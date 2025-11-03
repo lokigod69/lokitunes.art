@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "upload-content": "tsx scripts/upload-content.ts",
+    "seed-albums": "tsx scripts/seed-albums.ts"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.6",
@@ -35,6 +37,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.0.1",
     "tailwindcss": "^4",
+    "tsx": "^4.20.6",
     "typescript": "^5"
   }
 }

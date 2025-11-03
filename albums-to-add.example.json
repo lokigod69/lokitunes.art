@@ -1,0 +1,74 @@
+[
+  {
+    "slug": "first-thoughts",
+    "title": "First Thoughts",
+    "cover_file": "first-album.jpg",
+    "accent_hex": "#4F9EFF",
+    "songs": [
+      {
+        "title": "Opening",
+        "track_no": 1,
+        "versions": [
+          {
+            "label": "Original",
+            "audio_file": "opening-original.wav"
+          },
+          {
+            "label": "Remix 1",
+            "audio_file": "opening-remix1.wav"
+          },
+          {
+            "label": "Remix 2",
+            "audio_file": "opening-remix2.wav"
+          }
+        ]
+      },
+      {
+        "title": "Reflection",
+        "track_no": 2,
+        "versions": [
+          {
+            "label": "Original",
+            "audio_file": "reflection-original.wav"
+          },
+          {
+            "label": "Stripped",
+            "audio_file": "reflection-stripped.wav"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "sonic-evolution",
+    "title": "Sonic Evolution",
+    "cover_file": "sonic-evolution.jpg",
+    "accent_hex": "#6BFFB8",
+    "songs": [
+      {
+        "title": "Emergence",
+        "track_no": 1,
+        "versions": [
+          {
+            "label": "Original",
+            "audio_file": "emergence-original.wav"
+          }
+        ]
+      },
+      {
+        "title": "Transformation",
+        "track_no": 2,
+        "versions": [
+          {
+            "label": "Original",
+            "audio_file": "transformation-original.wav"
+          },
+          {
+            "label": "Extended Mix",
+            "audio_file": "transformation-extended.wav"
+          }
+        ]
+      }
+    ]
+  }
+]

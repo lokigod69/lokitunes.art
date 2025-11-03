@@ -39,3 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Local content (upload to Supabase, don't commit large files)
+content/
+loki-tunes-content/
+content-map.json
+albums-to-add.json
+
+# Keep albums-to-add.example.json in git as documentation

@@ -56,15 +56,23 @@ NEXT_PUBLIC_SUPABASE_URL=your-project-url.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
 ```
 
-### 4. Upload Sample Data
+### 4. Add Content
 
-1. Upload album covers to the `covers` bucket
-2. Upload WAV files to the `audio` bucket
-3. Insert album data into the `albums` table
-4. Insert songs into the `songs` table
-5. Insert versions into the `song_versions` table
+Use the built-in content management scripts:
 
-Example SQL for test data (uncomment the sample data section in `supabase-schema.sql`).
+```bash
+# 1. Upload your files to Supabase
+pnpm upload-content ~/path/to/your/content
+
+# 2. Create albums-to-add.json (see albums-to-add.example.json)
+cp albums-to-add.example.json albums-to-add.json
+# Edit albums-to-add.json with your album info
+
+# 3. Seed the database
+pnpm seed-albums albums-to-add.json
+```
+
+**See [ADDING_CONTENT.md](ADDING_CONTENT.md) for detailed instructions.**
 
 ### 5. Run Development Server
 
