@@ -5,8 +5,16 @@ import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { SongRow } from '@/components/SongRow'
 import { MiniPlayer } from '@/components/MiniPlayer'
-import { hexWithOpacity } from '@/lib/colors'
 import type { AlbumWithSongs } from '@/lib/supabase'
+
+function hexWithOpacity(hex: string, opacity: number): string {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+  if (!result) return hex
+  const r = parseInt(result[1], 16)
+  const g = parseInt(result[2], 16)
+  const b = parseInt(result[3], 16)
+  return `rgba(${r}, ${g}, ${b}, ${opacity})`
+}
 
 interface AlbumPageProps {
   album: AlbumWithSongs
