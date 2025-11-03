@@ -1,0 +1,21 @@
+@echo off
+REM Loki Tunes Content Sync - Windows
+REM 
+REM Instructions:
+REM 1. Copy this file to your content folder (e.g., D:\MUSIC\loki-content\)
+REM 2. Rename to sync.bat
+REM 3. Edit the paths below to match your setup
+REM 4. Double-click to sync!
+
+REM Path to your lokitunes project
+cd /d "D:\CODING\LOKI LAZER\lokitunes"
+
+REM Path to your content folder (where this script is)
+call pnpm sync-content "%~dp0"
+
+echo.
+echo ================================
+echo Sync complete!
+echo ================================
+echo.
+pause

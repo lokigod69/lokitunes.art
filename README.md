@@ -58,21 +58,23 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
 
 ### 4. Add Content
 
-Use the built-in content management scripts:
+Organize your content in folders and sync with one command:
 
 ```bash
-# 1. Upload your files to Supabase
-pnpm upload-content ~/path/to/your/content
+# Organize content by album
+# content/
+# ├── first-album/
+# │   ├── cover.jpg
+# │   └── 01-song-original.wav
+# └── second-album/
+#     ├── cover.png
+#     └── 01-track.wav
 
-# 2. Create albums-to-add.json (see albums-to-add.example.json)
-cp albums-to-add.example.json albums-to-add.json
-# Edit albums-to-add.json with your album info
-
-# 3. Seed the database
-pnpm seed-albums albums-to-add.json
+# Sync everything at once
+pnpm sync-content ~/path/to/content
 ```
 
-**See [ADDING_CONTENT.md](ADDING_CONTENT.md) for detailed instructions.**
+**See [SYNC_GUIDE.md](SYNC_GUIDE.md) for detailed instructions and one-click setup.**
 
 ### 5. Run Development Server
 

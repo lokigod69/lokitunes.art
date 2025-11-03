@@ -1,0 +1,23 @@
+#!/bin/bash
+# Loki Tunes Content Sync - Mac/Linux
+# 
+# Instructions:
+# 1. Copy this file to your content folder (e.g., ~/loki-content/)
+# 2. Rename to sync.sh
+# 3. Make executable: chmod +x sync.sh
+# 4. Edit the paths below to match your setup
+# 5. Double-click (or run ./sync.sh) to sync!
+
+# Path to your lokitunes project
+cd ~/code/lokitunes
+
+# Path to your content folder (where this script is)
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+pnpm sync-content "$SCRIPT_DIR"
+
+echo ""
+echo "================================"
+echo "Sync complete!"
+echo "================================"
+echo ""
+read -p "Press Enter to close..."

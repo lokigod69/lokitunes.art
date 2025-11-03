@@ -43,7 +43,10 @@ next-env.d.ts
 # Local content (upload to Supabase, don't commit large files)
 content/
 loki-tunes-content/
+loki-content/
 content-map.json
 albums-to-add.json
+sync.bat
+sync.sh
 
-# Keep albums-to-add.example.json in git as documentation
+# Keep example files in git as documentation
