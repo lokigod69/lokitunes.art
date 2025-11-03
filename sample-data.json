@@ -1,0 +1,84 @@
+{
+  "albums": [
+    {
+      "slug": "first-thoughts",
+      "title": "First Thoughts",
+      "cover_url": "https://your-project.supabase.co/storage/v1/object/public/covers/first-thoughts.jpg",
+      "palette": {
+        "dominant": "#2A1B3D",
+        "accent1": "#4F9EFF",
+        "accent2": "#FF6B4A"
+      },
+      "is_public": true,
+      "songs": [
+        {
+          "title": "Opening",
+          "track_no": 1,
+          "versions": [
+            {
+              "label": "Original",
+              "audio_url": "https://your-project.supabase.co/storage/v1/object/public/audio/opening-original.wav",
+              "duration_sec": 180
+            },
+            {
+              "label": "Remix 1",
+              "audio_url": "https://your-project.supabase.co/storage/v1/object/public/audio/opening-remix1.wav",
+              "duration_sec": 195
+            },
+            {
+              "label": "Remix 2",
+              "audio_url": "https://your-project.supabase.co/storage/v1/object/public/audio/opening-remix2.wav",
+              "duration_sec": 210
+            }
+          ]
+        },
+        {
+          "title": "Reflection",
+          "track_no": 2,
+          "versions": [
+            {
+              "label": "Original",
+              "audio_url": "https://your-project.supabase.co/storage/v1/object/public/audio/reflection-original.wav",
+              "duration_sec": 240
+            },
+            {
+              "label": "Stripped",
+              "audio_url": "https://your-project.supabase.co/storage/v1/object/public/audio/reflection-stripped.wav",
+              "duration_sec": 220
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "sonic-evolution",
+      "title": "Sonic Evolution",
+      "cover_url": "https://your-project.supabase.co/storage/v1/object/public/covers/sonic-evolution.jpg",
+      "palette": {
+        "dominant": "#1A2332",
+        "accent1": "#6BFFB8",
+        "accent2": "#FF4A8B"
+      },
+      "is_public": true,
+      "songs": [
+        {
+          "title": "Emergence",
+          "track_no": 1,
+          "versions": [
+            {
+              "label": "Original",
+              "audio_url": "https://your-project.supabase.co/storage/v1/object/public/audio/emergence-original.wav",
+              "duration_sec": 300
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "notes": [
+    "Replace 'your-project' in URLs with your actual Supabase project reference",
+    "Upload corresponding files to Supabase Storage before inserting this data",
+    "Palette colors can be auto-extracted using the /api/extract-palette endpoint",
+    "Duration in seconds is optional - will be calculated from audio file if omitted"
+  ]
+}

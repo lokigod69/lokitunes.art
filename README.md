@@ -1,36 +1,141 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Loki Tunes — Sonic Resonance
 
-## Getting Started
+A sonic landscape where albums exist as resonant nodes. This isn't a music library—it's an immersive experience where visitors attune to musical evolution through 3D orb fields.
 
-First, run the development server:
+## Philosophy
+
+Musical evolution as consciousness crystallization—each remix is a facet of the same diamond, reflecting different frequencies of the original vision.
+
+## Features
+
+- **3D Orb Field**: Interactive physics-based orb field using react-three-fiber and Rapier
+- **Sonic Immersion**: Album pages with waveform players for each song version
+- **Crossfade Audio**: Smooth 400ms crossfade when switching between versions
+- **Reduced Motion Support**: Automatic fallback to static grid for accessibility
+- **Keyboard Shortcuts**: Space to play/pause, arrows to seek
+- **Persistent Volume**: Volume settings saved to localStorage
+
+## Tech Stack
+
+- **Framework**: Next.js 14 (App Router) + TypeScript
+- **Styling**: Tailwind CSS 4
+- **3D**: react-three-fiber + drei + @react-three/rapier
+- **Audio**: WaveSurfer.js 7.x
+- **State**: Zustand
+- **Backend**: Supabase (PostgreSQL + Storage)
+- **Color Extraction**: node-vibrant
+- **Icons**: Lucide React
+
+## Setup Instructions
+
+### 1. Clone and Install
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cd lokitunes
+pnpm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Supabase Setup
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Create a new project at [supabase.com](https://supabase.com)
+2. Run the SQL schema in Supabase SQL Editor:
+   ```bash
+   # Copy contents of supabase-schema.sql and run in Supabase SQL Editor
+   ```
+3. Create storage buckets in Supabase Dashboard > Storage:
+   - `audio` (public)
+   - `covers` (public)
+4. Get your project URL and anon key from Settings > API
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 3. Environment Variables
 
-## Learn More
+Create `.env.local` in the project root:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+NEXT_PUBLIC_SUPABASE_URL=your-project-url.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 4. Upload Sample Data
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Upload album covers to the `covers` bucket
+2. Upload WAV files to the `audio` bucket
+3. Insert album data into the `albums` table
+4. Insert songs into the `songs` table
+5. Insert versions into the `song_versions` table
+
+Example SQL for test data (uncomment the sample data section in `supabase-schema.sql`).
+
+### 5. Run Development Server
+
+```bash
+pnpm dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) to see the orb field.
+
+## Project Structure
+
+```
+/app
+  /page.tsx                         # Orb field landing
+  /album/[slug]/page.tsx            # Album immersion
+  /api/extract-palette/route.ts     # Color extraction endpoint
+  /donate/page.tsx                  # Donation placeholder
+  
+/components
+  /Logo3D.tsx                       # Liquid chrome wordmark
+  /OrbField.tsx                     # R3F scene with physics
+  /SonicOrb.tsx                     # Individual orb + attraction logic
+  /WaveformPlayer.tsx               # Wavesurfer + controls
+  /SongRow.tsx                      # Expandable song with versions
+  /MiniPlayer.tsx                   # Sticky bottom player
+  
+/lib
+  /supabase.ts                      # Supabase client + types
+  /queries.ts                       # Database queries
+  /colors.ts                        # Palette extraction
+  /audio-store.ts                   # Zustand audio state
+  /utils.ts                         # Utility functions
+```
+
+## Color Palette
+
+```
+void      #090B0D  // deeper than black, spatial depth
+bone      #EBE4D8  // warm off-white, analog not digital
+voltage   #4F9EFF  // electric blue
+ember     #FF6B4A  // coral accent for interactions
+```
+
+Album pages dynamically extract 3-color palettes from cover art.
+
+## Keyboard Shortcuts
+
+- **Space**: Play/Pause
+- **← / →**: Seek ±5s (coming soon)
+- **↑ / ↓**: Volume (coming soon)
+
+## Accessibility
+
+- High contrast mode support
+- Reduced motion fallback to static grid
+- Keyboard navigation with visible focus states
+- ARIA labels for screen readers
 
 ## Deploy on Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. Push to GitHub
+2. Import project in Vercel
+3. Add environment variables:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+4. Deploy
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Future Enhancements
+
+- Play count visualization as orb glow intensity
+- Download original WAV option
+- Remix lineage tree visualization
+- Comment threads per version
+- Art gallery section (Loki Layer)
