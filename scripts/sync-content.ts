@@ -191,16 +191,19 @@ async function uploadFile(bucket: string, filePath: string, fileName: string): P
     const fileBuffer = fs.readFileSync(filePath)
     
     // Check if file already exists
+    // For files in folders (e.g., "Platypus/cover.jpg"), we need to check the folder
+    const folderPath = fileName.includes('/') ? fileName.substring(0, fileName.lastIndexOf('/')) : ''
     const { data: existingFiles } = await supabase.storage
       .from(bucket)
-      .list('', { search: fileName })
+      .list(folderPath, { search: path.basename(fileName) })
     
     if (existingFiles && existingFiles.length > 0) {
+      // File exists, return its public URL with full path
       const { data } = supabase.storage.from(bucket).getPublicUrl(fileName)
       return data.publicUrl
     }
 
-    // Upload new file
+    // Upload new file with full path (including folder)
     const { data, error } = await supabase.storage
       .from(bucket)
       .upload(fileName, fileBuffer, {
@@ -213,6 +216,7 @@ async function uploadFile(bucket: string, filePath: string, fileName: string): P
       return null
     }
 
+    // Return public URL with full path (data.path includes the folder)
     const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(data.path)
     return urlData.publicUrl
   } catch (error) {
