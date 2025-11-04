@@ -48,13 +48,19 @@ export function SongRow({ song, accentColor }: SongRowProps) {
             <div key={version.id} className="space-y-2">
               <div className="flex items-center gap-3">
                 {/* Version cover thumbnail */}
-                {version.cover_url && (
-                  <div className="w-12 h-12 rounded overflow-hidden flex-shrink-0 shadow-lg">
-                    <img 
-                      src={version.cover_url} 
-                      alt={version.label}
-                      className="w-full h-full object-cover"
-                    />
+                {version.cover_url ? (
+                  <img 
+                    src={version.cover_url}
+                    alt={version.label}
+                    className="w-12 h-12 rounded-md object-cover flex-shrink-0 border border-white/10"
+                    onError={(e) => {
+                      console.error('Failed to load version cover:', version.cover_url)
+                      e.currentTarget.style.display = 'none'
+                    }}
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-md bg-void/50 flex items-center justify-center flex-shrink-0 border border-white/10">
+                    <span className="text-bone/30 text-xs">♪</span>
                   </div>
                 )}
                 

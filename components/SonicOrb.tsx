@@ -151,12 +151,20 @@ export function SonicOrb({ album, index, totalCount, onHover, onNavigate }: OrbP
           }}
         >
           <sphereGeometry args={[radius, 64, 64]} />
-          <meshStandardMaterial
-            map={texture}
-            metalness={0.3}
-            roughness={0.6}
-            envMapIntensity={0.5}
-          />
+          {texture ? (
+            <meshStandardMaterial
+              map={texture}
+              metalness={0.3}
+              roughness={0.6}
+              envMapIntensity={0.5}
+            />
+          ) : (
+            <meshStandardMaterial
+              color={accentColor}
+              metalness={0.5}
+              roughness={0.5}
+            />
+          )}
         </mesh>
       </group>
     </RigidBody>
