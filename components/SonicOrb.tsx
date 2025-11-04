@@ -9,6 +9,7 @@ import type { Album } from '@/lib/supabase'
 interface OrbProps {
   album: Album
   index: number
+  totalCount: number
   onHover: (title: string | null) => void
   onNavigate: (slug: string) => void
 }
@@ -20,37 +21,34 @@ function calculateRadius(versionCount: number): number {
   return clamped * (1 + (Math.random() - 0.5) * 0.16)
 }
 
-export function SonicOrb({ album, index, onHover, onNavigate }: OrbProps) {
+export function SonicOrb({ album, index, totalCount, onHover, onNavigate }: OrbProps) {
   const ref = useRef<RapierRigidBody>(null)
   const glowRef = useRef<THREE.PointLight>(null)
   const meshRef = useRef<THREE.Mesh>(null)
   const [texture, setTexture] = useState<THREE.Texture | null>(null)
   
-  // CRITICAL FIX: Load texture with proper error handling and crossOrigin
+  // CRITICAL FIX: Load texture with proper CORS handling using Image element
   useEffect(() => {
     if (!album.cover_url) {
       console.warn(`⚠️ No cover URL for ${album.title}`)
       return
     }
     
-    const loader = new THREE.TextureLoader()
-    loader.setCrossOrigin('anonymous')
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.src = album.cover_url
     
-    loader.load(
-      album.cover_url,
-      (loadedTexture) => {
-        loadedTexture.wrapS = THREE.RepeatWrapping
-        loadedTexture.wrapT = THREE.RepeatWrapping
-        loadedTexture.colorSpace = THREE.SRGBColorSpace
-        loadedTexture.needsUpdate = true
-        setTexture(loadedTexture)
-        console.log(`✅ Texture loaded: ${album.title}`)
-      },
-      undefined,
-      (error) => {
-        console.error(`❌ Texture failed: ${album.title}`, error)
-      }
-    )
+    img.onload = () => {
+      const newTexture = new THREE.Texture(img)
+      newTexture.needsUpdate = true
+      newTexture.colorSpace = THREE.SRGBColorSpace
+      setTexture(newTexture)
+      console.log('✅ Texture loaded:', album.title, album.cover_url)
+    }
+    
+    img.onerror = (err) => {
+      console.error('❌ Texture failed:', album.title, album.cover_url, err)
+    }
   }, [album.cover_url, album.title])
 
   const radius = calculateRadius(album.total_versions || 1)
@@ -103,6 +101,23 @@ export function SonicOrb({ album, index, onHover, onNavigate }: OrbProps) {
     }
   })
 
+  // Calculate grid position to keep all orbs visible
+  const cols = Math.ceil(Math.sqrt(totalCount))
+  const row = Math.floor(index / cols)
+  const col = index % cols
+  
+  const spacing = 3  // Distance between orbs
+  const gridWidth = (cols - 1) * spacing
+  const gridHeight = (Math.ceil(totalCount / cols) - 1) * spacing
+  const startX = -gridWidth / 2
+  const startY = gridHeight / 2
+  
+  const initialPosition: [number, number, number] = [
+    startX + col * spacing,
+    startY - row * spacing,
+    0
+  ]
+
   return (
     <RigidBody
       ref={ref}
@@ -111,11 +126,7 @@ export function SonicOrb({ album, index, onHover, onNavigate }: OrbProps) {
       friction={0.2}
       linearDamping={0.2}
       angularDamping={0.3}
-      position={[
-        (Math.random() - 0.5) * 10,
-        (Math.random() - 0.5) * 6,
-        (Math.random() - 0.5) * 2,
-      ]}
+      position={initialPosition}
     >
       <group>
         {/* Inner glow */}

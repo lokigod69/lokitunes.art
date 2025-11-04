@@ -19,27 +19,31 @@ function OrbScene({ albums, onHover, onNavigate }: {
 }) {
   return (
     <Physics gravity={[0, 0, 0]}>
-      {/* INVISIBLE WALLS to keep orbs in view */}
-      {/* Top */}
-      <CuboidCollider position={[0, 8, 0]} args={[20, 0.1, 5]} />
-      {/* Bottom */}
-      <CuboidCollider position={[0, -8, 0]} args={[20, 0.1, 5]} />
-      {/* Left */}
-      <CuboidCollider position={[-12, 0, 0]} args={[0.1, 10, 5]} />
-      {/* Right */}
-      <CuboidCollider position={[12, 0, 0]} args={[0.1, 10, 5]} />
-      {/* Back */}
-      <CuboidCollider position={[0, 0, -3]} args={[20, 10, 0.1]} />
-      
-      {albums.map((album, index) => (
-        <SonicOrb
-          key={album.id}
-          album={album}
-          index={index}
-          onHover={onHover}
-          onNavigate={onNavigate}
-        />
-      ))}
+      <group>
+        {/* Keep orbs centered and bounded */}
+        <group position={[0, 0, 0]}>
+          {albums.map((album, index) => (
+            <SonicOrb
+              key={album.id}
+              album={album}
+              index={index}
+              totalCount={albums.length}
+              onHover={onHover}
+              onNavigate={onNavigate}
+            />
+          ))}
+        </group>
+        
+        {/* Invisible bounds - SMALLER so orbs stay in view */}
+        {/* Top */}
+        <CuboidCollider position={[0, 5, 0]} args={[15, 0.1, 3]} />
+        {/* Bottom */}
+        <CuboidCollider position={[0, -5, 0]} args={[15, 0.1, 3]} />
+        {/* Left */}
+        <CuboidCollider position={[-8, 0, 0]} args={[0.1, 8, 3]} />
+        {/* Right */}
+        <CuboidCollider position={[8, 0, 0]} args={[0.1, 8, 3]} />
+      </group>
     </Physics>
   )
 }
@@ -57,21 +61,25 @@ export function OrbField({ albums }: OrbFieldProps) {
       {/* 3D Canvas */}
       <Canvas
         camera={{ 
-          position: [0, 0, 15],
-          fov: 45,
-          near: 0.01,
+          position: [0, 0, 20],
+          fov: 40,
+          near: 0.1,
           far: 100
         }}
         gl={{ 
           alpha: true,
-          antialias: true,
-          powerPreference: "high-performance"
+          antialias: true
         }}
-        className="w-full h-full"
+        style={{
+          width: '100%',
+          height: '100%',
+          display: 'block'
+        }}
       >
-        <ambientLight intensity={0.2} />
-        <directionalLight position={[5, 5, 5]} intensity={0.5} />
-        <Environment preset="night" environmentIntensity={0.4} />
+        <color attach="background" args={['#0a0b0d']} />
+        <ambientLight intensity={0.3} />
+        <directionalLight position={[10, 10, 10]} intensity={0.6} />
+        <Environment preset="night" environmentIntensity={0.5} />
         <Suspense fallback={null}>
           <OrbScene
             albums={albums}
