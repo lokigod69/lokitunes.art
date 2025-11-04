@@ -24,19 +24,23 @@ D:\MUSIC\loki-content\
 ├── first-thoughts\
 │   ├── cover.jpg                    ← Required: Album cover
 │   ├── 01-opening-original.wav      ← Track 1, "Opening", version "Original"
+│   ├── 01-opening-original.jpg      ← Optional: Version cover art
 │   ├── 01-opening-remix1.wav        ← Track 1, "Opening", version "Remix 1"
+│   ├── 01-opening-remix1.jpg        ← Optional: Version cover art
 │   └── 02-reflection-original.wav   ← Track 2, "Reflection", version "Original"
 │
 └── midnight-sessions\
     ├── cover.png                    ← Required: Album cover
-    └── 01-dreams.wav                ← Track 1, "Dreams", version "Original"
+    ├── 01-dreams.wav                ← Track 1, "Dreams", version "Original"
+    └── 01-dreams.jpg                ← Optional: Version cover art
 ```
 
 **Rules:**
 - Each folder = one album
 - Folder name = album slug (lowercase, hyphens)
-- Must have `cover.jpg` or `cover.png`
+- Must have `cover.jpg` or `cover.png` (album cover)
 - Must have at least one audio file
+- **NEW:** Optional version covers (match audio filename with `.jpg`/`.png`)
 
 ### 2. Run Sync Command
 

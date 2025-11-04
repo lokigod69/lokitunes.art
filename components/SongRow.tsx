@@ -46,15 +46,28 @@ export function SongRow({ song, accentColor }: SongRowProps) {
         <div className="bg-void/50 space-y-2 p-4">
           {song.versions.map((version) => (
             <div key={version.id} className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-bone/70 text-sm font-medium">
-                  {version.label}
-                </span>
-                {version.play_count > 0 && (
-                  <span className="text-bone/40 text-xs">
-                    {version.play_count} plays
-                  </span>
+              <div className="flex items-center gap-3">
+                {/* Version cover thumbnail */}
+                {version.cover_url && (
+                  <div className="w-12 h-12 rounded overflow-hidden flex-shrink-0 shadow-lg">
+                    <img 
+                      src={version.cover_url} 
+                      alt={version.label}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
                 )}
+                
+                <div className="flex-1 flex items-center justify-between">
+                  <span className="text-bone/70 text-sm font-medium">
+                    {version.label}
+                  </span>
+                  {version.play_count > 0 && (
+                    <span className="text-bone/40 text-xs">
+                      {version.play_count} plays
+                    </span>
+                  )}
+                </div>
               </div>
               <WaveformPlayer
                 version={version}

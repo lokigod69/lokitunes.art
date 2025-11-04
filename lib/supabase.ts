@@ -38,6 +38,7 @@ export interface SongVersion {
   song_id: string
   label: string
   audio_url: string
+  cover_url: string | null
   duration_sec: number | null
   waveform_json: string | null
   play_count: number

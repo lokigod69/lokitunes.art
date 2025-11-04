@@ -41,7 +41,9 @@ interface SongData {
 interface VersionData {
   label: string
   filePath: string
+  coverPath?: string
   audioUrl?: string
+  coverUrl?: string
 }
 
 interface DbAlbum {
@@ -274,9 +276,28 @@ function scanAlbumFolder(albumPath: string, slug: string): AlbumData | null {
       })
     }
     
+    // Look for matching cover image for this version
+    const baseName = audioFile.replace(/\.(wav|mp3|flac|ogg)$/i, '')
+    const possibleCovers = [
+      `${baseName}.jpg`,
+      `${baseName}.jpeg`,
+      `${baseName}.png`,
+      `${baseName}.webp`,
+    ]
+    
+    let versionCoverPath: string | undefined
+    for (const coverName of possibleCovers) {
+      const coverPath = path.join(albumPath, coverName)
+      if (fs.existsSync(coverPath)) {
+        versionCoverPath = coverPath
+        break
+      }
+    }
+    
     songs.get(trackNo)!.versions.push({
       label: version,
       filePath: path.join(albumPath, audioFile),
+      coverPath: versionCoverPath,
     })
   }
   
@@ -689,12 +710,23 @@ async function addVersion(song: DbSong, version: VersionData): Promise<void> {
       return
     }
     
+    // Upload version cover if it exists
+    let versionCoverUrl: string | null = null
+    if (version.coverPath) {
+      const coverFileName = `${albumSlug}/${path.basename(version.coverPath)}`
+      versionCoverUrl = await uploadFile('covers', version.coverPath, coverFileName)
+      if (versionCoverUrl) {
+        console.log(`   🎨 Uploaded version cover for ${version.label}`)
+      }
+    }
+    
     const { error: versionError } = await supabase
       .from('song_versions')
       .insert({
         song_id: song.id,
         label: version.label,
         audio_url: audioUrl,
+        cover_url: versionCoverUrl,
         duration_sec: null,
         waveform_json: null,
       })

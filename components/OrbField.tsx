@@ -41,14 +41,19 @@ export function OrbField({ albums }: OrbFieldProps) {
   }
 
   return (
-    <div className="relative w-full" style={{ minHeight: '70vh' }}>
+    <div className="relative w-full" style={{ minHeight: '80vh' }}>
       {/* 3D Canvas */}
       <Canvas
         camera={{ 
-          position: [0, 0, 12],
-          fov: 50,
-          near: 0.1,
-          far: 1000
+          position: [0, 0, 15],
+          fov: 45,
+          near: 0.01,
+          far: 100
+        }}
+        gl={{ 
+          alpha: true,
+          antialias: true,
+          powerPreference: "high-performance"
         }}
         className="w-full h-full"
       >

@@ -1,9 +1,8 @@
 'use client'
 
-import { useRef } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { RigidBody, type RapierRigidBody } from '@react-three/rapier'
-import { useTexture } from '@react-three/drei'
 import * as THREE from 'three'
 import type { Album } from '@/lib/supabase'
 
@@ -25,14 +24,28 @@ export function SonicOrb({ album, index, onHover, onNavigate }: OrbProps) {
   const ref = useRef<RapierRigidBody>(null)
   const glowRef = useRef<THREE.PointLight>(null)
   const meshRef = useRef<THREE.Mesh>(null)
+  const [texture, setTexture] = useState<THREE.Texture | null>(null)
   
-  // Load texture with error handling
-  let texture: THREE.Texture | null = null
-  try {
-    texture = useTexture(album.cover_url || '/placeholder-album.jpg')
-  } catch (error) {
-    console.warn('Failed to load texture for', album.title)
-  }
+  // Load texture properly with error handling
+  useEffect(() => {
+    if (!album.cover_url) return
+    
+    const loader = new THREE.TextureLoader()
+    loader.load(
+      album.cover_url,
+      (loadedTexture) => {
+        loadedTexture.wrapS = THREE.RepeatWrapping
+        loadedTexture.wrapT = THREE.RepeatWrapping
+        loadedTexture.colorSpace = THREE.SRGBColorSpace
+        setTexture(loadedTexture)
+        console.log(`✅ Loaded texture for ${album.title}`)
+      },
+      undefined,
+      (error) => {
+        console.error(`❌ Failed to load texture for ${album.title}:`, error)
+      }
+    )
+  }, [album.cover_url, album.title])
 
   const radius = calculateRadius(album.total_versions || 1)
   const seed = index * 137.5 // golden angle for distribution
@@ -51,19 +64,26 @@ export function SonicOrb({ album, index, onHover, onNavigate }: OrbProps) {
     const noiseY = Math.cos(t * 0.2 + seed * 0.7) * 0.05
     body.applyImpulse({ x: noiseX, y: noiseY, z: 0 }, true)
 
-    // Mouse attraction field (stronger and larger radius)
+    // Mouse interaction field (repulsion when too close, attraction when near)
     const mouse = new THREE.Vector3(
       state.pointer.x * 5,
       state.pointer.y * 3,
       0
     )
-    const distance = mouse.distanceTo(new THREE.Vector3(pos.x, pos.y, pos.z))
+    const orbPos = new THREE.Vector3(pos.x, pos.y, pos.z)
+    const distance = mouse.distanceTo(orbPos)
+    const toCursor = mouse.clone().sub(orbPos)
 
-    if (distance < 6) {
-      const direction = mouse.clone().sub(new THREE.Vector3(pos.x, pos.y, pos.z))
+    const tooClose = 2  // Personal space radius
+    if (distance < tooClose) {
+      // Push away from cursor when too close
+      const repulsion = toCursor.clone().normalize().multiplyScalar(-0.15)
+      body.applyImpulse(repulsion, true)
+    } else if (distance < 6) {
+      // Normal attraction when not too close
       const strength = 0.12 * (1 - distance / 6)
-      direction.normalize().multiplyScalar(strength)
-      body.applyImpulse(direction, true)
+      const attraction = toCursor.normalize().multiplyScalar(strength)
+      body.applyImpulse(attraction, true)
     }
 
     // Glow pulse
@@ -116,14 +136,14 @@ export function SonicOrb({ album, index, onHover, onNavigate }: OrbProps) {
           <sphereGeometry args={[radius, 64, 64]} />
           <meshPhysicalMaterial
             map={texture}
-            metalness={1}
-            roughness={0.05}
+            metalness={0.8}
+            roughness={0.2}
             transmission={0}
-            clearcoat={1}
-            clearcoatRoughness={0}
-            envMapIntensity={3}
-            iridescence={0.8}
-            iridescenceIOR={1.5}
+            clearcoat={0.7}
+            clearcoatRoughness={0.1}
+            envMapIntensity={1.5}
+            iridescence={0.4}
+            iridescenceIOR={1.3}
           />
         </mesh>
       </group>

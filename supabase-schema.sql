@@ -30,6 +30,7 @@ create table public.song_versions (
   song_id uuid references public.songs on delete cascade,
   label text not null,
   audio_url text not null,
+  cover_url text,
   duration_sec int,
   waveform_json text,
   play_count int default 0,
