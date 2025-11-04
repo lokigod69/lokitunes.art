@@ -3,7 +3,7 @@
 import { Suspense, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { Environment } from '@react-three/drei'
-import { Physics } from '@react-three/rapier'
+import { Physics, CuboidCollider } from '@react-three/rapier'
 import { useRouter } from 'next/navigation'
 import { SonicOrb } from './SonicOrb'
 import type { Album } from '@/lib/supabase'
@@ -19,6 +19,18 @@ function OrbScene({ albums, onHover, onNavigate }: {
 }) {
   return (
     <Physics gravity={[0, 0, 0]}>
+      {/* INVISIBLE WALLS to keep orbs in view */}
+      {/* Top */}
+      <CuboidCollider position={[0, 8, 0]} args={[20, 0.1, 5]} />
+      {/* Bottom */}
+      <CuboidCollider position={[0, -8, 0]} args={[20, 0.1, 5]} />
+      {/* Left */}
+      <CuboidCollider position={[-12, 0, 0]} args={[0.1, 10, 5]} />
+      {/* Right */}
+      <CuboidCollider position={[12, 0, 0]} args={[0.1, 10, 5]} />
+      {/* Back */}
+      <CuboidCollider position={[0, 0, -3]} args={[20, 10, 0.1]} />
+      
       {albums.map((album, index) => (
         <SonicOrb
           key={album.id}
@@ -41,7 +53,7 @@ export function OrbField({ albums }: OrbFieldProps) {
   }
 
   return (
-    <div className="relative w-full" style={{ minHeight: '80vh' }}>
+    <div className="relative w-full" style={{ minHeight: '100vh' }}>
       {/* 3D Canvas */}
       <Canvas
         camera={{ 

@@ -14,9 +14,9 @@ interface OrbProps {
 }
 
 function calculateRadius(versionCount: number): number {
-  const base = 1.2
-  const raw = base + 0.3 * Math.sqrt(versionCount)
-  const clamped = THREE.MathUtils.clamp(raw, 0.9, 2.8)
+  const base = 1.5  // Increased from 1.2
+  const raw = base + 0.4 * Math.sqrt(versionCount)  // Increased multiplier
+  const clamped = THREE.MathUtils.clamp(raw, 1.2, 3.0)  // Bigger min/max
   return clamped * (1 + (Math.random() - 0.5) * 0.16)
 }
 
@@ -26,23 +26,29 @@ export function SonicOrb({ album, index, onHover, onNavigate }: OrbProps) {
   const meshRef = useRef<THREE.Mesh>(null)
   const [texture, setTexture] = useState<THREE.Texture | null>(null)
   
-  // Load texture properly with error handling
+  // CRITICAL FIX: Load texture with proper error handling and crossOrigin
   useEffect(() => {
-    if (!album.cover_url) return
+    if (!album.cover_url) {
+      console.warn(`⚠️ No cover URL for ${album.title}`)
+      return
+    }
     
     const loader = new THREE.TextureLoader()
+    loader.setCrossOrigin('anonymous')
+    
     loader.load(
       album.cover_url,
       (loadedTexture) => {
         loadedTexture.wrapS = THREE.RepeatWrapping
         loadedTexture.wrapT = THREE.RepeatWrapping
         loadedTexture.colorSpace = THREE.SRGBColorSpace
+        loadedTexture.needsUpdate = true
         setTexture(loadedTexture)
-        console.log(`✅ Loaded texture for ${album.title}`)
+        console.log(`✅ Texture loaded: ${album.title}`)
       },
       undefined,
       (error) => {
-        console.error(`❌ Failed to load texture for ${album.title}:`, error)
+        console.error(`❌ Texture failed: ${album.title}`, error)
       }
     )
   }, [album.cover_url, album.title])
@@ -134,16 +140,11 @@ export function SonicOrb({ album, index, onHover, onNavigate }: OrbProps) {
           }}
         >
           <sphereGeometry args={[radius, 64, 64]} />
-          <meshPhysicalMaterial
+          <meshStandardMaterial
             map={texture}
-            metalness={0.8}
-            roughness={0.2}
-            transmission={0}
-            clearcoat={0.7}
-            clearcoatRoughness={0.1}
-            envMapIntensity={1.5}
-            iridescence={0.4}
-            iridescenceIOR={1.3}
+            metalness={0.3}
+            roughness={0.6}
+            envMapIntensity={0.5}
           />
         </mesh>
       </group>
