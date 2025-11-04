@@ -46,12 +46,12 @@ export function SonicOrb({ album, index, onHover, onNavigate }: OrbProps) {
     const body = ref.current
     const pos = body.translation()
 
-    // Perlin noise drift (simplified)
-    const noiseX = Math.sin(t * 0.3 + seed) * 0.02
-    const noiseY = Math.cos(t * 0.2 + seed * 0.7) * 0.02
+    // Perlin noise drift (increased for more motion)
+    const noiseX = Math.sin(t * 0.3 + seed) * 0.05
+    const noiseY = Math.cos(t * 0.2 + seed * 0.7) * 0.05
     body.applyImpulse({ x: noiseX, y: noiseY, z: 0 }, true)
 
-    // Mouse attraction field
+    // Mouse attraction field (stronger and larger radius)
     const mouse = new THREE.Vector3(
       state.pointer.x * 5,
       state.pointer.y * 3,
@@ -59,9 +59,10 @@ export function SonicOrb({ album, index, onHover, onNavigate }: OrbProps) {
     )
     const distance = mouse.distanceTo(new THREE.Vector3(pos.x, pos.y, pos.z))
 
-    if (distance < 4) {
+    if (distance < 6) {
       const direction = mouse.clone().sub(new THREE.Vector3(pos.x, pos.y, pos.z))
-      direction.normalize().multiplyScalar(0.02 * (1 - distance / 4))
+      const strength = 0.12 * (1 - distance / 6)
+      direction.normalize().multiplyScalar(strength)
       body.applyImpulse(direction, true)
     }
 
@@ -82,7 +83,8 @@ export function SonicOrb({ album, index, onHover, onNavigate }: OrbProps) {
       colliders="ball"
       restitution={0.7}
       friction={0.2}
-      linearDamping={0.5}
+      linearDamping={0.2}
+      angularDamping={0.3}
       position={[
         (Math.random() - 0.5) * 10,
         (Math.random() - 0.5) * 6,
@@ -114,12 +116,14 @@ export function SonicOrb({ album, index, onHover, onNavigate }: OrbProps) {
           <sphereGeometry args={[radius, 64, 64]} />
           <meshPhysicalMaterial
             map={texture}
-            transmission={0.9}
-            roughness={0.1}
-            thickness={0.5}
-            iridescence={0.6}
-            iridescenceIOR={1.3}
-            envMapIntensity={2}
+            metalness={1}
+            roughness={0.05}
+            transmission={0}
+            clearcoat={1}
+            clearcoatRoughness={0}
+            envMapIntensity={3}
+            iridescence={0.8}
+            iridescenceIOR={1.5}
           />
         </mesh>
       </group>

@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 import { Vibrant } from 'node-vibrant/node'
 import * as fs from 'fs'
 import * as path from 'path'
+import * as readline from 'readline'
 
 // Load environment variables
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -16,6 +17,11 @@ if (!supabaseUrl || !supabaseKey) {
 }
 
 const supabase = createClient(supabaseUrl, supabaseKey)
+
+// Parse command line flags
+const args = process.argv.slice(2)
+const forceMode = args.includes('--force')
+const contentDirArg = args.find(arg => !arg.startsWith('--'))
 
 interface AlbumData {
   slug: string
@@ -36,6 +42,53 @@ interface VersionData {
   label: string
   filePath: string
   audioUrl?: string
+}
+
+interface DbAlbum {
+  id: string
+  slug: string
+  title: string
+  cover_url: string
+  palette: any
+}
+
+interface DbSong {
+  id: string
+  album_id: string
+  title: string
+  track_no: number
+}
+
+interface DbVersion {
+  id: string
+  song_id: string
+  label: string
+  audio_url: string
+}
+
+interface SyncChanges {
+  albumsToAdd: AlbumData[]
+  albumsToDelete: DbAlbum[]
+  songsToAdd: { album: DbAlbum; song: SongData }[]
+  songsToDelete: { album: DbAlbum; song: DbSong }[]
+  songsToUpdate: { album: DbAlbum; oldSong: DbSong; newSong: SongData }[]
+  versionsToAdd: { song: DbSong; version: VersionData }[]
+  versionsToDelete: { song: DbSong; version: DbVersion }[]
+  versionsToUpdate: { song: DbSong; oldVersion: DbVersion; newVersion: VersionData }[]
+}
+
+function promptUser(question: string): Promise<string> {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+  })
+  
+  return new Promise(resolve => {
+    rl.question(question, answer => {
+      rl.close()
+      resolve(answer.trim().toLowerCase())
+    })
+  })
 }
 
 function prettifyName(slug: string): string {
@@ -235,37 +288,325 @@ function scanAlbumFolder(albumPath: string, slug: string): AlbumData | null {
   }
 }
 
-async function syncAlbum(album: AlbumData): Promise<{ success: boolean; songCount: number; versionCount: number }> {
-  let songCount = 0
-  let versionCount = 0
+async function fetchDatabaseState(): Promise<{ albums: DbAlbum[]; songs: DbSong[]; versions: DbVersion[] }> {
+  // Fetch all albums
+  const { data: albums, error: albumsError } = await supabase
+    .from('albums')
+    .select('*')
   
+  if (albumsError) {
+    console.error('❌ Error fetching albums:', albumsError.message)
+    return { albums: [], songs: [], versions: [] }
+  }
+  
+  // Fetch all songs
+  const { data: songs, error: songsError } = await supabase
+    .from('songs')
+    .select('*')
+  
+  if (songsError) {
+    console.error('❌ Error fetching songs:', songsError.message)
+    return { albums: albums || [], songs: [], versions: [] }
+  }
+  
+  // Fetch all versions
+  const { data: versions, error: versionsError } = await supabase
+    .from('song_versions')
+    .select('*')
+  
+  if (versionsError) {
+    console.error('❌ Error fetching versions:', versionsError.message)
+    return { albums: albums || [], songs: songs || [], versions: [] }
+  }
+  
+  return {
+    albums: albums || [],
+    songs: songs || [],
+    versions: versions || []
+  }
+}
+
+function detectChanges(
+  localAlbums: Map<string, AlbumData>,
+  dbState: { albums: DbAlbum[]; songs: DbSong[]; versions: DbVersion[] }
+): SyncChanges {
+  const changes: SyncChanges = {
+    albumsToAdd: [],
+    albumsToDelete: [],
+    songsToAdd: [],
+    songsToDelete: [],
+    songsToUpdate: [],
+    versionsToAdd: [],
+    versionsToDelete: [],
+    versionsToUpdate: []
+  }
+  
+  // Create lookup maps
+  const dbAlbumsMap = new Map(dbState.albums.map(a => [a.slug, a]))
+  const dbSongsByAlbum = new Map<string, DbSong[]>()
+  const dbVersionsBySong = new Map<string, DbVersion[]>()
+  
+  for (const song of dbState.songs) {
+    if (!dbSongsByAlbum.has(song.album_id)) {
+      dbSongsByAlbum.set(song.album_id, [])
+    }
+    dbSongsByAlbum.get(song.album_id)!.push(song)
+  }
+  
+  for (const version of dbState.versions) {
+    if (!dbVersionsBySong.has(version.song_id)) {
+      dbVersionsBySong.set(version.song_id, [])
+    }
+    dbVersionsBySong.get(version.song_id)!.push(version)
+  }
+  
+  // Detect albums to add
+  for (const [slug, albumData] of localAlbums) {
+    if (!dbAlbumsMap.has(slug)) {
+      changes.albumsToAdd.push(albumData)
+    }
+  }
+  
+  // Detect albums to delete
+  for (const dbAlbum of dbState.albums) {
+    if (!localAlbums.has(dbAlbum.slug)) {
+      changes.albumsToDelete.push(dbAlbum)
+    }
+  }
+  
+  // Detect song and version changes for existing albums
+  for (const [slug, localAlbum] of localAlbums) {
+    const dbAlbum = dbAlbumsMap.get(slug)
+    if (!dbAlbum) continue // New album, already handled
+    
+    const dbSongs = dbSongsByAlbum.get(dbAlbum.id) || []
+    const localSongsArray = Array.from(localAlbum.songs.values())
+    
+    // Create lookup by track number for comparison
+    const dbSongsByTrack = new Map(dbSongs.map(s => [s.track_no, s]))
+    const localSongsByTrack = new Map(localSongsArray.map(s => [s.trackNo, s]))
+    
+    // Detect songs to add
+    for (const localSong of localSongsArray) {
+      if (!dbSongsByTrack.has(localSong.trackNo)) {
+        changes.songsToAdd.push({ album: dbAlbum, song: localSong })
+      }
+    }
+    
+    // Detect songs to delete or update
+    for (const dbSong of dbSongs) {
+      const localSong = localSongsByTrack.get(dbSong.track_no)
+      
+      if (!localSong) {
+        changes.songsToDelete.push({ album: dbAlbum, song: dbSong })
+      } else if (dbSong.title !== localSong.title) {
+        // Song renamed
+        changes.songsToUpdate.push({ album: dbAlbum, oldSong: dbSong, newSong: localSong })
+      }
+      
+      // Check versions for this song
+      if (localSong) {
+        const dbVersions = dbVersionsBySong.get(dbSong.id) || []
+        const dbVersionsByLabel = new Map(dbVersions.map(v => [v.label, v]))
+        const localVersionsByLabel = new Map(localSong.versions.map(v => [v.label, v]))
+        
+        // Detect versions to add
+        for (const localVersion of localSong.versions) {
+          if (!dbVersionsByLabel.has(localVersion.label)) {
+            changes.versionsToAdd.push({ song: dbSong, version: localVersion })
+          }
+        }
+        
+        // Detect versions to delete
+        for (const dbVersion of dbVersions) {
+          if (!localVersionsByLabel.has(dbVersion.label)) {
+            changes.versionsToDelete.push({ song: dbSong, version: dbVersion })
+          }
+        }
+      }
+    }
+  }
+  
+  return changes
+}
+
+function displayChanges(changes: SyncChanges): void {
+  console.log('\n📊 Changes detected:\n')
+  
+  let totalChanges = 0
+  
+  if (changes.albumsToAdd.length > 0) {
+    console.log(`✓ ${changes.albumsToAdd.length} new album(s) to add:`)
+    changes.albumsToAdd.forEach(a => console.log(`   • ${a.title}`))
+    totalChanges += changes.albumsToAdd.length
+  }
+  
+  if (changes.albumsToDelete.length > 0) {
+    console.log(`✗ ${changes.albumsToDelete.length} album(s) to delete (removed locally):`)
+    changes.albumsToDelete.forEach(a => console.log(`   • ${a.title}`))
+    totalChanges += changes.albumsToDelete.length
+  }
+  
+  if (changes.songsToAdd.length > 0) {
+    console.log(`✓ ${changes.songsToAdd.length} new song(s) to add:`)
+    changes.songsToAdd.forEach(s => console.log(`   • ${s.song.title} (${s.album.title})`))
+    totalChanges += changes.songsToAdd.length
+  }
+  
+  if (changes.songsToDelete.length > 0) {
+    console.log(`✗ ${changes.songsToDelete.length} song(s) to delete:`)
+    changes.songsToDelete.forEach(s => console.log(`   • ${s.song.title} (${s.album.title})`))
+    totalChanges += changes.songsToDelete.length
+  }
+  
+  if (changes.songsToUpdate.length > 0) {
+    console.log(`⚠ ${changes.songsToUpdate.length} song(s) renamed:`)
+    changes.songsToUpdate.forEach(s => console.log(`   • "${s.oldSong.title}" → "${s.newSong.title}" (${s.album.title})`))
+    totalChanges += changes.songsToUpdate.length
+  }
+  
+  if (changes.versionsToAdd.length > 0) {
+    console.log(`✓ ${changes.versionsToAdd.length} new version(s) to add:`)
+    changes.versionsToAdd.forEach(v => console.log(`   • ${v.song.title} - ${v.version.label}`))
+    totalChanges += changes.versionsToAdd.length
+  }
+  
+  if (changes.versionsToDelete.length > 0) {
+    console.log(`✗ ${changes.versionsToDelete.length} version(s) to delete:`)
+    changes.versionsToDelete.forEach(v => console.log(`   • ${v.song.title} - ${v.version.label}`))
+    totalChanges += changes.versionsToDelete.length
+  }
+  
+  if (totalChanges === 0) {
+    console.log('✅ Everything is in sync! No changes needed.')
+  }
+  
+  console.log()
+}
+
+async function applyChanges(changes: SyncChanges, forceMode: boolean): Promise<void> {
+  console.log('🔄 Applying changes...\n')
+  
+  // Delete albums (if force mode)
+  if (changes.albumsToDelete.length > 0) {
+    if (forceMode) {
+      console.log(`🗑️  Deleting ${changes.albumsToDelete.length} album(s)...`)
+      for (const album of changes.albumsToDelete) {
+        const { error } = await supabase
+          .from('albums')
+          .delete()
+          .eq('id', album.id)
+        
+        if (error) {
+          console.log(`   ❌ Failed to delete ${album.title}: ${error.message}`)
+        } else {
+          console.log(`   ✅ Deleted ${album.title}`)
+        }
+      }
+    } else {
+      console.log(`⚠️  Skipping ${changes.albumsToDelete.length} album deletion(s) (use --force to delete)`)
+    }
+  }
+  
+  // Delete songs (if force mode)
+  if (changes.songsToDelete.length > 0) {
+    if (forceMode) {
+      console.log(`🗑️  Deleting ${changes.songsToDelete.length} song(s)...`)
+      for (const { song, album } of changes.songsToDelete) {
+        const { error } = await supabase
+          .from('songs')
+          .delete()
+          .eq('id', song.id)
+        
+        if (error) {
+          console.log(`   ❌ Failed to delete ${song.title}: ${error.message}`)
+        } else {
+          console.log(`   ✅ Deleted ${song.title} from ${album.title}`)
+        }
+      }
+    } else {
+      console.log(`⚠️  Skipping ${changes.songsToDelete.length} song deletion(s) (use --force to delete)`)
+    }
+  }
+  
+  // Delete versions (if force mode)
+  if (changes.versionsToDelete.length > 0) {
+    if (forceMode) {
+      console.log(`🗑️  Deleting ${changes.versionsToDelete.length} version(s)...`)
+      for (const { version, song } of changes.versionsToDelete) {
+        const { error } = await supabase
+          .from('song_versions')
+          .delete()
+          .eq('id', version.id)
+        
+        if (error) {
+          console.log(`   ❌ Failed to delete ${song.title} - ${version.label}: ${error.message}`)
+        } else {
+          console.log(`   ✅ Deleted ${song.title} - ${version.label}`)
+        }
+      }
+    } else {
+      console.log(`⚠️  Skipping ${changes.versionsToDelete.length} version deletion(s) (use --force to delete)`)
+    }
+  }
+  
+  // Update songs (renames)
+  if (changes.songsToUpdate.length > 0) {
+    console.log(`✏️  Updating ${changes.songsToUpdate.length} song(s)...`)
+    for (const { oldSong, newSong } of changes.songsToUpdate) {
+      const { error } = await supabase
+        .from('songs')
+        .update({ title: newSong.title })
+        .eq('id', oldSong.id)
+      
+      if (error) {
+        console.log(`   ❌ Failed to update ${oldSong.title}: ${error.message}`)
+      } else {
+        console.log(`   ✅ Renamed "${oldSong.title}" → "${newSong.title}"`)
+      }
+    }
+  }
+  
+  // Add new albums
+  if (changes.albumsToAdd.length > 0) {
+    console.log(`➕ Adding ${changes.albumsToAdd.length} new album(s)...`)
+    for (const album of changes.albumsToAdd) {
+      await addAlbum(album)
+    }
+  }
+  
+  // Add new songs
+  if (changes.songsToAdd.length > 0) {
+    console.log(`➕ Adding ${changes.songsToAdd.length} new song(s)...`)
+    for (const { album, song } of changes.songsToAdd) {
+      await addSong(album, song)
+    }
+  }
+  
+  // Add new versions
+  if (changes.versionsToAdd.length > 0) {
+    console.log(`➕ Adding ${changes.versionsToAdd.length} new version(s)...`)
+    for (const { song, version } of changes.versionsToAdd) {
+      await addVersion(song, version)
+    }
+  }
+  
+  console.log('\n✅ Sync complete!')
+}
+
+async function addAlbum(album: AlbumData): Promise<void> {
   try {
     // Upload cover
     const coverFileName = `${album.slug}${path.extname(album.coverPath)}`
     const coverUrl = await uploadFile('covers', album.coverPath, coverFileName)
     
     if (!coverUrl) {
-      console.log(`   ❌ Failed to upload cover`)
-      return { success: false, songCount: 0, versionCount: 0 }
+      console.log(`   ❌ Failed to upload cover for ${album.title}`)
+      return
     }
-    
-    album.coverUrl = coverUrl
     
     // Extract palette
-    console.log(`   🎨 Extracting color palette...`)
     album.palette = await extractPalette(coverUrl)
-    
-    // Check if album already exists
-    const { data: existingAlbum } = await supabase
-      .from('albums')
-      .select('id')
-      .eq('slug', album.slug)
-      .single()
-    
-    if (existingAlbum) {
-      console.log(`   ⏭️  Album already exists, skipping...`)
-      return { success: false, songCount: 0, versionCount: 0 }
-    }
     
     // Insert album
     const { data: dbAlbum, error: albumError } = await supabase
@@ -281,66 +622,96 @@ async function syncAlbum(album: AlbumData): Promise<{ success: boolean; songCoun
       .single()
     
     if (albumError) {
-      console.log(`   ❌ Error creating album: ${albumError.message}`)
-      return { success: false, songCount: 0, versionCount: 0 }
+      console.log(`   ❌ Error creating album ${album.title}: ${albumError.message}`)
+      return
     }
     
-    // Process songs
+    console.log(`   ✅ Added album ${album.title}`)
+    
+    // Add all songs
     const sortedSongs = Array.from(album.songs.values()).sort((a, b) => a.trackNo - b.trackNo)
-    
     for (const song of sortedSongs) {
-      // Insert song
-      const { data: dbSong, error: songError } = await supabase
-        .from('songs')
-        .insert({
-          album_id: dbAlbum.id,
-          title: song.title,
-          track_no: song.trackNo,
-        })
-        .select()
-        .single()
-      
-      if (songError) {
-        console.log(`      ❌ Error creating song: ${songError.message}`)
-        continue
-      }
-      
-      songCount++
-      
-      // Upload and insert versions
-      for (const version of song.versions) {
-        const audioFileName = `${album.slug}-${song.trackNo}-${version.label.toLowerCase().replace(/\s+/g, '-')}${path.extname(version.filePath)}`
-        const audioUrl = await uploadFile('audio', version.filePath, audioFileName)
-        
-        if (!audioUrl) continue
-        
-        version.audioUrl = audioUrl
-        
-        const { error: versionError } = await supabase
-          .from('song_versions')
-          .insert({
-            song_id: dbSong.id,
-            label: version.label,
-            audio_url: audioUrl,
-            duration_sec: null,
-            waveform_json: null,
-          })
-        
-        if (!versionError) {
-          versionCount++
-        }
-      }
+      await addSong(dbAlbum, song)
+    }
+  } catch (error) {
+    console.log(`   ❌ Error adding album ${album.title}: ${error}`)
+  }
+}
+
+async function addSong(album: DbAlbum, song: SongData): Promise<void> {
+  try {
+    const { data: dbSong, error: songError } = await supabase
+      .from('songs')
+      .insert({
+        album_id: album.id,
+        title: song.title,
+        track_no: song.trackNo,
+      })
+      .select()
+      .single()
+    
+    if (songError) {
+      console.log(`   ❌ Error creating song ${song.title}: ${songError.message}`)
+      return
     }
     
-    return { success: true, songCount, versionCount }
+    console.log(`   ✅ Added song ${song.title}`)
+    
+    // Add all versions
+    for (const version of song.versions) {
+      await addVersion(dbSong, version)
+    }
   } catch (error) {
-    console.log(`   ❌ Error: ${error}`)
-    return { success: false, songCount: 0, versionCount: 0 }
+    console.log(`   ❌ Error adding song ${song.title}: ${error}`)
+  }
+}
+
+async function addVersion(song: DbSong, version: VersionData): Promise<void> {
+  try {
+    // Get album slug from song
+    const { data: songWithAlbum } = await supabase
+      .from('songs')
+      .select('album_id, albums(slug)')
+      .eq('id', song.id)
+      .single()
+    
+    if (!songWithAlbum) {
+      console.log(`   ❌ Could not find album for song ${song.title}`)
+      return
+    }
+    
+    const albumSlug = (songWithAlbum.albums as any).slug
+    const audioFileName = `${albumSlug}-${song.track_no}-${version.label.toLowerCase().replace(/\s+/g, '-')}${path.extname(version.filePath)}`
+    const audioUrl = await uploadFile('audio', version.filePath, audioFileName)
+    
+    if (!audioUrl) {
+      console.log(`   ❌ Failed to upload ${version.label} for ${song.title}`)
+      return
+    }
+    
+    const { error: versionError } = await supabase
+      .from('song_versions')
+      .insert({
+        song_id: song.id,
+        label: version.label,
+        audio_url: audioUrl,
+        duration_sec: null,
+        waveform_json: null,
+      })
+    
+    if (versionError) {
+      console.log(`   ❌ Error creating version ${version.label}: ${versionError.message}`)
+    } else {
+      console.log(`   ✅ Added version ${song.title} - ${version.label}`)
+    }
+  } catch (error) {
+    console.log(`   ❌ Error adding version ${version.label}: ${error}`)
   }
 }
 
 async function syncContent(contentDir: string) {
-  console.log('\n🎵 Loki Tunes Content Sync\n')
+  console.log('\n🎵 Loki Tunes Content Sync')
+  console.log(`Mode: ${forceMode ? '🔥 FORCE (will delete)' : '🛡️  SAFE (add/update only)'}\n`)
   
   // Validate content directory
   if (!fs.existsSync(contentDir)) {
@@ -349,6 +720,7 @@ async function syncContent(contentDir: string) {
   }
   
   // Scan for album folders
+  console.log('📁 Scanning local content...')
   const entries = fs.readdirSync(contentDir, { withFileTypes: true })
   const albumFolders = entries.filter(e => e.isDirectory())
   
@@ -365,80 +737,81 @@ async function syncContent(contentDir: string) {
     process.exit(1)
   }
   
-  console.log(`📁 Found ${albumFolders.length} album folder(s)\n`)
-  
-  const results: { album: string; success: boolean; songs: number; versions: number; error?: string }[] = []
+  // Scan all local albums
+  const localAlbums = new Map<string, AlbumData>()
   
   for (const folder of albumFolders) {
     const albumPath = path.join(contentDir, folder.name)
     const slug = folder.name
-    
-    console.log(`📀 ${prettifyName(slug)}`)
-    
-    // Scan album folder
     const albumData = scanAlbumFolder(albumPath, slug)
     
-    if (!albumData) {
-      const files = fs.readdirSync(albumPath)
-      const hasCover = files.some(f => f.toLowerCase().startsWith('cover.') && isImageFile(f))
-      const hasAudio = files.some(isAudioFile)
-      
-      if (!hasCover) {
-        console.log(`   ❌ No cover image found (need cover.jpg or cover.png)`)
-        results.push({ album: prettifyName(slug), success: false, songs: 0, versions: 0, error: 'No cover image' })
-      } else if (!hasAudio) {
-        console.log(`   ❌ No audio files found`)
-        results.push({ album: prettifyName(slug), success: false, songs: 0, versions: 0, error: 'No audio files' })
-      }
-      console.log()
-      continue
+    if (albumData) {
+      localAlbums.set(slug, albumData)
     }
-    
-    // Sync album
-    const result = await syncAlbum(albumData)
-    
-    if (result.success) {
-      console.log(`   ✅ ${result.songCount} song(s), ${result.versionCount} version(s) uploaded`)
-      if (albumData.palette) {
-        console.log(`   🎨 Palette: ${albumData.palette.accent1}, ${albumData.palette.dominant}, ${albumData.palette.accent2}`)
-      }
-      results.push({ album: albumData.title, success: true, songs: result.songCount, versions: result.versionCount })
-    } else {
-      results.push({ album: albumData.title, success: false, songs: 0, versions: 0, error: 'Upload failed' })
-    }
-    
-    console.log()
   }
   
-  // Summary
-  console.log('━'.repeat(60))
-  const successful = results.filter(r => r.success)
-  const failed = results.filter(r => !r.success)
+  console.log(`   Found ${localAlbums.size} valid album(s) locally\n`)
   
-  if (successful.length > 0) {
-    console.log(`\n✅ Successfully added ${successful.length} album(s):`)
-    successful.forEach(r => {
-      console.log(`   • ${r.album} (${r.songs} songs, ${r.versions} versions)`)
-    })
+  // Fetch database state
+  console.log('🗄️  Fetching database state...')
+  const dbState = await fetchDatabaseState()
+  console.log(`   Found ${dbState.albums.length} album(s) in database\n`)
+  
+  // Detect changes
+  console.log('🔍 Detecting changes...')
+  const changes = detectChanges(localAlbums, dbState)
+  
+  // Display changes
+  displayChanges(changes)
+  
+  // Check if there are any changes
+  const hasChanges = 
+    changes.albumsToAdd.length > 0 ||
+    changes.albumsToDelete.length > 0 ||
+    changes.songsToAdd.length > 0 ||
+    changes.songsToDelete.length > 0 ||
+    changes.songsToUpdate.length > 0 ||
+    changes.versionsToAdd.length > 0 ||
+    changes.versionsToDelete.length > 0
+  
+  if (!hasChanges) {
+    console.log('💡 Everything is already in sync!\n')
+    return
   }
   
-  if (failed.length > 0) {
-    console.log(`\n⏭️  Skipped ${failed.length} album(s):`)
-    failed.forEach(r => {
-      console.log(`   • ${r.album} - ${r.error}`)
-    })
+  // Check if there are destructive changes
+  const hasDestructiveChanges = 
+    changes.albumsToDelete.length > 0 ||
+    changes.songsToDelete.length > 0 ||
+    changes.versionsToDelete.length > 0
+  
+  if (hasDestructiveChanges && !forceMode) {
+    console.log('⚠️  Destructive changes detected but not in --force mode.')
+    console.log('   Run with --force to apply deletions.\n')
   }
   
-  console.log(`\n💡 Visit your site to see the new orbs!\n`)
+  // Prompt for confirmation
+  const answer = await promptUser('Continue with sync? (y/n): ')
+  
+  if (answer !== 'y' && answer !== 'yes') {
+    console.log('\n❌ Sync cancelled.\n')
+    return
+  }
+  
+  // Apply changes
+  await applyChanges(changes, forceMode)
+  
+  console.log('\n💡 Visit your site to see the changes!\n')
 }
 
 // Main execution
-const contentDir = process.argv[2]
-
-if (!contentDir) {
+if (!contentDirArg) {
   console.error('❌ Error: Please provide a content directory')
-  console.error('\nUsage: pnpm sync-content <directory>')
+  console.error('\nUsage: pnpm sync-content <directory> [--force]')
   console.error('Example: pnpm sync-content ~/loki-content')
+  console.error('Example: pnpm sync-content ~/loki-content --force')
+  console.error('\nFlags:')
+  console.error('  --force    Enable destructive operations (delete missing content)')
   console.error('\nExpected structure:')
   console.error('  ~/loki-content/')
   console.error('  ├── first-album/')
@@ -451,4 +824,4 @@ if (!contentDir) {
   process.exit(1)
 }
 
-syncContent(path.resolve(contentDir))
+syncContent(path.resolve(contentDirArg))

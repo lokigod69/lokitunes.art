@@ -6,12 +6,20 @@ REM 1. Copy this file to your content folder (e.g., D:\MUSIC\loki-content\)
 REM 2. Rename to sync.bat
 REM 3. Edit the paths below to match your setup
 REM 4. Double-click to sync!
+REM
+REM Usage:
+REM   sync.bat           - Safe mode (add/update only, no deletions)
+REM   sync.bat --force   - Force mode (includes deletions)
 
 REM Path to your lokitunes project
 cd /d "D:\CODING\LOKI LAZER\lokitunes"
 
+REM Check for --force flag
+set FORCE_FLAG=
+if "%~1"=="--force" set FORCE_FLAG=--force
+
 REM Path to your content folder (where this script is)
-call pnpm sync-content "%~dp0"
+call pnpm sync-content "%~dp0" %FORCE_FLAG%
 
 echo.
 echo ================================

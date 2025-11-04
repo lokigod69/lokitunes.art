@@ -1,6 +1,17 @@
-# Content Sync Guide - One Command Upload
+# Content Sync Guide - True Bidirectional Sync
 
-The easiest way to add content to Loki Tunes.
+The easiest way to keep your local content in sync with Supabase.
+
+## What's New: True Sync
+
+The sync script now provides **true bidirectional synchronization**:
+
+- ✅ **Detects additions** - New albums, songs, and versions
+- ✅ **Detects deletions** - Content removed locally
+- ✅ **Detects renames** - Track number or title changes
+- ✅ **Safe by default** - Only adds/updates unless you use `--force`
+- ✅ **Interactive diff** - Shows exactly what will change before applying
+- ✅ **Confirmation prompt** - You approve changes before they happen
 
 ## Quick Start
 
@@ -29,15 +40,22 @@ D:\MUSIC\loki-content\
 
 ### 2. Run Sync Command
 
+**Safe mode (default)** - Only adds and updates, no deletions:
 ```bash
 pnpm sync-content D:\MUSIC\loki-content
 ```
 
-That's it! The script will:
-- ✅ Upload all covers and audio to Supabase
-- ✅ Extract color palettes from covers
-- ✅ Create albums, songs, and versions in database
-- ✅ Show progress and summary
+**Force mode** - Includes deletions to mirror local content:
+```bash
+pnpm sync-content D:\MUSIC\loki-content --force
+```
+
+The script will:
+1. 🔍 Scan your local content
+2. 🗄️ Fetch current database state
+3. 📊 Show you a diff of all changes
+4. ❓ Ask for confirmation
+5. 🔄 Apply the changes you approve
 
 ### 3. View Your Site
 
@@ -70,6 +88,36 @@ The script auto-detects track numbers, song names, and versions:
 - `extended` → "Extended"
 - `instrumental` → "Instrumental"
 
+## Sync Modes
+
+### Safe Mode (Default)
+
+```bash
+pnpm sync-content ~/loki-content
+```
+
+**What it does:**
+- ✅ Adds new albums, songs, versions
+- ✅ Updates song titles if renamed
+- ⚠️ Warns about deletions but doesn't apply them
+
+**Use when:** You want to add new content without risk of data loss.
+
+### Force Mode
+
+```bash
+pnpm sync-content ~/loki-content --force
+```
+
+**What it does:**
+- ✅ Adds new albums, songs, versions
+- ✅ Updates song titles if renamed
+- 🗑️ Deletes albums/songs/versions removed locally
+
+**Use when:** You want to mirror your local content exactly to the database.
+
+**⚠️ Warning:** This will permanently delete content from Supabase that doesn't exist locally!
+
 ## One-Click Sync (Recommended)
 
 ### Windows
@@ -81,7 +129,8 @@ The script auto-detects track numbers, song names, and versions:
    cd /d "D:\CODING\LOKI LAZER\lokitunes"
    call pnpm sync-content "%~dp0"
    ```
-4. Double-click `sync.bat` to sync!
+4. Double-click `sync.bat` to sync (safe mode)
+5. Or run `sync.bat --force` for force mode
 
 ### Mac/Linux
 
@@ -97,28 +146,122 @@ The script auto-detects track numbers, song names, and versions:
 
 ## Example Output
 
+### First Sync (Adding Content)
+
 ```
 🎵 Loki Tunes Content Sync
+Mode: 🛡️  SAFE (add/update only)
 
-📁 Found 2 album folder(s)
+📁 Scanning local content...
+   Found 2 valid album(s) locally
 
-📀 First Thoughts
-   🎨 Extracting color palette...
-   ✅ 2 song(s), 3 version(s) uploaded
-   🎨 Palette: #4F9EFF, #2D3748, #E8D5B5
+🗄️  Fetching database state...
+   Found 0 album(s) in database
 
-📀 Midnight Sessions
-   🎨 Extracting color palette...
-   ✅ 1 song(s), 1 version(s) uploaded
-   🎨 Palette: #8B5CF6, #1F2937, #F3E8FF
+🔍 Detecting changes...
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 Changes detected:
 
-✅ Successfully added 2 album(s):
-   • First Thoughts (2 songs, 3 versions)
-   • Midnight Sessions (1 songs, 1 versions)
+✓ 2 new album(s) to add:
+   • First Thoughts
+   • Midnight Sessions
 
-💡 Visit your site to see the new orbs!
+✓ 3 new song(s) to add:
+   • Opening (First Thoughts)
+   • Reflection (First Thoughts)
+   • Dreams (Midnight Sessions)
+
+✓ 4 new version(s) to add:
+   • Opening - Original
+   • Opening - Remix 1
+   • Reflection - Original
+   • Dreams - Original
+
+Continue with sync? (y/n): y
+
+🔄 Applying changes...
+
+➕ Adding 2 new album(s)...
+   ✅ Added album First Thoughts
+   ✅ Added song Opening
+   ✅ Added version Opening - Original
+   ✅ Added version Opening - Remix 1
+   ✅ Added song Reflection
+   ✅ Added version Reflection - Original
+   ✅ Added album Midnight Sessions
+   ✅ Added song Dreams
+   ✅ Added version Dreams - Original
+
+✅ Sync complete!
+
+💡 Visit your site to see the changes!
+```
+
+### Subsequent Sync (Detecting Changes)
+
+```
+🎵 Loki Tunes Content Sync
+Mode: 🛡️  SAFE (add/update only)
+
+📁 Scanning local content...
+   Found 1 valid album(s) locally
+
+🗄️  Fetching database state...
+   Found 2 album(s) in database
+
+🔍 Detecting changes...
+
+📊 Changes detected:
+
+✓ 1 new song(s) to add:
+   • Awakening (First Thoughts)
+
+✗ 1 album(s) to delete (removed locally):
+   • Midnight Sessions
+
+⚠ 1 song(s) renamed:
+   • "Opening" → "The Opening" (First Thoughts)
+
+⚠️  Destructive changes detected but not in --force mode.
+   Run with --force to apply deletions.
+
+Continue with sync? (y/n): y
+
+🔄 Applying changes...
+
+⚠️  Skipping 1 album deletion(s) (use --force to delete)
+
+✏️  Updating 1 song(s)...
+   ✅ Renamed "Opening" → "The Opening"
+
+➕ Adding 1 new song(s)...
+   ✅ Added song Awakening
+   ✅ Added version Awakening - Original
+
+✅ Sync complete!
+
+💡 Visit your site to see the changes!
+```
+
+### Force Mode (With Deletions)
+
+```
+🎵 Loki Tunes Content Sync
+Mode: 🔥 FORCE (will delete)
+
+📊 Changes detected:
+
+✗ 1 album(s) to delete (removed locally):
+   • Midnight Sessions
+
+Continue with sync? (y/n): y
+
+🔄 Applying changes...
+
+🗑️  Deleting 1 album(s)...
+   ✅ Deleted Midnight Sessions
+
+✅ Sync complete!
 ```
 
 ## Error Handling
@@ -141,16 +284,17 @@ The script auto-detects track numbers, song names, and versions:
 
 **Fix:** Add at least one `.wav`, `.mp3`, `.ogg`, or `.flac` file
 
-### Duplicate Album
+### Already in Sync
 
 ```
-📀 First Thoughts
-   ⏭️  Album already exists, skipping...
+📊 Changes detected:
+
+✅ Everything is in sync! No changes needed.
+
+💡 Everything is already in sync!
 ```
 
-**Fix:** Either:
-- Delete the existing album in Supabase (Table Editor > albums)
-- Rename the folder to a different slug
+This means your local content matches the database perfectly - no action needed!
 
 ## Supported Formats
 

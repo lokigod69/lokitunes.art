@@ -44,11 +44,17 @@ export function OrbField({ albums }: OrbFieldProps) {
     <div className="relative w-full" style={{ minHeight: '70vh' }}>
       {/* 3D Canvas */}
       <Canvas
-        camera={{ position: [0, 0, 10], fov: 50 }}
+        camera={{ 
+          position: [0, 0, 12],
+          fov: 50,
+          near: 0.1,
+          far: 1000
+        }}
         className="w-full h-full"
       >
-        <ambientLight intensity={0.3} />
-        <Environment preset="night" />
+        <ambientLight intensity={0.2} />
+        <directionalLight position={[5, 5, 5]} intensity={0.5} />
+        <Environment preset="night" environmentIntensity={0.4} />
         <Suspense fallback={null}>
           <OrbScene
             albums={albums}
