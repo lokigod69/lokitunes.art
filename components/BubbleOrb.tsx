@@ -107,10 +107,9 @@ export function BubbleOrb({
       body.applyImpulse(attraction, true)
     }
 
-    // Pulsing glow - slower, more dramatic
+    // Subtle constant glow
     if (glowRef.current) {
-      const pulse = Math.sin(t * 1.5) * 0.5 + 1.5
-      glowRef.current.intensity = (hovered ? normalizedIntensity * 2 : normalizedIntensity) * mobileIntensityBoost * pulse
+      glowRef.current.intensity = hovered ? 3 : 2
     }
 
     // Gentle rotation for inner sphere
@@ -134,15 +133,15 @@ export function BubbleOrb({
       position={position}
     >
       <group>
-        {/* Inner glow with normalized brightness - BRIGHTER ON MOBILE */}
+        {/* Inner glow - subtle and constant */}
         <pointLight
           ref={glowRef}
           color={glowColor}
-          intensity={(hovered ? normalizedIntensity * 2 : normalizedIntensity) * mobileIntensityBoost}
-          distance={radius * (isMobile ? 6 : 5)}
+          intensity={2}
+          distance={radius * 4}
         />
 
-        {/* Outer glass shell - TINTED ON MOBILE */}
+        {/* Outer glass shell - REDUCED TRANSMISSION for cover visibility */}
         <mesh
           onClick={() => {
             onNavigate(album.slug)
@@ -160,21 +159,20 @@ export function BubbleOrb({
         >
           <sphereGeometry args={[radius, quality.sphereSegments, quality.sphereSegments]} />
           <MeshTransmissionMaterial
-            transmission={isMobile ? 0.85 : 1}
-            thickness={quality.thickness}
-            roughness={quality.roughness}
-            chromaticAberration={quality.chromaticAberration}
-            anisotropicBlur={0.1}
-            distortion={0.05}
+            transmission={0.3}
+            thickness={0.2}
+            roughness={0.1}
+            chromaticAberration={0}
+            anisotropicBlur={0}
+            distortion={0}
             samples={quality.samples}
             toneMapped={false}
-            color={isMobile ? glowColor : 'white'}
           />
         </mesh>
 
-        {/* Inner album art sphere - BIGGER and BRIGHTER */}
+        {/* Inner album art sphere - BIGGER for visibility */}
         {texture && (
-          <mesh ref={innerMeshRef} scale={0.7}>
+          <mesh ref={innerMeshRef} scale={0.85}>
             <sphereGeometry 
               args={[
                 radius, 
@@ -182,10 +180,12 @@ export function BubbleOrb({
                 Math.floor(quality.sphereSegments * 0.75)
               ]} 
             />
-            <meshStandardMaterial 
+            <meshStandardMaterial
               map={texture}
               emissive={glowColor}
-              emissiveIntensity={hovered ? normalizedIntensity * 1.5 : normalizedIntensity}
+              emissiveIntensity={hovered ? 1.5 : 0.8}
+              metalness={0.1}
+              roughness={0.3}
               toneMapped={false}
               dispose={null}
             />
@@ -212,17 +212,20 @@ export function BubbleOrb({
           </mesh>
         )}
         
-        {/* Text ON the orb - only when hovered */}
+        {/* Text label on hover - reduced size with spacing */}
         {hovered && (
           <Text
-            position={[0, 0, radius * 1.1]}  // Slightly in front of orb
-            fontSize={radius * 0.3}
+            position={[0, 0, radius * 1.1]}
+            fontSize={radius * 0.25}
             color="white"
             anchorX="center"
             anchorY="middle"
-            outlineWidth={0.02}
+            outlineWidth={0.03}
             outlineColor="black"
-            outlineBlur={0.05}
+            outlineBlur={0.1}
+            maxWidth={radius * 2.5}
+            textAlign="center"
+            letterSpacing={0.05}
           >
             {album.title}
           </Text>
