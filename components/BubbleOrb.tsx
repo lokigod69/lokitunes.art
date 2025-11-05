@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { RigidBody, type RapierRigidBody } from '@react-three/rapier'
 import { MeshTransmissionMaterial, Text } from '@react-three/drei'
@@ -59,6 +59,17 @@ export function BubbleOrb({
   // Load texture with smart loader (tries multiple extensions)
   const possibleUrls = getAlbumCoverUrl(album.slug)
   const texture = useSmartTexture(possibleUrls, album.title)
+
+  // Configure texture for maximum sharpness
+  useEffect(() => {
+    if (texture) {
+      texture.colorSpace = THREE.SRGBColorSpace
+      texture.minFilter = THREE.LinearFilter  // Sharp when zoomed out
+      texture.magFilter = THREE.LinearFilter  // Sharp when zoomed in
+      texture.anisotropy = 16  // Maximum sharpness
+      texture.needsUpdate = true
+    }
+  }, [texture])
 
   const seed = album.id.charCodeAt(0) * 137.5
 
@@ -142,7 +153,7 @@ export function BubbleOrb({
           distance={radius * 5}
         />
 
-        {/* Outer glass shell - BALANCED for glass effect + visible covers */}
+        {/* Outer glass shell - LESS transparent for more visible covers */}
         <mesh
           onClick={() => {
             onNavigate(album.slug)
@@ -160,21 +171,21 @@ export function BubbleOrb({
         >
           <sphereGeometry args={[radius, quality.sphereSegments, quality.sphereSegments]} />
           <MeshTransmissionMaterial
-            transmission={0.6}
-            thickness={0.3}
-            roughness={0.05}
-            chromaticAberration={0.01}
-            anisotropicBlur={0.1}
-            distortion={0.05}
+            transmission={0.3}
+            thickness={0.2}
+            roughness={0.1}
+            chromaticAberration={0.005}
+            anisotropicBlur={0.05}
+            distortion={0.02}
             samples={quality.samples}
             toneMapped={false}
             color="white"
           />
         </mesh>
 
-        {/* Inner album art sphere - BALANCED size */}
+        {/* Inner album art sphere - BIGGER and BRIGHTER */}
         {texture && (
-          <mesh ref={innerMeshRef} scale={0.75}>
+          <mesh ref={innerMeshRef} scale={0.85}>
             <sphereGeometry 
               args={[
                 radius, 
@@ -185,9 +196,9 @@ export function BubbleOrb({
             <meshStandardMaterial
               map={texture}
               emissive={glowColor}
-              emissiveIntensity={hovered ? 2.5 : 1.5}
-              metalness={0.1}
-              roughness={0.3}
+              emissiveIntensity={hovered ? 3.5 : 2.5}
+              metalness={0.2}
+              roughness={0.2}
               toneMapped={false}
               dispose={null}
             />
