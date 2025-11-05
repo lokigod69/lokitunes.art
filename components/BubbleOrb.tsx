@@ -58,18 +58,22 @@ export function BubbleOrb({
 
   // Load texture with smart loader (tries multiple extensions)
   const possibleUrls = getAlbumCoverUrl(album.slug)
+  console.log(`🔍 Attempting to load texture for ${album.title}:`, possibleUrls.slice(0, 3))
   const texture = useSmartTexture(possibleUrls, album.title)
 
   // Configure texture for maximum sharpness
   useEffect(() => {
     if (texture) {
+      console.log(`✅ Texture loaded for ${album.title}:`, texture)
       texture.colorSpace = THREE.SRGBColorSpace
       texture.minFilter = THREE.LinearFilter  // Sharp when zoomed out
       texture.magFilter = THREE.LinearFilter  // Sharp when zoomed in
       texture.anisotropy = 16  // Maximum sharpness
       texture.needsUpdate = true
+    } else {
+      console.log(`❌ NO texture for ${album.title} - using fallback color`)
     }
-  }, [texture])
+  }, [texture, album.title])
 
   const seed = album.id.charCodeAt(0) * 137.5
 
