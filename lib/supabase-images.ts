@@ -7,46 +7,58 @@
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 
 /**
- * Get album cover URL from nested folder
- * Example: covers/Burn/cover.jpg
+ * Get album cover URLs from nested folder (tries multiple extensions)
+ * Example: covers/Burn/cover.jpg, covers/Burn/cover.jpeg, etc.
  */
-export function getAlbumCoverUrl(albumSlug: string): string {
-  if (!supabaseUrl) return ''
-  return `${supabaseUrl}/storage/v1/object/public/covers/${albumSlug}/cover.jpg`
+export function getAlbumCoverUrl(albumSlug: string): string[] {
+  if (!supabaseUrl) return []
+  
+  const baseUrl = `${supabaseUrl}/storage/v1/object/public/covers/${albumSlug}`
+  
+  // Try multiple possible filenames in order of likelihood
+  return [
+    `${baseUrl}/cover.jpg`,
+    `${baseUrl}/cover.jpeg`,
+    `${baseUrl}/cover.png`,
+    `${baseUrl}/${albumSlug}.jpg`,
+    `${baseUrl}/${albumSlug}.jpeg`,
+    `${baseUrl}/${albumSlug}.png`,
+  ]
 }
 
 /**
- * Get song/version cover URL from nested folder
- * Example: covers/Burn/01-Burn-Tom Parker.jpg
+ * Get song/version cover URLs from nested folder (tries multiple extensions)
+ * Example: covers/Burn/01-Burn-Tom Parker.jpg, .jpeg, .png
  * 
  * @param albumSlug - Album slug (e.g., "Burn")
  * @param songFilename - Full filename with extension (e.g., "01-Burn-Tom Parker.wav")
- * @returns URL to the song cover image
+ * @returns Array of possible URLs to try
  */
-export function getSongCoverUrl(albumSlug: string, songFilename: string): string {
-  if (!supabaseUrl || !songFilename) return ''
+export function getSongCoverUrl(albumSlug: string, songFilename: string): string[] {
+  if (!supabaseUrl || !songFilename) return []
   
   // Extract base name without extension
   const baseName = songFilename.replace(/\.(wav|mp3|flac|ogg|m4a)$/i, '')
+  const baseUrl = `${supabaseUrl}/storage/v1/object/public/covers/${albumSlug}`
   
-  // Try common image extensions
-  return `${supabaseUrl}/storage/v1/object/public/covers/${albumSlug}/${baseName}.jpg`
+  return [
+    `${baseUrl}/${baseName}.jpg`,
+    `${baseUrl}/${baseName}.jpeg`,
+    `${baseUrl}/${baseName}.png`,
+  ]
 }
 
 /**
- * Get song cover URL with multiple extension fallbacks
+ * Get song cover URL with multiple extension fallbacks including album cover
  */
 export function getSongCoverUrlWithFallbacks(albumSlug: string, songFilename: string): string[] {
   if (!supabaseUrl || !songFilename) return []
   
-  const baseName = songFilename.replace(/\.(wav|mp3|flac|ogg|m4a)$/i, '')
+  const songUrls = getSongCoverUrl(albumSlug, songFilename)
+  const albumUrls = getAlbumCoverUrl(albumSlug)
   
-  return [
-    `${supabaseUrl}/storage/v1/object/public/covers/${albumSlug}/${baseName}.jpg`,
-    `${supabaseUrl}/storage/v1/object/public/covers/${albumSlug}/${baseName}.jpeg`,
-    `${supabaseUrl}/storage/v1/object/public/covers/${albumSlug}/${baseName}.png`,
-    getAlbumCoverUrl(albumSlug) // Fallback to album cover
-  ]
+  // Try song covers first, then fall back to album covers
+  return [...songUrls, ...albumUrls]
 }
 
 /**

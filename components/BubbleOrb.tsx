@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, useEffect } from 'react'
+import { useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { RigidBody, type RapierRigidBody } from '@react-three/rapier'
 import { MeshTransmissionMaterial } from '@react-three/drei'
@@ -9,6 +9,7 @@ import type { Album } from '@/lib/supabase'
 import type { DeviceTier } from '@/lib/device-detection'
 import { getQualitySettings } from '@/lib/device-detection'
 import { getAlbumCoverUrl } from '@/lib/supabase-images'
+import { useSmartTexture } from '@/hooks/useSmartTexture'
 
 interface BubbleOrbProps {
   album: Album
@@ -31,42 +32,12 @@ export function BubbleOrb({
   const ref = useRef<RapierRigidBody>(null)
   const glowRef = useRef<THREE.PointLight>(null)
   const innerMeshRef = useRef<THREE.Mesh>(null)
-  const [texture, setTexture] = useState<THREE.Texture | null>(null)
   
   const quality = getQualitySettings(deviceTier)
-  
-  // Load texture from nested folder structure
-  useEffect(() => {
-    const coverUrl = getAlbumCoverUrl(album.slug)
-    if (!coverUrl) {
-      console.warn(`⚠️ No cover URL for ${album.title}`)
-      return
-    }
-    
-    const img = new Image()
-    img.crossOrigin = 'anonymous'
-    img.src = coverUrl
-    
-    img.onload = () => {
-      const newTexture = new THREE.Texture(img)
-      // CRITICAL: Set color space BEFORE needsUpdate to prevent black textures
-      newTexture.colorSpace = THREE.SRGBColorSpace
-      newTexture.needsUpdate = true
-      setTexture(newTexture)
-      console.log('✅ Texture loaded:', album.title, coverUrl)
-    }
-    
-    img.onerror = (err) => {
-      console.error('❌ Texture failed:', album.title, coverUrl, err)
-    }
-    
-    // Cleanup function to prevent memory leaks
-    return () => {
-      if (texture) {
-        texture.dispose()
-      }
-    }
-  }, [album.slug, album.title])
+
+  // Load texture with smart loader (tries multiple extensions)
+  const possibleUrls = getAlbumCoverUrl(album.slug)
+  const texture = useSmartTexture(possibleUrls)
 
   const seed = album.id.charCodeAt(0) * 137.5
 
@@ -140,12 +111,12 @@ export function BubbleOrb({
           document.body.style.cursor = 'default'
         }}
       >
-        {/* Inner glow with album color palette */}
+        {/* Inner glow with album color palette - BRIGHTER */}
         <pointLight
           ref={glowRef}
           color={glowColor}
-          intensity={3}
-          distance={radius * 4}
+          intensity={5}
+          distance={radius * 5}
         />
 
         {/* Outer glass shell */}
@@ -163,9 +134,9 @@ export function BubbleOrb({
           />
         </mesh>
 
-        {/* Inner album art sphere */}
+        {/* Inner album art sphere - BIGGER and BRIGHTER */}
         {texture && (
-          <mesh ref={innerMeshRef} scale={0.85}>
+          <mesh ref={innerMeshRef} scale={0.7}>
             <sphereGeometry 
               args={[
                 radius, 
@@ -176,16 +147,16 @@ export function BubbleOrb({
             <meshStandardMaterial 
               map={texture}
               emissive={glowColor}
-              emissiveIntensity={2.0}
+              emissiveIntensity={2.5}
               toneMapped={false}
               dispose={null}
             />
           </mesh>
         )}
 
-        {/* Fallback colored sphere if no texture */}
+        {/* Fallback colored sphere if no texture - BIGGER */}
         {!texture && (
-          <mesh scale={0.85}>
+          <mesh scale={0.7}>
             <sphereGeometry 
               args={[
                 radius, 

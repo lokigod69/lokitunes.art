@@ -88,14 +88,14 @@ export async function getAlbumBySlug(slug: string): Promise<AlbumWithSongs | nul
     versions: (song.song_versions || []).map((v: any) => {
       // Extract filename from audio_url to generate cover_url
       const audioFilename = v.audio_url?.split('/').pop() || ''
-      const generatedCoverUrl = getSongCoverUrl(album.slug, audioFilename)
+      const generatedCoverUrls = getSongCoverUrl(album.slug, audioFilename)
       
       return {
         id: v.id,
         song_id: v.song_id,
         label: v.label,
         audio_url: v.audio_url,
-        cover_url: v.cover_url || generatedCoverUrl, // Use DB value or generate from filename
+        cover_url: v.cover_url || generatedCoverUrls[0], // Use DB value or first generated URL
         duration_sec: v.duration_sec,
         waveform_json: v.waveform_json,
         play_count: v.play_count,
