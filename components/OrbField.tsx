@@ -1,33 +1,42 @@
 'use client'
 
-import { Suspense, useState } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import { Canvas } from '@react-three/fiber'
-import { Environment } from '@react-three/drei'
+import { Environment, PerformanceMonitor } from '@react-three/drei'
 import { Physics, CuboidCollider } from '@react-three/rapier'
+import { EffectComposer, Bloom, ChromaticAberration, ToneMapping } from '@react-three/postprocessing'
+import { KernelSize, ToneMappingMode } from 'postprocessing'
 import { useRouter } from 'next/navigation'
+import { BubbleOrb } from './BubbleOrb'
 import { SonicOrb } from './SonicOrb'
 import type { Album } from '@/lib/supabase'
+import { detectDeviceTier, getQualitySettings, type DeviceTier } from '@/lib/device-detection'
 
 interface OrbFieldProps {
   albums: Album[]
 }
 
-function OrbScene({ albums, onHover, onNavigate }: {
+function OrbScene({ albums, onHover, onNavigate, deviceTier, useGlassBubbles }: {
   albums: Album[]
   onHover: (title: string | null) => void
   onNavigate: (slug: string) => void
+  deviceTier: DeviceTier
+  useGlassBubbles: boolean
 }) {
+  const OrbComponent = useGlassBubbles ? BubbleOrb : SonicOrb
+  
   return (
     <Physics gravity={[0, 0, 0]}>
       <group>
         {/* Keep orbs centered and bounded */}
         <group position={[0, 0, 0]}>
           {albums.map((album, index) => (
-            <SonicOrb
+            <OrbComponent
               key={album.id}
               album={album}
               index={index}
               totalCount={albums.length}
+              deviceTier={deviceTier}
               onHover={onHover}
               onNavigate={onNavigate}
             />
@@ -51,6 +60,17 @@ function OrbScene({ albums, onHover, onNavigate }: {
 export function OrbField({ albums }: OrbFieldProps) {
   const router = useRouter()
   const [hoveredTitle, setHoveredTitle] = useState<string | null>(null)
+  const [deviceTier, setDeviceTier] = useState<DeviceTier>('high')
+  const [dpr, setDpr] = useState(1.5)
+  const [useGlassBubbles, setUseGlassBubbles] = useState(true)
+  
+  const quality = getQualitySettings(deviceTier)
+
+  useEffect(() => {
+    const tier = detectDeviceTier()
+    setDeviceTier(tier)
+    setDpr(quality.dpr)
+  }, [])
 
   const handleNavigate = (slug: string) => {
     router.push(`/album/${slug}`)
@@ -60,6 +80,7 @@ export function OrbField({ albums }: OrbFieldProps) {
     <div className="relative w-full" style={{ minHeight: '100vh' }}>
       {/* 3D Canvas */}
       <Canvas
+        dpr={dpr}
         camera={{ 
           position: [0, 0, 20],
           fov: 40,
@@ -68,7 +89,8 @@ export function OrbField({ albums }: OrbFieldProps) {
         }}
         gl={{ 
           alpha: true,
-          antialias: true
+          antialias: true,
+          powerPreference: 'high-performance'
         }}
         style={{
           width: '100%',
@@ -76,17 +98,43 @@ export function OrbField({ albums }: OrbFieldProps) {
           display: 'block'
         }}
       >
+        <PerformanceMonitor
+          onDecline={() => {
+            setDpr(prev => Math.max(1, prev * 0.9))
+            if (dpr < 1.2) setUseGlassBubbles(false)
+          }}
+        />
+        
         <color attach="background" args={['#0a0b0d']} />
-        <ambientLight intensity={0.3} />
-        <directionalLight position={[10, 10, 10]} intensity={0.6} />
-        <Environment preset="night" environmentIntensity={0.5} />
+        <ambientLight intensity={0.5} />
+        <directionalLight position={[10, 10, 5]} intensity={1.0} />
+        <Environment preset="sunset" />
+        
         <Suspense fallback={null}>
           <OrbScene
             albums={albums}
             onHover={setHoveredTitle}
             onNavigate={handleNavigate}
+            deviceTier={deviceTier}
+            useGlassBubbles={useGlassBubbles}
           />
         </Suspense>
+        
+        {/* Post-processing effects */}
+        <EffectComposer multisampling={quality.multisampling}>
+          <Bloom
+            intensity={quality.bloomIntensity}
+            luminanceThreshold={0.9}
+            luminanceSmoothing={0.025}
+            mipmapBlur={true}
+            kernelSize={KernelSize.LARGE}
+          />
+          <ChromaticAberration
+            offset={deviceTier === 'low' ? [0, 0] : [0.002, 0.001]}
+            radialModulation={deviceTier !== 'low'}
+          />
+          <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
+        </EffectComposer>
       </Canvas>
 
       {/* Hover label */}

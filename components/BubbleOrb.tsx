@@ -3,32 +3,44 @@
 import { useRef, useState, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { RigidBody, type RapierRigidBody } from '@react-three/rapier'
+import { MeshTransmissionMaterial } from '@react-three/drei'
 import * as THREE from 'three'
 import type { Album } from '@/lib/supabase'
+import type { DeviceTier } from '@/lib/device-detection'
+import { getQualitySettings } from '@/lib/device-detection'
 
-interface OrbProps {
+interface BubbleOrbProps {
   album: Album
   index: number
   totalCount: number
-  deviceTier?: 'low' | 'medium' | 'high'
+  deviceTier: DeviceTier
   onHover: (title: string | null) => void
   onNavigate: (slug: string) => void
 }
 
 function calculateRadius(versionCount: number): number {
-  const base = 1.5  // Increased from 1.2
-  const raw = base + 0.4 * Math.sqrt(versionCount)  // Increased multiplier
-  const clamped = THREE.MathUtils.clamp(raw, 1.2, 3.0)  // Bigger min/max
+  const base = 1.5
+  const raw = base + 0.4 * Math.sqrt(versionCount)
+  const clamped = THREE.MathUtils.clamp(raw, 1.2, 3.0)
   return clamped * (1 + (Math.random() - 0.5) * 0.16)
 }
 
-export function SonicOrb({ album, index, totalCount, onHover, onNavigate }: OrbProps) {
+export function BubbleOrb({ 
+  album, 
+  index, 
+  totalCount, 
+  deviceTier,
+  onHover, 
+  onNavigate 
+}: BubbleOrbProps) {
   const ref = useRef<RapierRigidBody>(null)
   const glowRef = useRef<THREE.PointLight>(null)
-  const meshRef = useRef<THREE.Mesh>(null)
+  const innerMeshRef = useRef<THREE.Mesh>(null)
   const [texture, setTexture] = useState<THREE.Texture | null>(null)
   
-  // CRITICAL FIX: Load texture with proper CORS handling using Image element
+  const quality = getQualitySettings(deviceTier)
+  
+  // Load texture with proper CORS and color space handling
   useEffect(() => {
     if (!album.cover_url) {
       console.warn(`⚠️ No cover URL for ${album.title}`)
@@ -61,7 +73,7 @@ export function SonicOrb({ album, index, totalCount, onHover, onNavigate }: OrbP
   }, [album.cover_url, album.title])
 
   const radius = calculateRadius(album.total_versions || 1)
-  const seed = index * 137.5 // golden angle for distribution
+  const seed = index * 137.5
 
   const accentColor = album.palette?.accent1 || '#4F9EFF'
 
@@ -72,7 +84,7 @@ export function SonicOrb({ album, index, totalCount, onHover, onNavigate }: OrbP
     const body = ref.current
     const pos = body.translation()
 
-    // Perlin noise drift (increased for more motion)
+    // Perlin noise drift for organic motion
     const noiseX = Math.sin(t * 0.3 + seed) * 0.05
     const noiseY = Math.cos(t * 0.2 + seed * 0.7) * 0.05
     body.applyImpulse({ x: noiseX, y: noiseY, z: 0 }, true)
@@ -87,13 +99,11 @@ export function SonicOrb({ album, index, totalCount, onHover, onNavigate }: OrbP
     const distance = mouse.distanceTo(orbPos)
     const toCursor = mouse.clone().sub(orbPos)
 
-    const tooClose = 2  // Personal space radius
+    const tooClose = 2
     if (distance < tooClose) {
-      // Push away from cursor when too close
       const repulsion = toCursor.clone().normalize().multiplyScalar(-0.15)
       body.applyImpulse(repulsion, true)
     } else if (distance < 6) {
-      // Normal attraction when not too close
       const strength = 0.12 * (1 - distance / 6)
       const attraction = toCursor.normalize().multiplyScalar(strength)
       body.applyImpulse(attraction, true)
@@ -104,18 +114,18 @@ export function SonicOrb({ album, index, totalCount, onHover, onNavigate }: OrbP
       glowRef.current.intensity = 0.8 + Math.sin(t * 0.7) * 0.2
     }
 
-    // Gentle rotation
-    if (meshRef.current) {
-      meshRef.current.rotation.y = t * 0.1
+    // Gentle rotation for inner sphere
+    if (innerMeshRef.current) {
+      innerMeshRef.current.rotation.y = t * 0.1
     }
   })
 
-  // Calculate grid position to keep all orbs visible
+  // Calculate grid position
   const cols = Math.ceil(Math.sqrt(totalCount))
   const row = Math.floor(index / cols)
   const col = index % cols
   
-  const spacing = 3  // Distance between orbs
+  const spacing = 3
   const gridWidth = (cols - 1) * spacing
   const gridHeight = (Math.ceil(totalCount / cols) - 1) * spacing
   const startX = -gridWidth / 2
@@ -133,11 +143,23 @@ export function SonicOrb({ album, index, totalCount, onHover, onNavigate }: OrbP
       colliders="ball"
       restitution={0.7}
       friction={0.2}
-      linearDamping={0.2}
-      angularDamping={0.3}
+      linearDamping={0.3}
+      angularDamping={1.0}
+      gravityScale={0}
+      mass={radius}
       position={initialPosition}
     >
-      <group>
+      <group
+        onClick={() => onNavigate(album.slug)}
+        onPointerEnter={() => {
+          onHover(album.title)
+          document.body.style.cursor = 'pointer'
+        }}
+        onPointerLeave={() => {
+          onHover(null)
+          document.body.style.cursor = 'default'
+        }}
+      >
         {/* Inner glow */}
         <pointLight
           ref={glowRef}
@@ -146,37 +168,60 @@ export function SonicOrb({ album, index, totalCount, onHover, onNavigate }: OrbP
           distance={radius * 2}
         />
 
-        {/* Orb mesh */}
-        <mesh
-          ref={meshRef}
-          onClick={() => onNavigate(album.slug)}
-          onPointerEnter={() => {
-            onHover(album.title)
-            document.body.style.cursor = 'pointer'
-          }}
-          onPointerLeave={() => {
-            onHover(null)
-            document.body.style.cursor = 'default'
-          }}
-        >
-          <sphereGeometry args={[radius, 64, 64]} />
-          {texture ? (
-            <meshStandardMaterial
-              map={texture}
-              metalness={0.3}
-              roughness={0.6}
-              envMapIntensity={0.5}
-              dispose={null}
-            />
-          ) : (
-            <meshStandardMaterial
-              color={accentColor}
-              metalness={0.5}
-              roughness={0.5}
-              dispose={null}
-            />
-          )}
+        {/* Outer glass shell */}
+        <mesh>
+          <sphereGeometry args={[radius, quality.sphereSegments, quality.sphereSegments]} />
+          <MeshTransmissionMaterial
+            transmission={1}
+            thickness={quality.thickness}
+            roughness={quality.roughness}
+            chromaticAberration={quality.chromaticAberration}
+            anisotropicBlur={0.1}
+            distortion={0.05}
+            samples={quality.samples}
+            toneMapped={false}
+          />
         </mesh>
+
+        {/* Inner album art sphere */}
+        {texture && (
+          <mesh ref={innerMeshRef} scale={0.85}>
+            <sphereGeometry 
+              args={[
+                radius, 
+                Math.floor(quality.sphereSegments * 0.75), 
+                Math.floor(quality.sphereSegments * 0.75)
+              ]} 
+            />
+            <meshStandardMaterial 
+              map={texture}
+              emissive={accentColor}
+              emissiveIntensity={1.5}
+              toneMapped={false}
+              dispose={null}
+            />
+          </mesh>
+        )}
+
+        {/* Fallback colored sphere if no texture */}
+        {!texture && (
+          <mesh scale={0.85}>
+            <sphereGeometry 
+              args={[
+                radius, 
+                Math.floor(quality.sphereSegments * 0.75), 
+                Math.floor(quality.sphereSegments * 0.75)
+              ]} 
+            />
+            <meshStandardMaterial 
+              color={accentColor}
+              emissive={accentColor}
+              emissiveIntensity={0.8}
+              toneMapped={false}
+              dispose={null}
+            />
+          </mesh>
+        )}
       </group>
     </RigidBody>
   )
