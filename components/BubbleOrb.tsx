@@ -1,9 +1,9 @@
 'use client'
 
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { RigidBody, type RapierRigidBody } from '@react-three/rapier'
-import { MeshTransmissionMaterial } from '@react-three/drei'
+import { MeshTransmissionMaterial, Html } from '@react-three/drei'
 import * as THREE from 'three'
 import type { Album } from '@/lib/supabase'
 import type { DeviceTier } from '@/lib/device-detection'
@@ -32,6 +32,7 @@ export function BubbleOrb({
   const ref = useRef<RapierRigidBody>(null)
   const glowRef = useRef<THREE.PointLight>(null)
   const innerMeshRef = useRef<THREE.Mesh>(null)
+  const [hovered, setHovered] = useState(false)
   
   const quality = getQualitySettings(deviceTier)
 
@@ -56,22 +57,25 @@ export function BubbleOrb({
     const noiseY = Math.cos(t * 0.2 + seed * 0.7) * 0.05
     body.applyImpulse({ x: noiseX, y: noiseY, z: 0 }, true)
 
-    // Mouse interaction field (repulsion when too close, attraction when near)
-    const mouse = new THREE.Vector3(
-      state.pointer.x * 5,
-      state.pointer.y * 3,
-      0
-    )
+    // Mouse interaction field with proper 3D unprojection
+    const vector = new THREE.Vector3(state.pointer.x, state.pointer.y, 0.5)
+    vector.unproject(state.camera)
+    const dir = vector.sub(state.camera.position).normalize()
+    const mousePos = state.camera.position.clone().add(dir.multiplyScalar(20))
+    
     const orbPos = new THREE.Vector3(pos.x, pos.y, pos.z)
-    const distance = mouse.distanceTo(orbPos)
-    const toCursor = mouse.clone().sub(orbPos)
+    const distance = mousePos.distanceTo(orbPos)
+    const toCursor = mousePos.clone().sub(orbPos)
 
+    // Stronger attraction with larger range
     const tooClose = 2
     if (distance < tooClose) {
-      const repulsion = toCursor.clone().normalize().multiplyScalar(-0.15)
+      // Repel when too close
+      const repulsion = toCursor.clone().normalize().multiplyScalar(-0.2)
       body.applyImpulse(repulsion, true)
-    } else if (distance < 6) {
-      const strength = 0.12 * (1 - distance / 6)
+    } else if (distance < 8) {
+      // Attract when in range (increased from 6 to 8)
+      const strength = 0.15 * (1 - distance / 8)  // Increased from 0.12
       const attraction = toCursor.normalize().multiplyScalar(strength)
       body.applyImpulse(attraction, true)
     }
@@ -100,17 +104,7 @@ export function BubbleOrb({
       mass={radius}
       position={position}
     >
-      <group
-        onClick={() => onNavigate(album.slug)}
-        onPointerEnter={() => {
-          onHover(album.title)
-          document.body.style.cursor = 'pointer'
-        }}
-        onPointerLeave={() => {
-          onHover(null)
-          document.body.style.cursor = 'default'
-        }}
-      >
+      <group>
         {/* Inner glow with album color palette - BRIGHTER */}
         <pointLight
           ref={glowRef}
@@ -120,7 +114,19 @@ export function BubbleOrb({
         />
 
         {/* Outer glass shell */}
-        <mesh>
+        <mesh
+          onClick={() => onNavigate(album.slug)}
+          onPointerEnter={() => {
+            setHovered(true)
+            onHover(album.title)
+            document.body.style.cursor = 'pointer'
+          }}
+          onPointerLeave={() => {
+            setHovered(false)
+            onHover(null)
+            document.body.style.cursor = 'default'
+          }}
+        >
           <sphereGeometry args={[radius, quality.sphereSegments, quality.sphereSegments]} />
           <MeshTransmissionMaterial
             transmission={1}
@@ -172,6 +178,26 @@ export function BubbleOrb({
               dispose={null}
             />
           </mesh>
+        )}
+        
+        {/* Tooltip - positioned above orb with highest z-index */}
+        {hovered && (
+          <Html
+            position={[0, radius + 1, 0]}
+            center
+            distanceFactor={10}
+            style={{
+              pointerEvents: 'none',
+              userSelect: 'none',
+            }}
+          >
+            <div 
+              className="px-4 py-2 bg-void/90 backdrop-blur-sm text-bone rounded-lg text-sm whitespace-nowrap border border-voltage/30 shadow-lg"
+              style={{ zIndex: 9999 }}
+            >
+              {album.title}
+            </div>
+          </Html>
         )}
       </group>
     </RigidBody>

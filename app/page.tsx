@@ -53,13 +53,13 @@ export default function Home() {
         </>
       ) : (
         <>
-          {/* Fullscreen 3D Canvas */}
-          <div className="fixed inset-0 w-full h-full">
+          {/* Fullscreen 3D Canvas - Background layer (z-0) */}
+          <div className="fixed inset-0 w-full h-full z-0">
             <OrbField albums={albums} />
           </div>
           
-          {/* UI Overlay */}
-          <div className="fixed top-8 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
+          {/* Header - Always on top (z-50) */}
+          <div className="fixed top-8 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
             <Logo3D />
           </div>
         </>

@@ -10,38 +10,38 @@ interface InvisibleBoundsProps {
  * Invisible physics boundaries to keep orbs in view
  * Creates walls on all sides to prevent orbs from flying away
  */
-export function InvisibleBounds({ size = 20 }: InvisibleBoundsProps) {
+export function InvisibleBounds({ size = 25 }: InvisibleBoundsProps) {
   return (
     <>
-      {/* Top wall */}
-      <CuboidCollider 
-        position={[0, size, 0]} 
-        args={[size * 2, 0.5, 10]} 
-      />
-      
+      {/* Top wall - LOWER to account for header (keep orbs below) */}
+      <RigidBody type="fixed" position={[0, 10, 0]}>
+        <CuboidCollider args={[size, 0.5, size / 2]} />
+      </RigidBody>
+
       {/* Bottom wall */}
-      <CuboidCollider 
-        position={[0, -size, 0]} 
-        args={[size * 2, 0.5, 10]} 
-      />
-      
+      <RigidBody type="fixed" position={[0, -15, 0]}>
+        <CuboidCollider args={[size, 0.5, size / 2]} />
+      </RigidBody>
+
       {/* Left wall */}
-      <CuboidCollider 
-        position={[-size, 0, 0]} 
-        args={[0.5, size * 2, 10]} 
-      />
-      
+      <RigidBody type="fixed" position={[-20, 0, 0]}>
+        <CuboidCollider args={[0.5, size, size / 2]} />
+      </RigidBody>
+
       {/* Right wall */}
-      <CuboidCollider 
-        position={[size, 0, 0]} 
-        args={[0.5, size * 2, 10]} 
-      />
+      <RigidBody type="fixed" position={[20, 0, 0]}>
+        <CuboidCollider args={[0.5, size, size / 2]} />
+      </RigidBody>
       
-      {/* Back wall (prevent orbs from going too far back) */}
-      <CuboidCollider 
-        position={[0, 0, -5]} 
-        args={[size * 2, size * 2, 0.5]} 
-      />
+      {/* Front wall - keep orbs from going too far forward */}
+      <RigidBody type="fixed" position={[0, 0, 5]}>
+        <CuboidCollider args={[size, size, 0.5]} />
+      </RigidBody>
+      
+      {/* Back wall - keep orbs from going too far back */}
+      <RigidBody type="fixed" position={[0, 0, -5]}>
+        <CuboidCollider args={[size, size, 0.5]} />
+      </RigidBody>
     </>
   )
 }
