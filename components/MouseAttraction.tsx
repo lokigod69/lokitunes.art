@@ -12,13 +12,15 @@ import * as THREE from 'three'
 export function MouseAttraction() {
   const { camera, pointer } = useThree()
   const attractorRef = useRef<THREE.Mesh>(null)
+  const coreRef = useRef<THREE.Mesh>(null)
+  const lightRef = useRef<THREE.PointLight>(null)
   
   // Log on mount to verify component exists
   useEffect(() => {
     console.log('🎯 MouseAttraction component mounted!')
   }, [])
   
-  useFrame(() => {
+  useFrame((state) => {
     if (!attractorRef.current) return
     
     // Convert screen coordinates to 3D world position
@@ -41,6 +43,21 @@ export function MouseAttraction() {
     // Update attractor position
     attractorRef.current.position.copy(cursorPos)
     
+    // PULSING ANIMATION
+    const pulse = Math.sin(state.clock.elapsedTime * 3) * 0.2 + 1
+    attractorRef.current.scale.setScalar(pulse)
+    
+    if (coreRef.current) {
+      coreRef.current.position.copy(cursorPos)
+      coreRef.current.scale.setScalar(pulse * 1.5)
+    }
+    
+    // Pulsing light intensity
+    if (lightRef.current) {
+      lightRef.current.position.copy(cursorPos)
+      lightRef.current.intensity = 2 + Math.sin(state.clock.elapsedTime * 3) * 1
+    }
+    
     // DEBUG: Log cursor position occasionally
     if (Math.random() < 0.016) {  // ~60fps = once per second
       console.log('🎯 Attractor position:', cursorPos.toArray())
@@ -61,15 +78,21 @@ export function MouseAttraction() {
         />
       </mesh>
       
-      {/* Glowing red core */}
-      <mesh position={attractorRef.current?.position.toArray() || [0, 0, 0]}>
+      {/* Middle cyan ring - rotates */}
+      <mesh position={[0, 0, 0]} rotation={[0, 0, Math.PI / 4]}>
+        <torusGeometry args={[0.6, 0.05, 16, 32]} />
+        <meshBasicMaterial color="#00ffff" wireframe />
+      </mesh>
+      
+      {/* Glowing red core - pulsing */}
+      <mesh ref={coreRef}>
         <sphereGeometry args={[0.3, 8, 8]} />
         <meshBasicMaterial color="#ff0000" />
       </mesh>
       
-      {/* Point light at cursor for glow effect */}
+      {/* Point light at cursor - pulsing intensity */}
       <pointLight 
-        position={attractorRef.current?.position.toArray() || [0, 0, 0]}
+        ref={lightRef}
         color="#ff0000" 
         intensity={2}
         distance={5}

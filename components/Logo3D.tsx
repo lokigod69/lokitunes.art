@@ -17,24 +17,51 @@ export function Logo3D() {
   }, [])
   
   return (
-    <div 
-      ref={textRef}
-      className="relative text-center py-8"
-      style={{
-        fontSize: '4rem',
-        fontWeight: 900,
-        letterSpacing: '0.2em',
-        background: 'linear-gradient(135deg, #ffffff 0%, #e0e0e0 50%, #ffffff 100%)',
-        backgroundClip: 'text',
-        WebkitBackgroundClip: 'text',
-        WebkitTextFillColor: 'transparent',
-        filter: 'drop-shadow(0 4px 12px rgba(255,255,255,0.3))',
-        textShadow: '0 1px 0 #ccc, 0 2px 0 #c9c9c9, 0 3px 0 #bbb, 0 4px 0 #b9b9b9, 0 5px 0 #aaa',
-        transform: 'perspective(1000px)',
-        transition: 'transform 0.3s ease'
-      }}
-    >
-      LOKI TUNES
-    </div>
+    <>
+      <div 
+        ref={textRef}
+        className="relative text-center py-8"
+        style={{
+          fontSize: '4rem',
+          fontWeight: 900,
+          letterSpacing: '0.2em',
+          color: '#00ffff',
+          textShadow: `
+            0 0 10px #00ffff,
+            0 0 20px #00ffff,
+            0 0 30px #00ffff,
+            0 0 40px #00ffff,
+            0 0 70px #00ffff,
+            0 0 80px #00ffff,
+            0 0 100px #00ffff,
+            0 0 150px #00ffff
+          `,
+          transform: 'perspective(1000px)',
+          transition: 'transform 0.3s ease',
+          animation: 'flicker-text 3s infinite alternate',
+        }}
+      >
+        LOKI TUNES
+      </div>
+      
+      <style jsx>{`
+        @keyframes flicker-text {
+          0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+            text-shadow: 
+              0 0 10px #00ffff,
+              0 0 20px #00ffff,
+              0 0 30px #00ffff,
+              0 0 40px #00ffff,
+              0 0 70px #00ffff,
+              0 0 80px #00ffff,
+              0 0 100px #00ffff,
+              0 0 150px #00ffff;
+          }
+          20%, 24%, 55% {
+            text-shadow: none;
+          }
+        }
+      `}</style>
+    </>
   )
 }

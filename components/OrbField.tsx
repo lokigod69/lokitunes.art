@@ -11,6 +11,7 @@ import { BubbleOrb } from './BubbleOrb'
 import { SonicOrb } from './SonicOrb'
 import { InvisibleBounds } from './InvisibleBounds'
 import { MouseAttraction } from './MouseAttraction'
+import { PulsingWireframe } from './PulsingWireframe'
 import type { Album } from '@/lib/supabase'
 import { detectDeviceTier, getQualitySettings, type DeviceTier } from '@/lib/device-detection'
 import { calculateOrbLayout, calculateCameraDistance } from '@/lib/orb-layout'
@@ -55,8 +56,33 @@ function OrbScene({ albums, onHover, onNavigate, deviceTier, useGlassBubbles }: 
         <InvisibleBounds size={25} />
       </Suspense>
       
-      {/* Grid helper for cyberpunk/sci-fi aesthetic */}
-      <gridHelper args={[100, 50, '#00ffff', '#004444']} position={[0, -15, 0]} />
+      {/* MULTI-LAYER NEON GRIDS - Cyberpunk aesthetic */}
+      <gridHelper 
+        args={[100, 50, '#00ffff', '#004444']}
+        position={[0, -15, 0]} 
+      />
+      <gridHelper 
+        args={[100, 50, '#ff00ff', '#440044']}
+        position={[0, -14.5, 0]} 
+        rotation={[0, Math.PI / 4, 0]}
+      />
+      <gridHelper 
+        args={[100, 50, '#00ff88', '#004422']}
+        position={[0, -14, 0]} 
+        rotation={[0, -Math.PI / 4, 0]}
+      />
+      
+      {/* DECORATIVE PULSING WIREFRAMES */}
+      <PulsingWireframe position={[-10, 5, -10]} size={[3, 3, 3]} color="#ff00ff" />
+      <PulsingWireframe position={[10, 5, -10]} size={[2, 4, 2]} color="#00ffff" />
+      <PulsingWireframe position={[-10, -5, 10]} size={[4, 2, 4]} color="#00ff88" />
+      <PulsingWireframe position={[10, -5, 10]} size={[3, 3, 3]} color="#ff00ff" />
+      
+      {/* Corner markers */}
+      <PulsingWireframe position={[-15, 0, -15]} size={[1, 1, 1]} color="#ff0000" />
+      <PulsingWireframe position={[15, 0, -15]} size={[1, 1, 1]} color="#ff0000" />
+      <PulsingWireframe position={[-15, 0, 15]} size={[1, 1, 1]} color="#ff0000" />
+      <PulsingWireframe position={[15, 0, 15]} size={[1, 1, 1]} color="#ff0000" />
     </Physics>
   )
 }
@@ -117,9 +143,14 @@ export function OrbField({ albums }: OrbFieldProps) {
         />
         
         <color attach="background" args={['#0a0b0d']} />
-        <ambientLight intensity={0.5} />
-        <directionalLight position={[10, 10, 5]} intensity={1.0} />
-        <Environment preset="sunset" />
+        
+        {/* NEON COLORED LIGHTS - Cyberpunk aesthetic */}
+        <ambientLight intensity={0.3} color="#0a0a2e" />
+        <directionalLight position={[10, 10, 5]} intensity={0.8} color="#00ffff" />
+        <directionalLight position={[-10, 5, -5]} intensity={0.5} color="#ff00ff" />
+        <pointLight position={[0, 10, 0]} intensity={1} color="#00ff88" />
+        
+        <Environment preset="night" />
         
         <OrbScene
           albums={albums}

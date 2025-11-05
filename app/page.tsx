@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { Logo3D } from '@/components/Logo3D'
 import { OrbField, OrbFieldFallback } from '@/components/OrbField'
 import { MiniPlayer } from '@/components/MiniPlayer'
+import { ScanlineEffect } from '@/components/ScanlineEffect'
 import { getAlbumsWithVersionCounts } from '@/lib/queries'
 import type { Album } from '@/lib/supabase'
 
@@ -62,6 +63,9 @@ export default function Home() {
           <div className="fixed top-8 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
             <Logo3D />
           </div>
+          
+          {/* Scanline CRT Effect */}
+          <ScanlineEffect />
         </>
       )}
 

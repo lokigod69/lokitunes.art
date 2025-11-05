@@ -107,9 +107,10 @@ export function BubbleOrb({
       body.applyImpulse(attraction, true)
     }
 
-    // Glow pulse
+    // Pulsing glow - slower, more dramatic
     if (glowRef.current) {
-      glowRef.current.intensity = 0.8 + Math.sin(t * 0.7) * 0.2
+      const pulse = Math.sin(t * 1.5) * 0.5 + 1.5
+      glowRef.current.intensity = (hovered ? normalizedIntensity * 2 : normalizedIntensity) * mobileIntensityBoost * pulse
     }
 
     // Gentle rotation for inner sphere
