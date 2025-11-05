@@ -20,6 +20,9 @@ importers:
       '@react-three/rapier':
         specifier: ^2.2.0
         version: 2.2.0(@react-three/fiber@9.4.0(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(three@0.181.0))(react@19.2.0)(three@0.181.0)
+      '@react-three/rapier-addons':
+        specifier: ^5.0.0
+        version: 5.0.0(@react-three/fiber@9.4.0(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(three@0.181.0))(@react-three/rapier@2.2.0(@react-three/fiber@9.4.0(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(three@0.181.0))(react@19.2.0)(three@0.181.0))(react@19.2.0)(three@0.181.0)
       '@supabase/supabase-js':
         specifier: ^2.78.0
         version: 2.78.0
@@ -711,6 +714,14 @@ packages:
       '@react-three/fiber': ^9.0.0
       react: ^19.0
       three: '>= 0.156.0'
+
+  '@react-three/rapier-addons@5.0.0':
+    resolution: {integrity: sha512-GOTa+XliEBTpEYgVD3bcOnWoZzBHT1UPn848ugCK3vxyQ4LCmr+0RipAtlOLW3SthaScP/dqqDzI14PNrB3sKw==}
+    peerDependencies:
+      '@react-three/fiber': '*'
+      '@react-three/rapier': ^2.0.0
+      react: ^19
+      three: '*'
 
   '@react-three/rapier@2.2.0':
     resolution: {integrity: sha512-mVsqbKXlGZoN+XrqdhzFZUQmy8pibEOVzl4k7LC+LHe84bQnYBSagy1Hvbda6bL1PJDdTFyiDiBk5buKFinNIQ==}
@@ -3281,6 +3292,14 @@ snapshots:
       three: 0.181.0
     transitivePeerDependencies:
       - '@types/three'
+
+  '@react-three/rapier-addons@5.0.0(@react-three/fiber@9.4.0(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(three@0.181.0))(@react-three/rapier@2.2.0(@react-three/fiber@9.4.0(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(three@0.181.0))(react@19.2.0)(three@0.181.0))(react@19.2.0)(three@0.181.0)':
+    dependencies:
+      '@react-three/fiber': 9.4.0(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(three@0.181.0)
+      '@react-three/rapier': 2.2.0(@react-three/fiber@9.4.0(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(three@0.181.0))(react@19.2.0)(three@0.181.0)
+      react: 19.2.0
+      three: 0.181.0
+      three-stdlib: 2.36.0(three@0.181.0)
 
   '@react-three/rapier@2.2.0(@react-three/fiber@9.4.0(@types/react@19.2.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(three@0.181.0))(react@19.2.0)(three@0.181.0)':
     dependencies:
