@@ -126,8 +126,8 @@ export function BubbleOrb({
       colliders="ball"
       restitution={0.8}         // More bouncy
       friction={0.1}            // Less friction = more slippery
-      linearDamping={0.2}       // Less damping = more responsive
-      angularDamping={1.0}
+      linearDamping={0.05}      // REDUCED - Less damping = more movement
+      angularDamping={0.5}      // REDUCED - More rotation
       gravityScale={0}
       mass={radius * 0.5}       // LIGHTER = more responsive to forces
       ccd={true}                // Continuous collision detection

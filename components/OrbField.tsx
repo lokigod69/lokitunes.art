@@ -33,7 +33,7 @@ function OrbScene({ albums, onHover, onNavigate, deviceTier, useGlassBubbles }: 
   const { positions, radius } = calculateOrbLayout(albums.length)
   
   return (
-    <Physics gravity={[0, 0, 0]} debug={true}>
+    <Physics gravity={[0, 0, 0]}>
       <Suspense fallback={null}>
         <group>
           {albums.map((album, index) => (

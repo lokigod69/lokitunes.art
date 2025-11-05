@@ -34,8 +34,8 @@ export function MouseAttraction() {
   return (
     <Attractor 
       position={attractorPos}
-      strength={30}
-      range={15}
+      strength={100}
+      range={20}
       type="linear"
     />
   )
