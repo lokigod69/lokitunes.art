@@ -5,7 +5,7 @@ import * as THREE from 'three'
  * Smart texture loader that tries multiple URLs until one works
  * Handles different file extensions (.jpg, .jpeg, .png)
  */
-export function useSmartTexture(possibleUrls: string[]) {
+export function useSmartTexture(possibleUrls: string[], albumName: string = 'Unknown') {
   const [texture, setTexture] = useState<THREE.Texture | null>(null)
   const [workingUrl, setWorkingUrl] = useState<string | null>(null)
   
@@ -13,28 +13,33 @@ export function useSmartTexture(possibleUrls: string[]) {
     let cancelled = false
     
     async function findWorkingUrl() {
-      console.log('🔍 Trying texture URLs:', possibleUrls)
+      console.log(`🔍 [${albumName}] Starting texture search...`)
+      console.log(`📋 [${albumName}] Trying ${possibleUrls.length} URLs:`, possibleUrls)
       
-      for (const url of possibleUrls) {
+      for (let i = 0; i < possibleUrls.length; i++) {
         if (cancelled) return
+        
+        const url = possibleUrls[i]
+        console.log(`🌐 [${albumName}] Attempt ${i + 1}/${possibleUrls.length}: ${url}`)
         
         try {
           // Try to fetch the image
           const response = await fetch(url, { method: 'HEAD' })
-          console.log(`${response.ok ? '✅' : '❌'} ${url}: ${response.status}`)
+          console.log(`📊 [${albumName}] Response: ${response.status} ${response.statusText}`)
           
           if (response.ok) {
-            console.log('🎉 Found working URL:', url)
+            console.log(`✅ [${albumName}] SUCCESS! Using: ${url}`)
             setWorkingUrl(url)
             return
           }
         } catch (e) {
-          console.log(`❌ ${url}: Failed to fetch`)
+          console.log(`❌ [${albumName}] FAILED:`, e)
           continue
         }
       }
       
-      console.warn('⚠️ No working texture found for:', possibleUrls[0])
+      console.error(`🚨 [${albumName}] ALL URLS FAILED!`)
+      console.error(`🚨 [${albumName}] Tried:`, possibleUrls)
       // Still set first URL as fallback
       setWorkingUrl(possibleUrls[0])
     }
@@ -44,7 +49,7 @@ export function useSmartTexture(possibleUrls: string[]) {
     return () => {
       cancelled = true
     }
-  }, [possibleUrls.join(',')])
+  }, [possibleUrls.join(','), albumName])
   
   // Load texture once we have a working URL
   useEffect(() => {

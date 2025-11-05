@@ -4,47 +4,84 @@
  *           covers/album-slug/01-song-name.jpg
  */
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+const STORAGE_URL = `${SUPABASE_URL}/storage/v1/object/public/covers`
 
 /**
- * Get album cover URLs from nested folder (tries multiple extensions)
- * Example: covers/Burn/cover.jpg, covers/Burn/cover.jpeg, etc.
+ * Get album cover URLs from nested folder (tries ALL possible patterns)
+ * Handles: spaces, no spaces, different extensions, different naming conventions
  */
 export function getAlbumCoverUrl(albumSlug: string): string[] {
-  if (!supabaseUrl) return []
+  if (!SUPABASE_URL) return []
   
-  const baseUrl = `${supabaseUrl}/storage/v1/object/public/covers/${albumSlug}`
+  // Clean slug: remove spaces and special chars (CamouflageGirl, not Camouflage Girl)
+  const cleanSlug = albumSlug.replace(/\s+/g, '').replace(/[^a-zA-Z0-9-]/g, '')
   
-  // Try multiple possible filenames in order of likelihood
+  // Original slug with spaces
+  const originalSlug = albumSlug
+  
+  // Try EVERY possible pattern
   return [
-    `${baseUrl}/cover.jpg`,
-    `${baseUrl}/cover.jpeg`,
-    `${baseUrl}/cover.png`,
-    `${baseUrl}/${albumSlug}.jpg`,
-    `${baseUrl}/${albumSlug}.jpeg`,
-    `${baseUrl}/${albumSlug}.png`,
+    // Pattern 1: Clean folder, album name as filename
+    `${STORAGE_URL}/${cleanSlug}/${cleanSlug}.jpeg`,
+    `${STORAGE_URL}/${cleanSlug}/${cleanSlug}.jpg`,
+    `${STORAGE_URL}/${cleanSlug}/${cleanSlug}.png`,
+    
+    // Pattern 2: Clean folder, "cover" filename
+    `${STORAGE_URL}/${cleanSlug}/cover.jpeg`,
+    `${STORAGE_URL}/${cleanSlug}/cover.jpg`,
+    `${STORAGE_URL}/${cleanSlug}/cover.png`,
+    
+    // Pattern 3: Original slug with spaces, album name
+    `${STORAGE_URL}/${originalSlug}/${originalSlug}.jpeg`,
+    `${STORAGE_URL}/${originalSlug}/${originalSlug}.jpg`,
+    `${STORAGE_URL}/${originalSlug}/${originalSlug}.png`,
+    
+    // Pattern 4: Original slug with spaces, "cover" filename
+    `${STORAGE_URL}/${originalSlug}/cover.jpeg`,
+    `${STORAGE_URL}/${originalSlug}/cover.jpg`,
+    `${STORAGE_URL}/${originalSlug}/cover.png`,
+    
+    // Pattern 5: At root level (no folder)
+    `${STORAGE_URL}/${cleanSlug}.jpeg`,
+    `${STORAGE_URL}/${cleanSlug}.jpg`,
+    `${STORAGE_URL}/${cleanSlug}.png`,
+    `${STORAGE_URL}/${originalSlug}.jpeg`,
+    `${STORAGE_URL}/${originalSlug}.jpg`,
+    `${STORAGE_URL}/${originalSlug}.png`,
   ]
 }
 
 /**
- * Get song/version cover URLs from nested folder (tries multiple extensions)
- * Example: covers/Burn/01-Burn-Tom Parker.jpg, .jpeg, .png
+ * Get song/version cover URLs from nested folder (tries ALL possible patterns)
  * 
- * @param albumSlug - Album slug (e.g., "Burn")
+ * @param albumSlug - Album slug (e.g., "Burn" or "Camouflage Girl")
  * @param songFilename - Full filename with extension (e.g., "01-Burn-Tom Parker.wav")
  * @returns Array of possible URLs to try
  */
 export function getSongCoverUrl(albumSlug: string, songFilename: string): string[] {
-  if (!supabaseUrl || !songFilename) return []
+  if (!SUPABASE_URL || !songFilename) return []
   
-  // Extract base name without extension
-  const baseName = songFilename.replace(/\.(wav|mp3|flac|ogg|m4a)$/i, '')
-  const baseUrl = `${supabaseUrl}/storage/v1/object/public/covers/${albumSlug}`
+  // Clean slug: no spaces
+  const cleanSlug = albumSlug.replace(/\s+/g, '').replace(/[^a-zA-Z0-9-]/g, '')
+  const originalSlug = albumSlug
+  
+  // Extract base name from audio filename
+  // "01-Burn-Tom Parker.wav" -> "01-Burn-Tom Parker"
+  const baseName = songFilename
+    .replace(/\.(wav|mp3|flac|m4a|aac|ogg)$/i, '')
+    .trim()
   
   return [
-    `${baseUrl}/${baseName}.jpg`,
-    `${baseUrl}/${baseName}.jpeg`,
-    `${baseUrl}/${baseName}.png`,
+    // Try with clean slug folder
+    `${STORAGE_URL}/${cleanSlug}/${baseName}.jpeg`,
+    `${STORAGE_URL}/${cleanSlug}/${baseName}.jpg`,
+    `${STORAGE_URL}/${cleanSlug}/${baseName}.png`,
+    
+    // Try with original slug folder (with spaces)
+    `${STORAGE_URL}/${originalSlug}/${baseName}.jpeg`,
+    `${STORAGE_URL}/${originalSlug}/${baseName}.jpg`,
+    `${STORAGE_URL}/${originalSlug}/${baseName}.png`,
   ]
 }
 
@@ -52,7 +89,7 @@ export function getSongCoverUrl(albumSlug: string, songFilename: string): string
  * Get song cover URL with multiple extension fallbacks including album cover
  */
 export function getSongCoverUrlWithFallbacks(albumSlug: string, songFilename: string): string[] {
-  if (!supabaseUrl || !songFilename) return []
+  if (!SUPABASE_URL || !songFilename) return []
   
   const songUrls = getSongCoverUrl(albumSlug, songFilename)
   const albumUrls = getAlbumCoverUrl(albumSlug)

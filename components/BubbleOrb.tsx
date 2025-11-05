@@ -37,7 +37,7 @@ export function BubbleOrb({
 
   // Load texture with smart loader (tries multiple extensions)
   const possibleUrls = getAlbumCoverUrl(album.slug)
-  const texture = useSmartTexture(possibleUrls)
+  const texture = useSmartTexture(possibleUrls, album.title)
 
   const seed = album.id.charCodeAt(0) * 137.5
 
