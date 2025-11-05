@@ -3,13 +3,33 @@
 import { useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { RigidBody, type RapierRigidBody } from '@react-three/rapier'
-import { MeshTransmissionMaterial, Html } from '@react-three/drei'
+import { MeshTransmissionMaterial, Text } from '@react-three/drei'
 import * as THREE from 'three'
 import type { Album } from '@/lib/supabase'
 import type { DeviceTier } from '@/lib/device-detection'
 import { getQualitySettings } from '@/lib/device-detection'
 import { getAlbumCoverUrl } from '@/lib/supabase-images'
 import { useSmartTexture } from '@/hooks/useSmartTexture'
+
+/**
+ * Normalize emissive intensity based on color brightness
+ * Darker colors get higher emissive, lighter colors get lower
+ * This ensures all orbs have similar perceived brightness
+ */
+function normalizeEmissiveIntensity(colorHex: string): number {
+  // Convert hex to RGB
+  const r = parseInt(colorHex.slice(1, 3), 16) / 255
+  const g = parseInt(colorHex.slice(3, 5), 16) / 255
+  const b = parseInt(colorHex.slice(5, 7), 16) / 255
+  
+  // Calculate perceived brightness (0-1)
+  const brightness = (r * 0.299 + g * 0.587 + b * 0.114)
+  
+  // Inverse relationship - darker colors need MORE emissive
+  return brightness < 0.5 
+    ? 3.5  // Dark colors: high emissive
+    : 2.0  // Light colors: lower emissive
+}
 
 interface BubbleOrbProps {
   album: Album
@@ -42,8 +62,15 @@ export function BubbleOrb({
 
   const seed = album.id.charCodeAt(0) * 137.5
 
+  // Detect mobile for enhanced visuals
+  const isMobile = deviceTier === 'low' || deviceTier === 'medium'
+
   // Use album's dominant color for glow, fallback to voltage blue
   const glowColor = album.palette?.dominant || album.palette?.accent1 || '#4F9EFF'
+  const normalizedIntensity = normalizeEmissiveIntensity(glowColor)
+  
+  // Mobile gets brighter glow for better visibility
+  const mobileIntensityBoost = isMobile ? 1.5 : 1.0
 
   useFrame((state) => {
     if (!ref.current) return
@@ -96,26 +123,29 @@ export function BubbleOrb({
     <RigidBody
       ref={ref}
       colliders="ball"
-      restitution={0.7}
-      friction={0.2}
-      linearDamping={0.3}
+      restitution={0.8}         // More bouncy
+      friction={0.1}            // Less friction = more slippery
+      linearDamping={0.2}       // Less damping = more responsive
       angularDamping={1.0}
       gravityScale={0}
-      mass={radius}
+      mass={radius * 0.5}       // LIGHTER = more responsive to forces
+      ccd={true}                // Continuous collision detection
       position={position}
     >
       <group>
-        {/* Inner glow with album color palette - BRIGHTER */}
+        {/* Inner glow with normalized brightness - BRIGHTER ON MOBILE */}
         <pointLight
           ref={glowRef}
           color={glowColor}
-          intensity={5}
-          distance={radius * 5}
+          intensity={(hovered ? normalizedIntensity * 2 : normalizedIntensity) * mobileIntensityBoost}
+          distance={radius * (isMobile ? 6 : 5)}
         />
 
-        {/* Outer glass shell */}
+        {/* Outer glass shell - TINTED ON MOBILE */}
         <mesh
-          onClick={() => onNavigate(album.slug)}
+          onClick={() => {
+            onNavigate(album.slug)
+          }}
           onPointerEnter={() => {
             setHovered(true)
             onHover(album.title)
@@ -129,7 +159,7 @@ export function BubbleOrb({
         >
           <sphereGeometry args={[radius, quality.sphereSegments, quality.sphereSegments]} />
           <MeshTransmissionMaterial
-            transmission={1}
+            transmission={isMobile ? 0.85 : 1}
             thickness={quality.thickness}
             roughness={quality.roughness}
             chromaticAberration={quality.chromaticAberration}
@@ -137,6 +167,7 @@ export function BubbleOrb({
             distortion={0.05}
             samples={quality.samples}
             toneMapped={false}
+            color={isMobile ? glowColor : 'white'}
           />
         </mesh>
 
@@ -153,7 +184,7 @@ export function BubbleOrb({
             <meshStandardMaterial 
               map={texture}
               emissive={glowColor}
-              emissiveIntensity={2.5}
+              emissiveIntensity={hovered ? normalizedIntensity * 1.5 : normalizedIntensity}
               toneMapped={false}
               dispose={null}
             />
@@ -180,24 +211,20 @@ export function BubbleOrb({
           </mesh>
         )}
         
-        {/* Tooltip - positioned above orb with highest z-index */}
+        {/* Text ON the orb - only when hovered */}
         {hovered && (
-          <Html
-            position={[0, radius + 1, 0]}
-            center
-            distanceFactor={10}
-            style={{
-              pointerEvents: 'none',
-              userSelect: 'none',
-            }}
+          <Text
+            position={[0, 0, radius * 1.1]}  // Slightly in front of orb
+            fontSize={radius * 0.3}
+            color="white"
+            anchorX="center"
+            anchorY="middle"
+            outlineWidth={0.02}
+            outlineColor="black"
+            outlineBlur={0.05}
           >
-            <div 
-              className="px-4 py-2 bg-void/90 backdrop-blur-sm text-bone rounded-lg text-sm whitespace-nowrap border border-voltage/30 shadow-lg"
-              style={{ zIndex: 9999 }}
-            >
-              {album.title}
-            </div>
-          </Html>
+            {album.title}
+          </Text>
         )}
       </group>
     </RigidBody>

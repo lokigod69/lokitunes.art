@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation'
 import { BubbleOrb } from './BubbleOrb'
 import { SonicOrb } from './SonicOrb'
 import { InvisibleBounds } from './InvisibleBounds'
+import { MouseAttraction } from './MouseAttraction'
 import type { Album } from '@/lib/supabase'
 import { detectDeviceTier, getQualitySettings, type DeviceTier } from '@/lib/device-detection'
 import { calculateOrbLayout, calculateCameraDistance } from '@/lib/orb-layout'
@@ -31,7 +32,7 @@ function OrbScene({ albums, onHover, onNavigate, deviceTier, useGlassBubbles }: 
   const { positions, radius } = calculateOrbLayout(albums.length)
   
   return (
-    <Physics gravity={[0, 0, 0]}>
+    <Physics gravity={[0, 0, 0]} debug={true}>
       <Suspense fallback={null}>
         <group>
           {albums.map((album, index) => (
@@ -46,6 +47,9 @@ function OrbScene({ albums, onHover, onNavigate, deviceTier, useGlassBubbles }: 
             />
           ))}
         </group>
+        
+        {/* Mouse attraction - RED SPHERE should follow cursor */}
+        <MouseAttraction />
         
         {/* Invisible physics boundaries */}
         <InvisibleBounds size={25} />

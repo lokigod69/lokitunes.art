@@ -6,6 +6,10 @@ interface AudioState {
   currentVersion: SongVersion | null
   currentSongId: string | null
   
+  // Queue management
+  queue: SongVersion[]
+  currentIndex: number
+  
   // Playback state
   isPlaying: boolean
   currentTime: number
@@ -16,6 +20,9 @@ interface AudioState {
   play: (version: SongVersion, songId: string) => void
   pause: () => void
   stop: () => void
+  setQueue: (versions: SongVersion[], startIndex?: number) => void
+  next: () => void
+  previous: () => void
   setCurrentTime: (time: number) => void
   setDuration: (duration: number) => void
   setVolume: (volume: number) => void
@@ -25,6 +32,8 @@ interface AudioState {
 export const useAudioStore = create<AudioState>((set, get) => ({
   currentVersion: null,
   currentSongId: null,
+  queue: [],
+  currentIndex: 0,
   isPlaying: false,
   currentTime: 0,
   duration: 0,
@@ -42,6 +51,8 @@ export const useAudioStore = create<AudioState>((set, get) => ({
         currentSongId: songId,
         isPlaying: true,
         currentTime: 0,
+        queue: [version],
+        currentIndex: 0,
       })
     } else {
       // Resume current version
@@ -57,7 +68,43 @@ export const useAudioStore = create<AudioState>((set, get) => ({
     isPlaying: false,
     currentTime: 0,
     duration: 0,
+    queue: [],
+    currentIndex: 0,
   }),
+
+  setQueue: (versions, startIndex = 0) => set({
+    queue: versions,
+    currentVersion: versions[startIndex],
+    currentIndex: startIndex,
+    isPlaying: true,
+    currentTime: 0,
+  }),
+
+  next: () => {
+    const { queue, currentIndex } = get()
+    if (queue.length === 0) return
+    
+    const nextIndex = (currentIndex + 1) % queue.length
+    set({
+      currentIndex: nextIndex,
+      currentVersion: queue[nextIndex],
+      isPlaying: true,
+      currentTime: 0,
+    })
+  },
+
+  previous: () => {
+    const { queue, currentIndex } = get()
+    if (queue.length === 0) return
+    
+    const prevIndex = currentIndex === 0 ? queue.length - 1 : currentIndex - 1
+    set({
+      currentIndex: prevIndex,
+      currentVersion: queue[prevIndex],
+      isPlaying: true,
+      currentTime: 0,
+    })
+  },
 
   setCurrentTime: (time) => set({ currentTime: time }),
 

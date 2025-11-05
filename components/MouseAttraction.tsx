@@ -1,17 +1,22 @@
 'use client'
 
 import { useThree, useFrame } from '@react-three/fiber'
-import { useRef } from 'react'
-import { RigidBody } from '@react-three/rapier'
+import { useRef, useEffect } from 'react'
 import * as THREE from 'three'
 
 /**
- * Mouse attraction component that creates a physics attractor at cursor position
- * Orbs will be attracted toward the mouse cursor
+ * Mouse attraction component - DEBUG VERSION
+ * Shows a RED SPHERE that follows your cursor
+ * This helps verify the mouse tracking is working
  */
 export function MouseAttraction() {
   const { camera, pointer } = useThree()
-  const attractorRef = useRef<THREE.Group>(null)
+  const attractorRef = useRef<THREE.Mesh>(null)
+  
+  // Log on mount to verify component exists
+  useEffect(() => {
+    console.log('🎯 MouseAttraction component mounted!')
+  }, [])
   
   useFrame(() => {
     if (!attractorRef.current) return
@@ -29,8 +34,8 @@ export function MouseAttraction() {
     // Calculate direction from camera to cursor
     const dir = vector.sub(camera.position).normalize()
     
-    // Project to a distance of 20 units from camera
-    const distance = 20
+    // Project to a distance of 15 units from camera
+    const distance = 15
     const cursorPos = camera.position.clone().add(dir.multiplyScalar(distance))
     
     // Update attractor position
@@ -38,23 +43,18 @@ export function MouseAttraction() {
     
     // DEBUG: Log cursor position occasionally
     if (Math.random() < 0.016) {  // ~60fps = once per second
-      console.log('🎯 Cursor world position:', cursorPos.toArray())
+      console.log('🎯 Attractor position:', cursorPos.toArray())
+      console.log('🖱️ Pointer:', pointer.x.toFixed(2), pointer.y.toFixed(2))
     }
   })
   
   return (
-    <group ref={attractorRef}>
-      {/* Invisible attractor sphere - orbs will be attracted to this */}
-      <RigidBody
-        type="kinematicPosition"
-        colliders="ball"
-        sensor
-        gravityScale={0}
-      >
-        <mesh visible={false}>
-          <sphereGeometry args={[2, 16, 16]} />
-        </mesh>
-      </RigidBody>
-    </group>
+    <>
+      {/* VISIBLE RED SPHERE - You should SEE this following your mouse! */}
+      <mesh ref={attractorRef}>
+        <sphereGeometry args={[0.5, 16, 16]} />
+        <meshBasicMaterial color="red" wireframe />
+      </mesh>
+    </>
   )
 }

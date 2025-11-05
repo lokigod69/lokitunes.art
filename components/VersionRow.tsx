@@ -37,9 +37,9 @@ export function VersionRow({
   
   return (
     <div className="group">
-      <div className="flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-white/5 transition-all duration-200">
-        {/* Cover Art Thumbnail */}
-        <div className="relative w-12 h-12 rounded-md overflow-hidden flex-shrink-0 bg-white/5 border border-white/10">
+      <div className="flex items-center gap-2 sm:gap-3 md:gap-4 px-3 sm:px-4 py-2 sm:py-3 rounded-lg hover:bg-white/5 transition-all duration-200">
+        {/* Cover Art Thumbnail - smaller on mobile */}
+        <div className="relative w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-md overflow-hidden flex-shrink-0 bg-white/5 border border-white/10">
           {fallbackUrl ? (
             <Image
               src={fallbackUrl}
@@ -61,22 +61,22 @@ export function VersionRow({
           )}
         </div>
         
-        {/* Play Button */}
+        {/* Play Button - responsive sizing */}
         <button
           onClick={onPlay}
-          className="flex-shrink-0 w-10 h-10 rounded-full bg-voltage hover:bg-voltage/80 flex items-center justify-center transition-all duration-200 shadow-lg hover:shadow-voltage/50"
+          className="flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-voltage hover:bg-voltage/80 flex items-center justify-center transition-all duration-200 shadow-lg hover:shadow-voltage/50"
           aria-label={isPlaying ? 'Pause' : 'Play'}
         >
           {isPlaying ? (
-            <Pause className="w-5 h-5 text-void" fill="currentColor" />
+            <Pause className="w-4 h-4 sm:w-5 sm:h-5 text-void" fill="currentColor" />
           ) : (
-            <Play className="w-5 h-5 text-void ml-0.5" fill="currentColor" />
+            <Play className="w-4 h-4 sm:w-5 sm:h-5 text-void ml-0.5" fill="currentColor" />
           )}
         </button>
         
-        {/* Version Info */}
+        {/* Version Info - responsive text */}
         <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-medium text-bone truncate group-hover:text-voltage transition-colors">
+          <h3 className="text-xs sm:text-sm md:text-base font-medium text-bone truncate group-hover:text-voltage transition-colors">
             {version.label}
           </h3>
           {version.play_count > 0 && (
@@ -86,8 +86,8 @@ export function VersionRow({
           )}
         </div>
         
-        {/* Duration */}
-        <div className="text-sm text-bone/50 flex-shrink-0 font-mono">
+        {/* Duration - hidden on small mobile */}
+        <div className="hidden sm:block text-xs sm:text-sm text-bone/50 flex-shrink-0 font-mono">
           {formatDuration(version.duration_sec)}
         </div>
       </div>
