@@ -50,11 +50,30 @@ export function MouseAttraction() {
   
   return (
     <>
-      {/* VISIBLE RED SPHERE - You should SEE this following your mouse! */}
+      {/* ENHANCED RED TRACKING SPHERE - Cyberpunk aesthetic! */}
       <mesh ref={attractorRef}>
-        <sphereGeometry args={[0.5, 16, 16]} />
-        <meshBasicMaterial color="red" wireframe />
+        <sphereGeometry args={[0.8, 16, 16]} />
+        <meshBasicMaterial 
+          color="#ff0000" 
+          wireframe 
+          transparent
+          opacity={0.8}
+        />
       </mesh>
+      
+      {/* Glowing red core */}
+      <mesh position={attractorRef.current?.position.toArray() || [0, 0, 0]}>
+        <sphereGeometry args={[0.3, 8, 8]} />
+        <meshBasicMaterial color="#ff0000" />
+      </mesh>
+      
+      {/* Point light at cursor for glow effect */}
+      <pointLight 
+        position={attractorRef.current?.position.toArray() || [0, 0, 0]}
+        color="#ff0000" 
+        intensity={2}
+        distance={5}
+      />
     </>
   )
 }

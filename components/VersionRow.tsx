@@ -37,7 +37,7 @@ export function VersionRow({
   
   return (
     <div className="group">
-      <div className="flex items-center gap-2 sm:gap-3 md:gap-4 px-3 sm:px-4 py-2 sm:py-3 rounded-lg hover:bg-white/5 transition-all duration-200">
+      <div className="flex flex-row flex-nowrap items-center gap-2 sm:gap-3 md:gap-4 px-3 sm:px-4 py-2 sm:py-3 rounded-lg hover:bg-white/5 transition-all duration-200">
         {/* Cover Art Thumbnail - smaller on mobile */}
         <div className="relative w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-md overflow-hidden flex-shrink-0 bg-white/5 border border-white/10">
           {fallbackUrl ? (

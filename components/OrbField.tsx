@@ -54,6 +54,9 @@ function OrbScene({ albums, onHover, onNavigate, deviceTier, useGlassBubbles }: 
         {/* Invisible physics boundaries */}
         <InvisibleBounds size={25} />
       </Suspense>
+      
+      {/* Grid helper for cyberpunk/sci-fi aesthetic */}
+      <gridHelper args={[100, 50, '#00ffff', '#004444']} position={[0, -15, 0]} />
     </Physics>
   )
 }
@@ -142,15 +145,6 @@ export function OrbField({ albums }: OrbFieldProps) {
           <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
         </EffectComposer>
       </Canvas>
-
-      {/* Hover label overlay */}
-      {hoveredTitle && (
-        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
-          <div className="bg-void/80 backdrop-blur-sm px-6 py-3 rounded-full border border-voltage/30">
-            <p className="text-bone text-lg font-medium">{hoveredTitle}</p>
-          </div>
-        </div>
-      )}
 
       {/* Fallback for no albums */}
       {albums.length === 0 && (
