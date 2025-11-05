@@ -153,7 +153,7 @@ export function BubbleOrb({
           distance={radius * 5}
         />
 
-        {/* Outer glass shell - LESS transparent for more visible covers */}
+        {/* Outer glass shell - BARELY THERE (just a subtle shine) */}
         <mesh
           onClick={() => {
             onNavigate(album.slug)
@@ -171,21 +171,22 @@ export function BubbleOrb({
         >
           <sphereGeometry args={[radius, quality.sphereSegments, quality.sphereSegments]} />
           <MeshTransmissionMaterial
-            transmission={0.3}
-            thickness={0.2}
-            roughness={0.1}
-            chromaticAberration={0.005}
-            anisotropicBlur={0.05}
-            distortion={0.02}
+            transmission={0.1}
+            thickness={0.1}
+            roughness={0.2}
+            chromaticAberration={0}
+            anisotropicBlur={0}
+            distortion={0}
             samples={quality.samples}
             toneMapped={false}
             color="white"
+            opacity={0.3}
           />
         </mesh>
 
-        {/* Inner album art sphere - BIGGER and BRIGHTER */}
+        {/* Inner album art sphere - HUGE and SUPER BRIGHT */}
         {texture && (
-          <mesh ref={innerMeshRef} scale={0.85}>
+          <mesh ref={innerMeshRef} scale={0.95}>
             <sphereGeometry 
               args={[
                 radius, 
@@ -196,9 +197,9 @@ export function BubbleOrb({
             <meshStandardMaterial
               map={texture}
               emissive={glowColor}
-              emissiveIntensity={hovered ? 3.5 : 2.5}
-              metalness={0.2}
-              roughness={0.2}
+              emissiveIntensity={hovered ? 4.0 : 3.0}
+              metalness={0.3}
+              roughness={0.1}
               toneMapped={false}
               dispose={null}
             />
