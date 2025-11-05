@@ -107,9 +107,10 @@ export function BubbleOrb({
       body.applyImpulse(attraction, true)
     }
 
-    // Subtle constant glow
+    // PULSING GLOW - Cyberpunk aesthetic
     if (glowRef.current) {
-      glowRef.current.intensity = hovered ? 3 : 2
+      const pulse = Math.sin(t * 1.5) * 0.5 + 1.5
+      glowRef.current.intensity = normalizedIntensity * pulse
     }
 
     // Gentle rotation for inner sphere
@@ -133,15 +134,15 @@ export function BubbleOrb({
       position={position}
     >
       <group>
-        {/* Inner glow - subtle and constant */}
+        {/* Inner glow - PULSING */}
         <pointLight
           ref={glowRef}
           color={glowColor}
-          intensity={2}
-          distance={radius * 4}
+          intensity={normalizedIntensity}
+          distance={radius * 5}
         />
 
-        {/* Outer glass shell - REDUCED TRANSMISSION for cover visibility */}
+        {/* Outer glass shell - BALANCED for glass effect + visible covers */}
         <mesh
           onClick={() => {
             onNavigate(album.slug)
@@ -159,20 +160,21 @@ export function BubbleOrb({
         >
           <sphereGeometry args={[radius, quality.sphereSegments, quality.sphereSegments]} />
           <MeshTransmissionMaterial
-            transmission={0.3}
-            thickness={0.2}
-            roughness={0.1}
-            chromaticAberration={0}
-            anisotropicBlur={0}
-            distortion={0}
+            transmission={0.6}
+            thickness={0.3}
+            roughness={0.05}
+            chromaticAberration={0.01}
+            anisotropicBlur={0.1}
+            distortion={0.05}
             samples={quality.samples}
             toneMapped={false}
+            color="white"
           />
         </mesh>
 
-        {/* Inner album art sphere - BIGGER for visibility */}
+        {/* Inner album art sphere - BALANCED size */}
         {texture && (
-          <mesh ref={innerMeshRef} scale={0.85}>
+          <mesh ref={innerMeshRef} scale={0.75}>
             <sphereGeometry 
               args={[
                 radius, 
@@ -183,7 +185,7 @@ export function BubbleOrb({
             <meshStandardMaterial
               map={texture}
               emissive={glowColor}
-              emissiveIntensity={hovered ? 1.5 : 0.8}
+              emissiveIntensity={hovered ? 2.5 : 1.5}
               metalness={0.1}
               roughness={0.3}
               toneMapped={false}

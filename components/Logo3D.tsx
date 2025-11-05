@@ -27,9 +27,14 @@ export function Logo3D() {
           letterSpacing: '0.2em',
           color: '#00ffff',
           textShadow: `
-            0 0 5px #00ffff,
             0 0 10px #00ffff,
-            0 0 15px #00ffff
+            0 0 20px #00ffff,
+            0 0 30px #00ffff,
+            0 0 40px #00ffff,
+            0 0 70px #00ffff,
+            0 0 80px #00ffff,
+            0 0 100px #00ffff,
+            0 0 150px #00ffff
           `,
           transform: 'perspective(1000px)',
           transition: 'transform 0.3s ease',
@@ -43,9 +48,14 @@ export function Logo3D() {
         @keyframes flicker-text {
           0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
             text-shadow: 
-              0 0 5px #00ffff,
               0 0 10px #00ffff,
-              0 0 15px #00ffff;
+              0 0 20px #00ffff,
+              0 0 30px #00ffff,
+              0 0 40px #00ffff,
+              0 0 70px #00ffff,
+              0 0 80px #00ffff,
+              0 0 100px #00ffff,
+              0 0 150px #00ffff;
           }
           20%, 24%, 55% {
             text-shadow: none;
