@@ -29,16 +29,12 @@ export function Logo3D() {
           textShadow: `
             0 0 10px #00ffff,
             0 0 20px #00ffff,
-            0 0 30px #00ffff,
-            0 0 40px #00ffff,
-            0 0 70px #00ffff,
-            0 0 80px #00ffff,
-            0 0 100px #00ffff,
-            0 0 150px #00ffff
+            0 0 30px #00ffff
           `,
           transform: 'perspective(1000px)',
           transition: 'transform 0.3s ease',
-          animation: 'flicker-text 3s infinite alternate',
+          animation: 'flicker-text 6s infinite alternate',
+          opacity: 0.95,
         }}
       >
         LOKI TUNES
@@ -50,12 +46,7 @@ export function Logo3D() {
             text-shadow: 
               0 0 10px #00ffff,
               0 0 20px #00ffff,
-              0 0 30px #00ffff,
-              0 0 40px #00ffff,
-              0 0 70px #00ffff,
-              0 0 80px #00ffff,
-              0 0 100px #00ffff,
-              0 0 150px #00ffff;
+              0 0 30px #00ffff;
           }
           20%, 24%, 55% {
             text-shadow: none;
