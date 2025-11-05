@@ -38,22 +38,32 @@ export default function Home() {
   const shouldUseFallback = prefersReducedMotion || !hasWebGL
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Logo */}
-      <Logo3D />
-
-      {/* Main Content */}
-      <main className="container mx-auto px-4">
-        {loading ? (
-          <div className="flex items-center justify-center min-h-[70vh]">
-            <div className="text-bone/50 text-lg">Loading sonic landscape...</div>
+    <div className="relative w-full h-screen bg-void overflow-hidden">
+      {loading ? (
+        <div className="fixed inset-0 flex items-center justify-center z-50">
+          <div className="text-bone/50 text-lg">Loading sonic landscape...</div>
+        </div>
+      ) : shouldUseFallback ? (
+        <>
+          {/* Logo */}
+          <Logo3D />
+          <main className="container mx-auto px-4">
+            <OrbFieldFallback albums={albums} />
+          </main>
+        </>
+      ) : (
+        <>
+          {/* Fullscreen 3D Canvas */}
+          <div className="fixed inset-0 w-full h-full">
+            <OrbField albums={albums} />
           </div>
-        ) : shouldUseFallback ? (
-          <OrbFieldFallback albums={albums} />
-        ) : (
-          <OrbField albums={albums} />
-        )}
-      </main>
+          
+          {/* UI Overlay */}
+          <div className="fixed top-8 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
+            <Logo3D />
+          </div>
+        </>
+      )}
 
       {/* Mini Player */}
       <MiniPlayer />

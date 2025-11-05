@@ -8,21 +8,14 @@ import type { Album } from '@/lib/supabase'
 
 interface OrbProps {
   album: Album
-  index: number
-  totalCount: number
+  position: [number, number, number]
+  radius: number
   deviceTier?: 'low' | 'medium' | 'high'
   onHover: (title: string | null) => void
   onNavigate: (slug: string) => void
 }
 
-function calculateRadius(versionCount: number): number {
-  const base = 1.5  // Increased from 1.2
-  const raw = base + 0.4 * Math.sqrt(versionCount)  // Increased multiplier
-  const clamped = THREE.MathUtils.clamp(raw, 1.2, 3.0)  // Bigger min/max
-  return clamped * (1 + (Math.random() - 0.5) * 0.16)
-}
-
-export function SonicOrb({ album, index, totalCount, onHover, onNavigate }: OrbProps) {
+export function SonicOrb({ album, position, radius, onHover, onNavigate }: OrbProps) {
   const ref = useRef<RapierRigidBody>(null)
   const glowRef = useRef<THREE.PointLight>(null)
   const meshRef = useRef<THREE.Mesh>(null)
@@ -60,8 +53,7 @@ export function SonicOrb({ album, index, totalCount, onHover, onNavigate }: OrbP
     }
   }, [album.cover_url, album.title])
 
-  const radius = calculateRadius(album.total_versions || 1)
-  const seed = index * 137.5 // golden angle for distribution
+  const seed = album.id.charCodeAt(0) * 137.5
 
   const accentColor = album.palette?.accent1 || '#4F9EFF'
 
@@ -110,23 +102,6 @@ export function SonicOrb({ album, index, totalCount, onHover, onNavigate }: OrbP
     }
   })
 
-  // Calculate grid position to keep all orbs visible
-  const cols = Math.ceil(Math.sqrt(totalCount))
-  const row = Math.floor(index / cols)
-  const col = index % cols
-  
-  const spacing = 3  // Distance between orbs
-  const gridWidth = (cols - 1) * spacing
-  const gridHeight = (Math.ceil(totalCount / cols) - 1) * spacing
-  const startX = -gridWidth / 2
-  const startY = gridHeight / 2
-  
-  const initialPosition: [number, number, number] = [
-    startX + col * spacing,
-    startY - row * spacing,
-    0
-  ]
-
   return (
     <RigidBody
       ref={ref}
@@ -135,7 +110,7 @@ export function SonicOrb({ album, index, totalCount, onHover, onNavigate }: OrbP
       friction={0.2}
       linearDamping={0.2}
       angularDamping={0.3}
-      position={initialPosition}
+      position={position}
     >
       <group>
         {/* Inner glow */}

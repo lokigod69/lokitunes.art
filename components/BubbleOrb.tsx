@@ -8,27 +8,22 @@ import * as THREE from 'three'
 import type { Album } from '@/lib/supabase'
 import type { DeviceTier } from '@/lib/device-detection'
 import { getQualitySettings } from '@/lib/device-detection'
+import { getAlbumCoverUrl } from '@/lib/supabase-images'
 
 interface BubbleOrbProps {
   album: Album
-  index: number
-  totalCount: number
+  position: [number, number, number]
+  radius: number
   deviceTier: DeviceTier
   onHover: (title: string | null) => void
   onNavigate: (slug: string) => void
 }
 
-function calculateRadius(versionCount: number): number {
-  const base = 1.5
-  const raw = base + 0.4 * Math.sqrt(versionCount)
-  const clamped = THREE.MathUtils.clamp(raw, 1.2, 3.0)
-  return clamped * (1 + (Math.random() - 0.5) * 0.16)
-}
 
 export function BubbleOrb({ 
   album, 
-  index, 
-  totalCount, 
+  position,
+  radius,
   deviceTier,
   onHover, 
   onNavigate 
@@ -40,16 +35,17 @@ export function BubbleOrb({
   
   const quality = getQualitySettings(deviceTier)
   
-  // Load texture with proper CORS and color space handling
+  // Load texture from nested folder structure
   useEffect(() => {
-    if (!album.cover_url) {
+    const coverUrl = getAlbumCoverUrl(album.slug)
+    if (!coverUrl) {
       console.warn(`⚠️ No cover URL for ${album.title}`)
       return
     }
     
     const img = new Image()
     img.crossOrigin = 'anonymous'
-    img.src = album.cover_url
+    img.src = coverUrl
     
     img.onload = () => {
       const newTexture = new THREE.Texture(img)
@@ -57,11 +53,11 @@ export function BubbleOrb({
       newTexture.colorSpace = THREE.SRGBColorSpace
       newTexture.needsUpdate = true
       setTexture(newTexture)
-      console.log('✅ Texture loaded:', album.title, album.cover_url)
+      console.log('✅ Texture loaded:', album.title, coverUrl)
     }
     
     img.onerror = (err) => {
-      console.error('❌ Texture failed:', album.title, album.cover_url, err)
+      console.error('❌ Texture failed:', album.title, coverUrl, err)
     }
     
     // Cleanup function to prevent memory leaks
@@ -70,12 +66,12 @@ export function BubbleOrb({
         texture.dispose()
       }
     }
-  }, [album.cover_url, album.title])
+  }, [album.slug, album.title])
 
-  const radius = calculateRadius(album.total_versions || 1)
-  const seed = index * 137.5
+  const seed = album.id.charCodeAt(0) * 137.5
 
-  const accentColor = album.palette?.accent1 || '#4F9EFF'
+  // Use album's dominant color for glow, fallback to voltage blue
+  const glowColor = album.palette?.dominant || album.palette?.accent1 || '#4F9EFF'
 
   useFrame((state) => {
     if (!ref.current) return
@@ -120,22 +116,6 @@ export function BubbleOrb({
     }
   })
 
-  // Calculate grid position
-  const cols = Math.ceil(Math.sqrt(totalCount))
-  const row = Math.floor(index / cols)
-  const col = index % cols
-  
-  const spacing = 3
-  const gridWidth = (cols - 1) * spacing
-  const gridHeight = (Math.ceil(totalCount / cols) - 1) * spacing
-  const startX = -gridWidth / 2
-  const startY = gridHeight / 2
-  
-  const initialPosition: [number, number, number] = [
-    startX + col * spacing,
-    startY - row * spacing,
-    0
-  ]
 
   return (
     <RigidBody
@@ -147,7 +127,7 @@ export function BubbleOrb({
       angularDamping={1.0}
       gravityScale={0}
       mass={radius}
-      position={initialPosition}
+      position={position}
     >
       <group
         onClick={() => onNavigate(album.slug)}
@@ -160,12 +140,12 @@ export function BubbleOrb({
           document.body.style.cursor = 'default'
         }}
       >
-        {/* Inner glow */}
+        {/* Inner glow with album color palette */}
         <pointLight
           ref={glowRef}
-          color={accentColor}
-          intensity={1}
-          distance={radius * 2}
+          color={glowColor}
+          intensity={3}
+          distance={radius * 4}
         />
 
         {/* Outer glass shell */}
@@ -195,8 +175,8 @@ export function BubbleOrb({
             />
             <meshStandardMaterial 
               map={texture}
-              emissive={accentColor}
-              emissiveIntensity={1.5}
+              emissive={glowColor}
+              emissiveIntensity={2.0}
               toneMapped={false}
               dispose={null}
             />
@@ -214,9 +194,9 @@ export function BubbleOrb({
               ]} 
             />
             <meshStandardMaterial 
-              color={accentColor}
-              emissive={accentColor}
-              emissiveIntensity={0.8}
+              color={glowColor}
+              emissive={glowColor}
+              emissiveIntensity={1.5}
               toneMapped={false}
               dispose={null}
             />

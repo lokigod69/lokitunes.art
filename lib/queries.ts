@@ -1,4 +1,5 @@
 import { supabase, Album, AlbumWithSongs, Song, SongVersion } from './supabase'
+import { getSongCoverUrl } from './supabase-images'
 
 /**
  * Fetch all public albums with version counts for orb sizing
@@ -77,23 +78,30 @@ export async function getAlbumBySlug(slug: string): Promise<AlbumWithSongs | nul
     return null
   }
 
-  // Transform the data structure
+  // Transform the data structure and generate cover URLs from nested folders
   const songsWithVersions = (songs || []).map((song: any) => ({
     id: song.id,
     album_id: song.album_id,
     title: song.title,
     track_no: song.track_no,
     created_at: song.created_at,
-    versions: (song.song_versions || []).map((v: any) => ({
-      id: v.id,
-      song_id: v.song_id,
-      label: v.label,
-      audio_url: v.audio_url,
-      duration_sec: v.duration_sec,
-      waveform_json: v.waveform_json,
-      play_count: v.play_count,
-      created_at: v.created_at,
-    })),
+    versions: (song.song_versions || []).map((v: any) => {
+      // Extract filename from audio_url to generate cover_url
+      const audioFilename = v.audio_url?.split('/').pop() || ''
+      const generatedCoverUrl = getSongCoverUrl(album.slug, audioFilename)
+      
+      return {
+        id: v.id,
+        song_id: v.song_id,
+        label: v.label,
+        audio_url: v.audio_url,
+        cover_url: v.cover_url || generatedCoverUrl, // Use DB value or generate from filename
+        duration_sec: v.duration_sec,
+        waveform_json: v.waveform_json,
+        play_count: v.play_count,
+        created_at: v.created_at,
+      }
+    }),
   }))
 
   return {

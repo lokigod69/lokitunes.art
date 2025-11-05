@@ -3,14 +3,16 @@
 import { Suspense, useState, useEffect } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { Environment, PerformanceMonitor } from '@react-three/drei'
-import { Physics, CuboidCollider } from '@react-three/rapier'
+import { Physics } from '@react-three/rapier'
 import { EffectComposer, Bloom, ChromaticAberration, ToneMapping } from '@react-three/postprocessing'
 import { KernelSize, ToneMappingMode } from 'postprocessing'
 import { useRouter } from 'next/navigation'
 import { BubbleOrb } from './BubbleOrb'
 import { SonicOrb } from './SonicOrb'
+import { InvisibleBounds } from './InvisibleBounds'
 import type { Album } from '@/lib/supabase'
 import { detectDeviceTier, getQualitySettings, type DeviceTier } from '@/lib/device-detection'
+import { calculateOrbLayout, calculateCameraDistance } from '@/lib/orb-layout'
 
 interface OrbFieldProps {
   albums: Album[]
@@ -25,17 +27,19 @@ function OrbScene({ albums, onHover, onNavigate, deviceTier, useGlassBubbles }: 
 }) {
   const OrbComponent = useGlassBubbles ? BubbleOrb : SonicOrb
   
+  // Calculate dynamic layout based on album count
+  const { positions, radius } = calculateOrbLayout(albums.length)
+  
   return (
     <Physics gravity={[0, 0, 0]}>
-      <group>
-        {/* Keep orbs centered and bounded */}
-        <group position={[0, 0, 0]}>
+      <Suspense fallback={null}>
+        <group>
           {albums.map((album, index) => (
             <OrbComponent
               key={album.id}
               album={album}
-              index={index}
-              totalCount={albums.length}
+              position={positions[index]}
+              radius={radius}
               deviceTier={deviceTier}
               onHover={onHover}
               onNavigate={onNavigate}
@@ -43,16 +47,9 @@ function OrbScene({ albums, onHover, onNavigate, deviceTier, useGlassBubbles }: 
           ))}
         </group>
         
-        {/* Invisible bounds - SMALLER so orbs stay in view */}
-        {/* Top */}
-        <CuboidCollider position={[0, 5, 0]} args={[15, 0.1, 3]} />
-        {/* Bottom */}
-        <CuboidCollider position={[0, -5, 0]} args={[15, 0.1, 3]} />
-        {/* Left */}
-        <CuboidCollider position={[-8, 0, 0]} args={[0.1, 8, 3]} />
-        {/* Right */}
-        <CuboidCollider position={[8, 0, 0]} args={[0.1, 8, 3]} />
-      </group>
+        {/* Invisible physics boundaries */}
+        <InvisibleBounds size={25} />
+      </Suspense>
     </Physics>
   )
 }
@@ -69,33 +66,40 @@ export function OrbField({ albums }: OrbFieldProps) {
   useEffect(() => {
     const tier = detectDeviceTier()
     setDeviceTier(tier)
-    setDpr(quality.dpr)
+    const settings = getQualitySettings(tier)
+    setDpr(settings.dpr)
   }, [])
+  
+  // Calculate camera distance based on album count
+  const cameraDistance = calculateCameraDistance(albums.length)
 
   const handleNavigate = (slug: string) => {
     router.push(`/album/${slug}`)
   }
 
   return (
-    <div className="relative w-full" style={{ minHeight: '100vh' }}>
-      {/* 3D Canvas */}
+    <>
+      {/* 3D Canvas - Fullscreen */}
       <Canvas
         dpr={dpr}
         camera={{ 
-          position: [0, 0, 20],
-          fov: 40,
+          position: [0, 0, cameraDistance],
+          fov: 50,
           near: 0.1,
-          far: 100
+          far: 200
         }}
         gl={{ 
-          alpha: true,
+          alpha: false,
           antialias: true,
           powerPreference: 'high-performance'
         }}
         style={{
-          width: '100%',
-          height: '100%',
-          display: 'block'
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          zIndex: 0
         }}
       >
         <PerformanceMonitor
@@ -110,15 +114,13 @@ export function OrbField({ albums }: OrbFieldProps) {
         <directionalLight position={[10, 10, 5]} intensity={1.0} />
         <Environment preset="sunset" />
         
-        <Suspense fallback={null}>
-          <OrbScene
-            albums={albums}
-            onHover={setHoveredTitle}
-            onNavigate={handleNavigate}
-            deviceTier={deviceTier}
-            useGlassBubbles={useGlassBubbles}
-          />
-        </Suspense>
+        <OrbScene
+          albums={albums}
+          onHover={setHoveredTitle}
+          onNavigate={handleNavigate}
+          deviceTier={deviceTier}
+          useGlassBubbles={useGlassBubbles}
+        />
         
         {/* Post-processing effects */}
         <EffectComposer multisampling={quality.multisampling}>
@@ -137,9 +139,9 @@ export function OrbField({ albums }: OrbFieldProps) {
         </EffectComposer>
       </Canvas>
 
-      {/* Hover label */}
+      {/* Hover label overlay */}
       {hoveredTitle && (
-        <div className="absolute top-8 left-1/2 -translate-x-1/2 pointer-events-none">
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
           <div className="bg-void/80 backdrop-blur-sm px-6 py-3 rounded-full border border-voltage/30">
             <p className="text-bone text-lg font-medium">{hoveredTitle}</p>
           </div>
@@ -148,11 +150,11 @@ export function OrbField({ albums }: OrbFieldProps) {
 
       {/* Fallback for no albums */}
       {albums.length === 0 && (
-        <div className="absolute inset-0 flex items-center justify-center">
+        <div className="fixed inset-0 flex items-center justify-center z-10">
           <p className="text-bone/50 text-lg">No albums available</p>
         </div>
       )}
-    </div>
+    </>
   )
 }
 
