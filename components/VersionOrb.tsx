@@ -227,7 +227,7 @@ export function VersionOrb({
 
         {/* Inner cover art sphere - BRIGHT (extra bright when playing) */}
         {texture && (
-          <mesh ref={innerMeshRef} scale={0.95}>
+          <mesh ref={innerMeshRef} scale={0.95} onClick={handleClick}>
             <sphereGeometry 
               args={[
                 radius, 
@@ -249,7 +249,7 @@ export function VersionOrb({
 
         {/* Fallback colored sphere if no texture */}
         {!texture && (
-          <mesh scale={0.7}>
+          <mesh scale={0.7} onClick={handleClick}>
             <sphereGeometry 
               args={[
                 radius, 

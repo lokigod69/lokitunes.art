@@ -9,7 +9,6 @@ import { KernelSize, ToneMappingMode } from 'postprocessing'
 import { VersionOrb, type ExtendedVersion } from './VersionOrb'
 import { InvisibleBounds } from './InvisibleBounds'
 import { MouseAttraction } from './MouseAttraction'
-import { PulsingWireframe } from './PulsingWireframe'
 import { detectDeviceTier, getQualitySettings, type DeviceTier } from '@/lib/device-detection'
 import { calculateOrbLayout, calculateCameraDistance } from '@/lib/orb-layout'
 import type { Album } from '@/lib/supabase'
@@ -66,33 +65,16 @@ function OrbScene({
         <InvisibleBounds size={25} />
       </Suspense>
       
-      {/* MULTI-LAYER NEON GRIDS - Cyberpunk aesthetic */}
+      {/* MINIMAL GRID - Album page style (clean background) */}
       <gridHelper 
-        args={[100, 50, '#00ffff', '#004444']}
+        args={[
+          100,                                      // Size
+          10,                                       // Divisions (fewer = cleaner)
+          albumPalette?.accent1 || '#4F9EFF',      // Center lines (album accent color)
+          (albumPalette?.dominant || '#090B0D') + '30'  // Grid lines (subtle)
+        ]}
         position={[0, -15, 0]} 
       />
-      <gridHelper 
-        args={[100, 50, '#ff00ff', '#440044']}
-        position={[0, -14.5, 0]} 
-        rotation={[0, Math.PI / 4, 0]}
-      />
-      <gridHelper 
-        args={[100, 50, '#00ff88', '#004422']}
-        position={[0, -14, 0]} 
-        rotation={[0, -Math.PI / 4, 0]}
-      />
-      
-      {/* DECORATIVE PULSING WIREFRAMES */}
-      <PulsingWireframe position={[-10, 5, -10]} size={[3, 3, 3]} color="#ff00ff" />
-      <PulsingWireframe position={[10, 5, -10]} size={[2, 4, 2]} color="#00ffff" />
-      <PulsingWireframe position={[-10, -5, 10]} size={[4, 2, 4]} color="#00ff88" />
-      <PulsingWireframe position={[10, -5, 10]} size={[3, 3, 3]} color="#ff00ff" />
-      
-      {/* CORNER MARKERS */}
-      <PulsingWireframe position={[-15, 0, -15]} size={[1, 1, 1]} color="#ff0000" />
-      <PulsingWireframe position={[15, 0, -15]} size={[1, 1, 1]} color="#ff0000" />
-      <PulsingWireframe position={[-15, 0, 15]} size={[1, 1, 1]} color="#ff0000" />
-      <PulsingWireframe position={[15, 0, 15]} size={[1, 1, 1]} color="#ff0000" />
     </Physics>
   )
 }
