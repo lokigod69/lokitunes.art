@@ -1,10 +1,12 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { SongRow } from '@/components/SongRow'
 import { MiniPlayer } from '@/components/MiniPlayer'
+import { VersionOrbField } from '@/components/VersionOrbField'
+import type { ExtendedVersion } from '@/components/VersionOrb'
 import type { AlbumWithSongs } from '@/lib/supabase'
 
 function hexWithOpacity(hex: string, opacity: number): string {
@@ -26,6 +28,26 @@ export function AlbumPage({ album }: AlbumPageProps) {
     accent1: '#4F9EFF',
     accent2: '#FF6B4A',
   }
+
+  // Flatten all versions for orb field (each MP3 = one orb)
+  const allVersions: ExtendedVersion[] = useMemo(() => {
+    const versions = album.songs
+      .sort((a, b) => (a.track_no || 0) - (b.track_no || 0))  // Sort by track number
+      .flatMap(song => 
+        song.versions.map(version => ({
+          ...version,
+          songTitle: song.title,
+          songId: song.id,
+          trackNo: song.track_no
+        }))
+      )
+    
+    // Debug logging - verify orb count
+    console.log(`🎵 Album "${album.title}": ${versions.length} versions found`)
+    versions.forEach((v, i) => console.log(`  Version ${i + 1}: ${v.label}`))
+    
+    return versions
+  }, [album])
 
   // Inject album palette into CSS variables
   useEffect(() => {
@@ -82,28 +104,26 @@ export function AlbumPage({ album }: AlbumPageProps) {
                 {album.title}
               </h1>
               <p className="text-bone/70 text-lg">
-                {album.songs.length} {album.songs.length === 1 ? 'song' : 'songs'}
+                {album.songs.length} {album.songs.length === 1 ? 'song' : 'songs'} • {allVersions.length} {allVersions.length === 1 ? 'version' : 'versions'}
               </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Track list */}
+      {/* 3D Version Orb Field */}
       <div className="container mx-auto px-4 py-8">
-        <div className="max-w-5xl mx-auto bg-void/30 rounded-lg overflow-hidden border border-bone/10">
-          {album.songs.length === 0 ? (
-            <div className="p-12 text-center text-bone/50">
-              No songs available yet
+        <div className="relative w-full" style={{ height: '600px', minHeight: '500px' }}>
+          {allVersions.length === 0 ? (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <p className="text-bone/50 text-lg">No versions available yet</p>
             </div>
           ) : (
-            album.songs.map((song) => (
-              <SongRow
-                key={song.id}
-                song={song}
-                accentColor={palette.accent2}
-              />
-            ))
+            <VersionOrbField 
+              versions={allVersions}
+              albumCoverUrl={album.cover_url || ''}
+              albumPalette={album.palette}
+            />
           )}
         </div>
       </div>
