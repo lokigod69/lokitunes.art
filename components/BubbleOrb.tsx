@@ -3,7 +3,7 @@
 import { useRef, useState, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { RigidBody, type RapierRigidBody } from '@react-three/rapier'
-import { MeshTransmissionMaterial, Text } from '@react-three/drei'
+import { MeshTransmissionMaterial, Html } from '@react-three/drei'
 import * as THREE from 'three'
 import type { Album } from '@/lib/supabase'
 import type { DeviceTier } from '@/lib/device-detection'
@@ -230,23 +230,21 @@ export function BubbleOrb({
           </mesh>
         )}
         
-        {/* Text label on hover - reduced size with spacing */}
+        {/* HTML label overlay - consistent with VersionOrb */}
         {hovered && (
-          <Text
-            position={[0, 0, radius * 1.1]}
-            fontSize={radius * 0.25}
-            color="white"
-            anchorX="center"
-            anchorY="middle"
-            outlineWidth={0.03}
-            outlineColor="black"
-            outlineBlur={0.1}
-            maxWidth={radius * 2.5}
-            textAlign="center"
-            letterSpacing={0.05}
+          <Html
+            position={[0, radius * 0.7, 0]}
+            center
+            distanceFactor={12}
+            zIndexRange={[0, 0]}
+            style={{ pointerEvents: 'none' }}
           >
-            {album.title}
-          </Text>
+            <div className="px-6 py-3 bg-void/90 backdrop-blur-lg rounded-full border border-voltage/30 shadow-lg">
+              <p className="text-bone text-xl font-bold whitespace-nowrap">
+                {album.title}
+              </p>
+            </div>
+          </Html>
         )}
       </group>
     </RigidBody>
