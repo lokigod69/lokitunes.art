@@ -4,6 +4,7 @@ import { useAudioStore } from '@/lib/audio-store'
 import { Play, Pause, SkipForward, SkipBack, Volume2 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
+import { useWaveformPeaks } from '@/hooks/useWaveformPeaks'
 
 function formatTime(seconds: number): string {
   if (!isFinite(seconds)) return '0:00'
@@ -34,6 +35,9 @@ export function GlobalAudioPlayer() {
   const accentColor = currentPalette?.accent1 || '#4F9EFF'
   const bgColor = currentPalette?.dominant || '#090B0D'
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0
+  
+  // Extract real waveform peaks from audio
+  const { peaks } = useWaveformPeaks(currentVersion?.audio_url || '', 50)
   
   const audioRef = useRef<HTMLAudioElement>(null)
   
@@ -94,7 +98,10 @@ export function GlobalAudioPlayer() {
       className="fixed bottom-0 left-0 right-0 bg-void/95 backdrop-blur-lg border-t z-50"
       style={{ borderColor: `${accentColor}30` }}
     >
-      <audio ref={audioRef} />
+      <audio 
+        ref={audioRef}
+        src={currentVersion?.audio_url || ''}
+      />
       
       <div className="max-w-screen-2xl mx-auto px-3 sm:px-4 py-2 sm:py-3">
         {/* Main Controls Row */}
@@ -177,11 +184,11 @@ export function GlobalAudioPlayer() {
         
         {/* Progress Bar with Waveform Visualization */}
         <div className="mt-2 space-y-1.5">
-          {/* Waveform bars */}
+          {/* Waveform bars - Real audio peaks */}
           <div className="flex items-center gap-0.5 h-6">
-            {Array.from({ length: 50 }).map((_, i) => {
-              const height = Math.abs(Math.sin(i * 0.3) * 0.7 + Math.cos(i * 0.17) * 0.3) * 100
-              const isActive = (i / 50) * 100 < progress
+            {(peaks.length > 0 ? peaks : Array(50).fill(0.5)).map((peak, i) => {
+              const height = Math.abs(peak) * 100
+              const isActive = (i / (peaks.length || 50)) * 100 < progress
               return (
                 <div
                   key={i}
