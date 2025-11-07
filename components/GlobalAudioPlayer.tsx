@@ -15,6 +15,7 @@ function formatTime(seconds: number): string {
 export function GlobalAudioPlayer() {
   const { 
     currentVersion, 
+    currentPalette,
     isPlaying, 
     currentTime,
     duration,
@@ -28,6 +29,11 @@ export function GlobalAudioPlayer() {
     setVolume,
     updateTime,
   } = useAudioStore()
+  
+  // Use album palette colors for themed player
+  const accentColor = currentPalette?.accent1 || '#4F9EFF'
+  const bgColor = currentPalette?.dominant || '#090B0D'
+  const progress = duration > 0 ? (currentTime / duration) * 100 : 0
   
   const audioRef = useRef<HTMLAudioElement>(null)
   
@@ -84,7 +90,10 @@ export function GlobalAudioPlayer() {
   if (!currentVersion) return null
   
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-void/95 backdrop-blur-lg border-t border-voltage/30 z-50">
+    <div 
+      className="fixed bottom-0 left-0 right-0 bg-void/95 backdrop-blur-lg border-t z-50"
+      style={{ borderColor: `${accentColor}30` }}
+    >
       <audio ref={audioRef} />
       
       <div className="max-w-screen-2xl mx-auto px-3 sm:px-4 py-2 sm:py-3">
@@ -122,7 +131,8 @@ export function GlobalAudioPlayer() {
             
             <button 
               onClick={() => isPlaying ? pause() : play(currentVersion, currentVersion.song_id)}
-              className="p-2 sm:p-3 bg-voltage hover:bg-voltage/80 rounded-full transition-colors"
+              className="p-2 sm:p-3 rounded-full transition-all hover:scale-105"
+              style={{ backgroundColor: accentColor }}
               aria-label={isPlaying ? 'Pause' : 'Play'}
             >
               {isPlaying ? (
@@ -144,32 +154,73 @@ export function GlobalAudioPlayer() {
           {/* Volume - Desktop Only */}
           <div className="hidden md:flex items-center gap-2 w-24 lg:w-32">
             <Volume2 className="w-4 h-4 text-bone/70" />
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.01"
-              value={volume}
-              onChange={(e) => setVolume(parseFloat(e.target.value))}
-              className="flex-1 h-1 bg-bone/20 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-voltage"
-            />
+            <div className="relative flex-1 h-1 bg-bone/10 rounded-full">
+              <div 
+                className="absolute h-full rounded-full transition-all"
+                style={{ 
+                  width: `${volume * 100}%`,
+                  backgroundColor: accentColor
+                }}
+              />
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={volume}
+                onChange={(e) => setVolume(parseFloat(e.target.value))}
+                className="absolute inset-0 w-full opacity-0 cursor-pointer"
+              />
+            </div>
           </div>
         </div>
         
-        {/* Progress Bar */}
-        <div className="mt-2">
-          <input
-            type="range"
-            min="0"
-            max={duration || 0}
-            value={currentTime}
-            onChange={(e) => {
-              const time = parseFloat(e.target.value)
-              setCurrentTime(time)
-              if (audioRef.current) audioRef.current.currentTime = time
-            }}
-            className="w-full h-1 bg-bone/20 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-voltage"
-          />
+        {/* Progress Bar with Waveform Visualization */}
+        <div className="mt-2 space-y-1.5">
+          {/* Waveform bars */}
+          <div className="flex items-center gap-0.5 h-6">
+            {Array.from({ length: 50 }).map((_, i) => {
+              const height = Math.abs(Math.sin(i * 0.3) * 0.7 + Math.cos(i * 0.17) * 0.3) * 100
+              const isActive = (i / 50) * 100 < progress
+              return (
+                <div
+                  key={i}
+                  className="flex-1 rounded-full transition-all duration-150"
+                  style={{ 
+                    height: `${Math.max(height, 20)}%`,
+                    backgroundColor: isActive ? accentColor : `${accentColor}30`,
+                    opacity: isActive ? 1 : 0.5
+                  }}
+                />
+              )
+            })}
+          </div>
+          
+          {/* Progress bar */}
+          <div className="relative w-full h-1.5 bg-bone/10 rounded-full cursor-pointer group">
+            {/* Filled progress */}
+            <div 
+              className="absolute h-full rounded-full transition-all"
+              style={{ 
+                width: `${progress}%`,
+                backgroundColor: accentColor
+              }}
+            />
+            
+            {/* Seek input */}
+            <input
+              type="range"
+              min="0"
+              max={duration || 0}
+              value={currentTime}
+              onChange={(e) => {
+                const time = parseFloat(e.target.value)
+                setCurrentTime(time)
+                if (audioRef.current) audioRef.current.currentTime = time
+              }}
+              className="absolute inset-0 w-full opacity-0 cursor-pointer"
+            />
+          </div>
         </div>
       </div>
     </div>

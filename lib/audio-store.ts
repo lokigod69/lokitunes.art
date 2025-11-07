@@ -1,10 +1,11 @@
 import { create } from 'zustand'
-import type { SongVersion } from './supabase'
+import type { SongVersion, Album } from './supabase'
 
 interface AudioState {
   // Currently playing version
   currentVersion: SongVersion | null
   currentSongId: string | null
+  currentPalette: Album['palette'] | null
   
   // Queue management
   queue: SongVersion[]
@@ -17,7 +18,7 @@ interface AudioState {
   volume: number
   
   // Actions
-  play: (version: SongVersion, songId: string) => void
+  play: (version: SongVersion, songId: string, palette?: Album['palette']) => void
   pause: () => void
   stop: () => void
   setQueue: (versions: SongVersion[], startIndex?: number) => void
@@ -32,6 +33,7 @@ interface AudioState {
 export const useAudioStore = create<AudioState>((set, get) => ({
   currentVersion: null,
   currentSongId: null,
+  currentPalette: null,
   queue: [],
   currentIndex: 0,
   isPlaying: false,
@@ -41,7 +43,7 @@ export const useAudioStore = create<AudioState>((set, get) => ({
     ? parseFloat(localStorage.getItem('lokitunes-volume') || '0.7')
     : 0.7,
 
-  play: (version, songId) => {
+  play: (version, songId, palette) => {
     const current = get()
     
     // If switching to a different version, reset time
@@ -49,6 +51,7 @@ export const useAudioStore = create<AudioState>((set, get) => ({
       set({
         currentVersion: version,
         currentSongId: songId,
+        currentPalette: palette || null,
         isPlaying: true,
         currentTime: 0,
         queue: [version],
@@ -65,6 +68,7 @@ export const useAudioStore = create<AudioState>((set, get) => ({
   stop: () => set({
     currentVersion: null,
     currentSongId: null,
+    currentPalette: null,
     isPlaying: false,
     currentTime: 0,
     duration: 0,

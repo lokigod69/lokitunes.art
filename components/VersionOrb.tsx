@@ -169,8 +169,8 @@ export function VersionOrb({
     console.log('   Song ID:', version.songId)
     console.log('   Audio URL:', version.audio_url)
     
-    // Play this version
-    play(version, version.songId)
+    // Play this version with album palette for themed player
+    play(version, version.songId, albumPalette)
   }
 
   return (
