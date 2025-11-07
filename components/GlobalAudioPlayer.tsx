@@ -1,5 +1,6 @@
 'use client'
 
+import { usePathname } from 'next/navigation'
 import { useAudioStore } from '@/lib/audio-store'
 import { Play, Pause, SkipForward, SkipBack, Volume2 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
@@ -14,6 +15,13 @@ function formatTime(seconds: number): string {
 }
 
 export function GlobalAudioPlayer() {
+  const pathname = usePathname()
+  
+  // Hide on home page - MiniPlayer handles audio UI there
+  if (pathname === '/') {
+    return null
+  }
+  
   const { 
     currentVersion, 
     currentPalette,
