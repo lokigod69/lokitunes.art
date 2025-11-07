@@ -58,8 +58,8 @@ function OrbScene({
           })}
         </group>
         
-        {/* Mouse attraction - RED SPHERE should follow cursor */}
-        <MouseAttraction />
+        {/* Mouse attraction - Dynamic range for large albums */}
+        <MouseAttraction albumCount={versions.length} />
         
         {/* Invisible physics boundaries */}
         <InvisibleBounds size={25} />

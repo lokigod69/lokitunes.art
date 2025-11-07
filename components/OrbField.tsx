@@ -49,8 +49,8 @@ function OrbScene({ albums, onHover, onNavigate, deviceTier, useGlassBubbles }: 
           ))}
         </group>
         
-        {/* Mouse attraction - RED SPHERE should follow cursor */}
-        <MouseAttraction />
+        {/* Mouse attraction - Dynamic range for large collections */}
+        <MouseAttraction albumCount={albums.length} />
         
         {/* Invisible physics boundaries */}
         <InvisibleBounds size={25} />

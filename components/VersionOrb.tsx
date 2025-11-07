@@ -212,7 +212,7 @@ export function VersionOrb({
         >
           <sphereGeometry args={[radius, quality.sphereSegments, quality.sphereSegments]} />
           <MeshTransmissionMaterial
-            transmission={0.1}
+            transmission={0.95}
             thickness={0.1}
             roughness={0.2}
             chromaticAberration={0}
@@ -221,7 +221,7 @@ export function VersionOrb({
             samples={quality.samples}
             toneMapped={false}
             color="white"
-            opacity={0.3}
+            opacity={0.15}
           />
         </mesh>
 
@@ -270,9 +270,9 @@ export function VersionOrb({
         {/* HTML label overlay - always faces camera (readable from any angle) */}
         {(hovered || isThisPlaying) && (
           <Html
-            position={[0, radius * 0.85, 0]}
+            position={[0, radius * 0.7, 0]}
             center
-            distanceFactor={2}
+            distanceFactor={12}
             zIndexRange={[0, 0]}
             style={{ pointerEvents: 'none' }}
           >
