@@ -270,21 +270,21 @@ export function VersionOrb({
         {/* HTML label overlay - always faces camera (readable from any angle) */}
         {(hovered || isThisPlaying) && (
           <Html
-            position={[0, radius * 0.7, 0]}
+            position={[0, radius * 0.85, 0]}
             center
-            distanceFactor={3}
+            distanceFactor={2}
             zIndexRange={[0, 0]}
             style={{ pointerEvents: 'none' }}
           >
             <div
-              className={`px-5 py-2.5 backdrop-blur-lg rounded-full border shadow-lg transition-colors ${
+              className={`px-6 py-3 backdrop-blur-lg rounded-full border shadow-lg transition-colors ${
                 isThisPlaying
                   ? 'bg-voltage/20 border-voltage'
                   : 'bg-void/90 border-voltage/30'
               }`}
             >
               <p
-                className={`text-lg font-medium whitespace-nowrap ${
+                className={`text-xl font-bold whitespace-nowrap ${
                   isThisPlaying ? 'text-voltage' : 'text-bone'
                 }`}
               >
