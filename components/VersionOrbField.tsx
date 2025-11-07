@@ -84,7 +84,6 @@ export function VersionOrbField({
   albumCoverUrl, 
   albumPalette 
 }: VersionOrbFieldProps) {
-  const [hoveredLabel, setHoveredLabel] = useState<string | null>(null)
   const [deviceTier, setDeviceTier] = useState<DeviceTier>('high')
   const [dpr, setDpr] = useState(1.5)
   
@@ -147,7 +146,7 @@ export function VersionOrbField({
           versions={versions}
           albumCoverUrl={albumCoverUrl}
           albumPalette={albumPalette}
-          onHover={setHoveredLabel}
+          onHover={() => {}}
           deviceTier={deviceTier}
         />
         
@@ -167,15 +166,6 @@ export function VersionOrbField({
           <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
         </EffectComposer>
       </Canvas>
-
-      {/* Hovered version label overlay */}
-      {hoveredLabel && (
-        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
-          <div className="bg-void/90 backdrop-blur-lg px-6 py-3 rounded-full border border-voltage/30">
-            <p className="text-bone text-lg font-medium">{hoveredLabel}</p>
-          </div>
-        </div>
-      )}
 
       {/* Fallback for no versions */}
       {versions.length === 0 && (
