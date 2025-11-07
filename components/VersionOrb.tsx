@@ -3,7 +3,7 @@
 import { useRef, useState, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { RigidBody, type RapierRigidBody } from '@react-three/rapier'
-import { MeshTransmissionMaterial, Text } from '@react-three/drei'
+import { MeshTransmissionMaterial, Html } from '@react-three/drei'
 import * as THREE from 'three'
 import type { SongVersion } from '@/lib/supabase'
 import type { DeviceTier } from '@/lib/device-detection'
@@ -267,23 +267,31 @@ export function VersionOrb({
           </mesh>
         )}
         
-        {/* Text label on hover or when playing */}
+        {/* HTML label overlay - always faces camera (readable from any angle) */}
         {(hovered || isThisPlaying) && (
-          <Text
-            position={[0, 0, radius * 1.1]}
-            fontSize={radius * 0.25}
-            color="white"
-            anchorX="center"
-            anchorY="middle"
-            outlineWidth={0.03}
-            outlineColor="black"
-            outlineBlur={0.1}
-            maxWidth={radius * 2.5}
-            textAlign="center"
-            letterSpacing={0.05}
+          <Html
+            position={[0, radius * 0.7, 0]}
+            center
+            distanceFactor={8}
+            zIndexRange={[0, 0]}
+            style={{ pointerEvents: 'none' }}
           >
-            {isThisPlaying ? `♪ ${version.label}` : version.label}
-          </Text>
+            <div
+              className={`px-3 py-1.5 backdrop-blur-lg rounded-full border shadow-lg transition-colors ${
+                isThisPlaying
+                  ? 'bg-voltage/20 border-voltage'
+                  : 'bg-void/90 border-voltage/30'
+              }`}
+            >
+              <p
+                className={`text-sm font-medium whitespace-nowrap ${
+                  isThisPlaying ? 'text-voltage' : 'text-bone'
+                }`}
+              >
+                {isThisPlaying ? '♪ ' : ''}{version.label}
+              </p>
+            </div>
+          </Html>
         )}
       </group>
     </RigidBody>
