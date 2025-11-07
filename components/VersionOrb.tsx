@@ -212,8 +212,8 @@ export function VersionOrb({
         >
           <sphereGeometry args={[radius, quality.sphereSegments, quality.sphereSegments]} />
           <MeshTransmissionMaterial
-            transmission={0.95}
-            thickness={0.1}
+            transmission={0.98}
+            thickness={0.08}
             roughness={0.2}
             chromaticAberration={0}
             anisotropicBlur={0}
@@ -221,7 +221,7 @@ export function VersionOrb({
             samples={quality.samples}
             toneMapped={false}
             color="white"
-            opacity={0.15}
+            opacity={0.12}
           />
         </mesh>
 

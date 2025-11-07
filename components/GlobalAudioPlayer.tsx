@@ -41,16 +41,10 @@ export function GlobalAudioPlayer() {
   
   const audioRef = useRef<HTMLAudioElement>(null)
   
-  // Update audio source when track changes
+  // Load new track when currentVersion changes (src is set by JSX prop)
   useEffect(() => {
     if (!audioRef.current || !currentVersion) return
-    
-    audioRef.current.src = currentVersion.audio_url
     audioRef.current.load()
-    
-    if (isPlaying) {
-      audioRef.current.play().catch(console.error)
-    }
   }, [currentVersion?.id])
   
   // Control playback
