@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Logo3D } from '@/components/Logo3D'
 import { OrbField, OrbFieldFallback } from '@/components/OrbField'
+import { MiniPlayer } from '@/components/MiniPlayer'
 import { ScanlineEffect } from '@/components/ScanlineEffect'
 import { getAlbumsWithVersionCounts } from '@/lib/queries'
 import type { Album } from '@/lib/supabase'
@@ -67,6 +68,9 @@ export default function Home() {
           <ScanlineEffect />
         </>
       )}
+
+      {/* Mini Player */}
+      <MiniPlayer />
     </div>
   )
 }

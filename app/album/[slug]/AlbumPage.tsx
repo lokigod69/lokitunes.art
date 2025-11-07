@@ -4,6 +4,7 @@ import { useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { SongRow } from '@/components/SongRow'
+import { GlobalAudioPlayer } from '@/components/GlobalAudioPlayer'
 import { VersionOrbField } from '@/components/VersionOrbField'
 import type { ExtendedVersion } from '@/components/VersionOrb'
 import type { AlbumWithSongs } from '@/lib/supabase'
@@ -126,6 +127,9 @@ export function AlbumPage({ album }: AlbumPageProps) {
           )}
         </div>
       </div>
+
+      {/* Global Audio Player */}
+      <GlobalAudioPlayer />
     </div>
   )
 }
