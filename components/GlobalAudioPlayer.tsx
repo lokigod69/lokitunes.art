@@ -93,17 +93,21 @@ export function GlobalAudioPlayer() {
     }
   }, [volume])
   
-  if (!currentVersion) return null
-  
   return (
-    <div 
-      className="fixed bottom-0 left-0 right-0 bg-void/95 backdrop-blur-lg border-t z-50"
-      style={{ borderColor: `${accentColor}30` }}
-    >
+    <>
+      {/* Audio element ALWAYS rendered - event listeners need it in DOM */}
       <audio 
         ref={audioRef}
         src={currentVersion?.audio_url || ''}
+        style={{ display: 'none' }}
       />
+      
+      {/* Player UI only shows when there's a track */}
+      {currentVersion && (
+        <div 
+          className="fixed bottom-0 left-0 right-0 bg-void/95 backdrop-blur-lg border-t z-50"
+          style={{ borderColor: `${accentColor}30` }}
+        >
       
       <div className="max-w-screen-2xl mx-auto px-3 sm:px-4 py-2 sm:py-3">
         {/* Main Controls Row */}
@@ -232,6 +236,8 @@ export function GlobalAudioPlayer() {
           </div>
         </div>
       </div>
-    </div>
+        </div>
+      )}
+    </>
   )
 }
