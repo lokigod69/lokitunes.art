@@ -55,7 +55,7 @@ export function GlobalAudioPlayer() {
     audioRef.current.load()
   }, [currentVersion?.id])
   
-  // Control playback
+  // Control playback - triggers when isPlaying changes OR when track changes
   useEffect(() => {
     if (!audioRef.current) return
     
@@ -64,7 +64,7 @@ export function GlobalAudioPlayer() {
     } else {
       audioRef.current.pause()
     }
-  }, [isPlaying])
+  }, [isPlaying, currentVersion?.id])
   
   // Set up audio event listeners
   useEffect(() => {
@@ -136,7 +136,7 @@ export function GlobalAudioPlayer() {
           <div className="flex items-center gap-1 sm:gap-2">
             <button 
               onClick={previous} 
-              className="p-2 hover:bg-voltage/20 rounded-full transition-colors"
+              className="p-2 hover:bg-voltage/20 rounded-full transition-colors cursor-pointer"
               aria-label="Previous"
             >
               <SkipBack className="w-4 h-4 sm:w-5 sm:h-5 text-bone" />
@@ -144,7 +144,7 @@ export function GlobalAudioPlayer() {
             
             <button 
               onClick={() => isPlaying ? pause() : play(currentVersion, currentVersion.song_id)}
-              className="p-2 sm:p-3 rounded-full transition-all hover:scale-105"
+              className="p-2 sm:p-3 rounded-full transition-all hover:scale-105 cursor-pointer"
               style={{ backgroundColor: accentColor }}
               aria-label={isPlaying ? 'Pause' : 'Play'}
             >
@@ -157,7 +157,7 @@ export function GlobalAudioPlayer() {
             
             <button 
               onClick={next} 
-              className="p-2 hover:bg-voltage/20 rounded-full transition-colors"
+              className="p-2 hover:bg-voltage/20 rounded-full transition-colors cursor-pointer"
               aria-label="Next"
             >
               <SkipForward className="w-4 h-4 sm:w-5 sm:h-5 text-bone" />
