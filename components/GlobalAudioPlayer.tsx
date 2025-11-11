@@ -110,10 +110,10 @@ export function GlobalAudioPlayer() {
         >
       
       <div className="max-w-screen-2xl mx-auto px-3 sm:px-4 py-2 sm:py-3">
-        {/* Main Controls Row */}
-        <div className="flex items-center gap-2 sm:gap-4">
-          {/* Track Info */}
-          <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+        {/* Main Controls Row - Three Column Layout */}
+        <div className="flex items-center justify-between w-full gap-4">
+          {/* LEFT: Track Info & Time */}
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
             {currentVersion.cover_url && (
               <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded overflow-hidden flex-shrink-0 bg-void">
                 <Image
@@ -132,8 +132,8 @@ export function GlobalAudioPlayer() {
             </div>
           </div>
           
-          {/* Playback Controls */}
-          <div className="flex items-center gap-1 sm:gap-2">
+          {/* CENTER: Playback Controls */}
+          <div className="flex items-center justify-center gap-1 sm:gap-2 flex-shrink-0">
             <button 
               onClick={previous} 
               className="p-2 hover:bg-voltage/20 rounded-full transition-colors cursor-pointer"
@@ -164,8 +164,8 @@ export function GlobalAudioPlayer() {
             </button>
           </div>
           
-          {/* Volume - Desktop Only */}
-          <div className="hidden md:flex items-center gap-2 w-24 lg:w-32">
+          {/* RIGHT: Volume - Desktop Only */}
+          <div className="hidden md:flex items-center justify-end gap-2 min-w-[120px] flex-1">
             <Volume2 className="w-4 h-4 text-bone/70" />
             <div className="relative flex-1 h-1 bg-bone/10 rounded-full">
               <div 

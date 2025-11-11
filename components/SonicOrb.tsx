@@ -106,10 +106,13 @@ export function SonicOrb({ album, position, radius, onHover, onNavigate }: OrbPr
     <RigidBody
       ref={ref}
       colliders="ball"
-      restitution={0.7}
-      friction={0.2}
-      linearDamping={0.2}
-      angularDamping={0.3}
+      restitution={0.8}         // Match BubbleOrb/VersionOrb (was 0.7)
+      friction={0.1}            // Match BubbleOrb/VersionOrb (was 0.2)
+      linearDamping={0.05}      // Match BubbleOrb/VersionOrb (was 0.2) ⭐ KEY FIX
+      angularDamping={0.5}      // Match BubbleOrb/VersionOrb (was 0.3)
+      gravityScale={0}          // Add missing property
+      mass={radius * 0.5}       // Add missing property - LIGHTER = more responsive
+      ccd={true}                // Add continuous collision detection
       position={position}
     >
       <group>

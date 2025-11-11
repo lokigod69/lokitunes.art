@@ -17,9 +17,18 @@ export function MouseAttraction({ albumCount }: { albumCount?: number }) {
   const [attractorPos, setAttractorPos] = useState<[number, number, number]>([0, 0, 0])
   
   // Dynamic attraction settings based on album size
-  // Large albums (>15 orbs) need stronger, longer-range attraction
-  const attractorRange = (albumCount && albumCount > 15) ? 30 : 20
-  const attractorStrength = (albumCount && albumCount > 15) ? 150 : 100
+  // AGGRESSIVE scaling for large albums - more orbs need MUCH stronger pull
+  const attractorRange = !albumCount ? 20 :
+                         albumCount > 20 ? 50 :   // Very large (25+ orbs)
+                         albumCount > 15 ? 40 :   // Large (16-20 orbs)
+                         albumCount > 10 ? 30 :   // Medium (11-15 orbs)
+                         20                       // Small (≤10 orbs)
+  
+  const attractorStrength = !albumCount ? 100 :
+                            albumCount > 20 ? 300 :  // Very large
+                            albumCount > 15 ? 200 :  // Large
+                            albumCount > 10 ? 150 :  // Medium
+                            100                      // Small
   
   useFrame(() => {
     // Convert 2D mouse pointer to 3D world position
@@ -29,12 +38,13 @@ export function MouseAttraction({ albumCount }: { albumCount?: number }) {
     const distance = 15
     const targetPos = camera.position.clone().add(dir.multiplyScalar(distance))
     
-    // DEBUG: Log attractor position
+    // DEBUG: Log attractor position and settings
     if (Math.random() < 0.016) {  // ~1 per second at 60fps
       console.log('🎯 Attractor position:', targetPos.x.toFixed(2), targetPos.y.toFixed(2), targetPos.z.toFixed(2))
       console.log('🖱️ Mouse pointer:', pointer.x.toFixed(2), pointer.y.toFixed(2))
-      if (albumCount && albumCount > 15) {
-        console.log('📊 Large album detected:', albumCount, 'orbs - using enhanced attraction')
+      if (albumCount) {
+        const level = albumCount > 20 ? 'VERY LARGE' : albumCount > 15 ? 'LARGE' : albumCount > 10 ? 'MEDIUM' : 'SMALL'
+        console.log(`📊 Album: ${albumCount} orbs (${level}) → range=${attractorRange}, strength=${attractorStrength}`)
       }
     }
     
