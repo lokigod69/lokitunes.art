@@ -2,7 +2,7 @@
 
 import { Attractor } from '@react-three/rapier-addons'
 import { useThree, useFrame } from '@react-three/fiber'
-import { useState, memo } from 'react'
+import { useState, memo, useEffect } from 'react'
 import * as THREE from 'three'
 
 /**
@@ -16,6 +16,12 @@ import * as THREE from 'three'
 function MouseAttractionComponent({ albumCount }: { albumCount?: number }) {
   const { camera, pointer } = useThree()
   const [attractorPos, setAttractorPos] = useState<[number, number, number]>([0, 0, 0])
+  
+  // 🎯🎯🎯 DEBUG: Log mount/unmount
+  useEffect(() => {
+    console.log('🎯🎯🎯 MouseAttraction MOUNTED for album with', albumCount, 'orbs')
+    return () => console.log('🎯🎯🎯 MouseAttraction UNMOUNTED')
+  }, [albumCount])
   
   // Dynamic attraction settings based on album size
   // AGGRESSIVE scaling for large albums - more orbs need MUCH stronger pull
@@ -40,6 +46,10 @@ function MouseAttractionComponent({ albumCount }: { albumCount?: number }) {
     const targetPos = camera.position.clone().add(dir.multiplyScalar(distance))
     
     setAttractorPos([targetPos.x, targetPos.y, targetPos.z])
+    
+    // 🎯 DEBUG: Log mouse and attractor position
+    console.log('🎯 FRAME - Mouse:', pointer.x.toFixed(2), pointer.y.toFixed(2))
+    console.log('🎯 FRAME - Attractor:', attractorPos)
   })
   
   return (
