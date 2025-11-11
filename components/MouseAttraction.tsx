@@ -17,12 +17,6 @@ function MouseAttractionComponent({ albumCount }: { albumCount?: number }) {
   const { camera, pointer } = useThree()
   const [attractorPos, setAttractorPos] = useState<[number, number, number]>([0, 0, 0])
   
-  // 🎯🎯🎯 DEBUG: Log mount/unmount
-  useEffect(() => {
-    console.log('🎯🎯🎯 MouseAttraction MOUNTED for album with', albumCount, 'orbs')
-    return () => console.log('🎯🎯🎯 MouseAttraction UNMOUNTED')
-  }, [albumCount])
-  
   // Dynamic attraction settings based on album size
   // AGGRESSIVE scaling for large albums - more orbs need MUCH stronger pull
   const attractorRange = !albumCount ? 20 :
@@ -37,6 +31,18 @@ function MouseAttractionComponent({ albumCount }: { albumCount?: number }) {
                             albumCount > 10 ? 150 :  // Medium
                             100                      // Small
   
+  // 🎯🎯🎯 DEBUG: Log mount/unmount and settings
+  useEffect(() => {
+    console.log('🎯🎯🎯 MouseAttraction MOUNTED for album with', albumCount, 'orbs')
+    console.log('🎯🎯🎯 Physics Settings:', {
+      albumCount,
+      attractorRange,
+      attractorStrength,
+      comparison: albumCount === 10 ? 'PLATYPUS (10 orbs)' : albumCount === 7 ? 'DANCING CREATURES (7 orbs)' : `${albumCount} orbs`
+    })
+    return () => console.log('🎯🎯🎯 MouseAttraction UNMOUNTED')
+  }, [albumCount, attractorRange, attractorStrength])
+  
   useFrame(() => {
     // Convert 2D mouse pointer to 3D world position
     const vector = new THREE.Vector3(pointer.x, pointer.y, 0.5)
@@ -47,9 +53,19 @@ function MouseAttractionComponent({ albumCount }: { albumCount?: number }) {
     
     setAttractorPos([targetPos.x, targetPos.y, targetPos.z])
     
-    // 🎯 DEBUG: Log mouse and attractor position
+    // 🎯 DEBUG: Log comprehensive physics settings
     console.log('🎯 FRAME - Mouse:', pointer.x.toFixed(2), pointer.y.toFixed(2))
-    console.log('🎯 FRAME - Attractor:', attractorPos)
+    console.log('🎯 FRAME - Attractor Position:', {
+      x: targetPos.x.toFixed(2),
+      y: targetPos.y.toFixed(2),
+      z: targetPos.z.toFixed(2)
+    })
+    console.log('🎯 FRAME - Physics Settings:', {
+      albumCount,
+      attractorRange,
+      attractorStrength,
+      type: 'linear'
+    })
   })
   
   return (
