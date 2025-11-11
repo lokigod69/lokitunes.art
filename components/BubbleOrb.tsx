@@ -81,7 +81,9 @@ export function BubbleOrb({
   const isMobile = deviceTier === 'low' || deviceTier === 'medium'
 
   // Use album's dominant color for glow, fallback to voltage blue
-  const glowColor = album.palette?.dominant || album.palette?.accent1 || '#4F9EFF'
+  // STRIP ALPHA: THREE.js only accepts 6-char hex (#RRGGBB), not 8-char (#RRGGBBAA)
+  const rawGlowColor = album.palette?.dominant || album.palette?.accent1 || '#4F9EFF'
+  const glowColor = rawGlowColor.slice(0, 7) // Strip alpha if present
   const normalizedIntensity = normalizeEmissiveIntensity(glowColor)
   
   // Mobile gets brighter glow for better visibility

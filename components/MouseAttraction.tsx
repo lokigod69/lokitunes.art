@@ -39,16 +39,6 @@ function MouseAttractionComponent({ albumCount }: { albumCount?: number }) {
     const distance = 15
     const targetPos = camera.position.clone().add(dir.multiplyScalar(distance))
     
-    // DEBUG: Log attractor position and settings
-    if (Math.random() < 0.016) {  // ~1 per second at 60fps
-      console.log('🎯 Attractor position:', targetPos.x.toFixed(2), targetPos.y.toFixed(2), targetPos.z.toFixed(2))
-      console.log('🖱️ Mouse pointer:', pointer.x.toFixed(2), pointer.y.toFixed(2))
-      if (albumCount) {
-        const level = albumCount > 20 ? 'VERY LARGE' : albumCount > 15 ? 'LARGE' : albumCount > 10 ? 'MEDIUM' : 'SMALL'
-        console.log(`📊 Album: ${albumCount} orbs (${level}) → range=${attractorRange}, strength=${attractorStrength}`)
-      }
-    }
-    
     setAttractorPos([targetPos.x, targetPos.y, targetPos.z])
   })
   
