@@ -2,7 +2,7 @@
 
 import { Attractor } from '@react-three/rapier-addons'
 import { useThree, useFrame } from '@react-three/fiber'
-import { useState } from 'react'
+import { useState, memo } from 'react'
 import * as THREE from 'three'
 
 /**
@@ -12,13 +12,10 @@ import * as THREE from 'three'
  * 
  * @param albumCount - Number of orbs/versions (used to scale attraction for large albums)
  */
-export function MouseAttraction({ albumCount }: { albumCount?: number }) {
+// Wrap in React.memo to prevent infinite re-renders!
+function MouseAttractionComponent({ albumCount }: { albumCount?: number }) {
   const { camera, pointer } = useThree()
   const [attractorPos, setAttractorPos] = useState<[number, number, number]>([0, 0, 0])
-  
-  // 🎯 DEBUG: Component start
-  console.log('🎯 [MouseAttraction] COMPONENT START')
-  console.log('🎯 [MouseAttraction] Album count:', albumCount)
   
   // Dynamic attraction settings based on album size
   // AGGRESSIVE scaling for large albums - more orbs need MUCH stronger pull
@@ -33,10 +30,6 @@ export function MouseAttraction({ albumCount }: { albumCount?: number }) {
                             albumCount > 15 ? 200 :  // Large
                             albumCount > 10 ? 150 :  // Medium
                             100                      // Small
-  
-  // 🎯 DEBUG: Settings
-  console.log('🎯 [MouseAttraction] SETTINGS')
-  console.log(`🎯 [MouseAttraction] Range: ${attractorRange}, Strength: ${attractorStrength}`)
   
   useFrame(() => {
     // Convert 2D mouse pointer to 3D world position
@@ -68,3 +61,6 @@ export function MouseAttraction({ albumCount }: { albumCount?: number }) {
     />
   )
 }
+
+// Export memoized version to prevent re-renders
+export const MouseAttraction = memo(MouseAttractionComponent)

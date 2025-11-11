@@ -70,8 +70,8 @@ function OrbScene({
         args={[
           100,                                      // Size
           10,                                       // Divisions (fewer = cleaner)
-          albumPalette?.accent1 || '#4F9EFF',      // Center lines (album accent color)
-          (albumPalette?.dominant || '#090B0D') + '30'  // Grid lines (subtle)
+          (albumPalette?.accent1 || '#4F9EFF').slice(0, 7),      // Center lines (strip alpha if present)
+          ((albumPalette?.dominant || '#090B0D').slice(0, 7)) + '30'  // Grid lines (strip alpha, add opacity)
         ]}
         position={[0, -15, 0]} 
       />
@@ -88,12 +88,6 @@ export function VersionOrbField({
   const [dpr, setDpr] = useState(1.5)
   
   const quality = getQualitySettings(deviceTier)
-  
-  // 🎨 DEBUG: Component render start
-  console.log('🎨 [VersionOrbField] RENDER START')
-  console.log('🎨 [VersionOrbField] Versions count:', versions.length)
-  console.log('🎨 [VersionOrbField] Album cover URL:', albumCoverUrl)
-  console.log('🎨 [VersionOrbField] Album palette:', albumPalette)
 
   useEffect(() => {
     const tier = detectDeviceTier()
