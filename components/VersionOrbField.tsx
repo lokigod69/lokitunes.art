@@ -70,8 +70,8 @@ function OrbScene({
         args={[
           100,                                      // Size
           10,                                       // Divisions (fewer = cleaner)
-          albumPalette?.accent1 || '#4F9EFF',      // Center lines (album accent color)
-          (albumPalette?.dominant || '#090B0D') + '30'  // Grid lines (subtle)
+          (albumPalette?.accent1 || '#4F9EFF').slice(0, 7),      // Center lines (FIXED: ensure 7 chars)
+          ((albumPalette?.dominant || '#090B0D').slice(0, 7)) + '30'  // Grid lines (FIXED: ensure 7 chars before opacity)
         ]}
         position={[0, -15, 0]} 
       />
