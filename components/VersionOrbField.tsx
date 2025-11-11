@@ -88,6 +88,12 @@ export function VersionOrbField({
   const [dpr, setDpr] = useState(1.5)
   
   const quality = getQualitySettings(deviceTier)
+  
+  // 🎨 DEBUG: Component render start
+  console.log('🎨 [VersionOrbField] RENDER START')
+  console.log('🎨 [VersionOrbField] Versions count:', versions.length)
+  console.log('🎨 [VersionOrbField] Album cover URL:', albumCoverUrl)
+  console.log('🎨 [VersionOrbField] Album palette:', albumPalette)
 
   useEffect(() => {
     const tier = detectDeviceTier()

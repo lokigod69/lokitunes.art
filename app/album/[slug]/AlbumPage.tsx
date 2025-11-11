@@ -41,9 +41,21 @@ export function AlbumPage({ album }: AlbumPageProps) {
         }))
       )
     
-    // Debug logging - verify orb count
+    // Debug logging - verify orb count and data integrity
     console.log(`🎵 Album "${album.title}": ${versions.length} versions found`)
-    versions.forEach((v, i) => console.log(`  Version ${i + 1}: ${v.label}`))
+    versions.forEach((v, i) => {
+      console.log(`  Version ${i + 1}: ${v.label}`)
+      console.log(`    - ID: ${v.id}`)
+      console.log(`    - Audio URL: ${v.audio_url}`)
+      console.log(`    - Song ID: ${v.songId}`)
+      console.log(`    - Track No: ${v.trackNo}`)
+    })
+    
+    // Check for any missing or invalid data
+    const invalidVersions = versions.filter(v => !v.id || !v.label || !v.audio_url)
+    if (invalidVersions.length > 0) {
+      console.error('❌ Invalid versions found:', invalidVersions)
+    }
     
     return versions
   }, [album])

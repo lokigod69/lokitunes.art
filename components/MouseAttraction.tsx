@@ -16,6 +16,10 @@ export function MouseAttraction({ albumCount }: { albumCount?: number }) {
   const { camera, pointer } = useThree()
   const [attractorPos, setAttractorPos] = useState<[number, number, number]>([0, 0, 0])
   
+  // 🎯 DEBUG: Component start
+  console.log('🎯 [MouseAttraction] COMPONENT START')
+  console.log('🎯 [MouseAttraction] Album count:', albumCount)
+  
   // Dynamic attraction settings based on album size
   // AGGRESSIVE scaling for large albums - more orbs need MUCH stronger pull
   const attractorRange = !albumCount ? 20 :
@@ -29,6 +33,10 @@ export function MouseAttraction({ albumCount }: { albumCount?: number }) {
                             albumCount > 15 ? 200 :  // Large
                             albumCount > 10 ? 150 :  // Medium
                             100                      // Small
+  
+  // 🎯 DEBUG: Settings
+  console.log('🎯 [MouseAttraction] SETTINGS')
+  console.log(`🎯 [MouseAttraction] Range: ${attractorRange}, Strength: ${attractorStrength}`)
   
   useFrame(() => {
     // Convert 2D mouse pointer to 3D world position

@@ -165,26 +165,23 @@ export function GlobalAudioPlayer() {
           </div>
           
           {/* RIGHT: Volume - Desktop Only */}
-          <div className="hidden md:flex items-center justify-end gap-2 min-w-[120px] flex-1">
+          <div className="hidden md:flex items-center gap-2 min-w-[120px] justify-end">
             <Volume2 className="w-4 h-4 text-bone/70" />
-            <div className="relative flex-1 h-1 bg-bone/10 rounded-full">
-              <div 
-                className="absolute h-full rounded-full transition-all"
-                style={{ 
-                  width: `${volume * 100}%`,
-                  backgroundColor: accentColor
-                }}
-              />
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.01"
-                value={volume}
-                onChange={(e) => setVolume(parseFloat(e.target.value))}
-                className="absolute inset-0 w-full opacity-0 cursor-pointer"
-              />
-            </div>
+            <input 
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              value={volume}
+              onChange={(e) => setVolume(parseFloat(e.target.value))}
+              className="w-24 accent-voltage cursor-pointer 
+                         [&::-webkit-slider-thumb]:appearance-none 
+                         [&::-webkit-slider-thumb]:w-3.5 
+                         [&::-webkit-slider-thumb]:h-3.5 
+                         [&::-webkit-slider-thumb]:rounded-full 
+                         [&::-webkit-slider-thumb]:bg-voltage
+                         [&::-webkit-slider-thumb]:cursor-pointer"
+            />
           </div>
         </div>
         
