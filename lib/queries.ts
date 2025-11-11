@@ -8,6 +8,8 @@ import { getSongCoverUrl } from './supabase-images'
 function cleanPalette(palette: any): any {
   if (!palette || typeof palette !== 'object') return palette
   
+  console.log('🎨 CLEANING PALETTE - BEFORE:', JSON.stringify(palette, null, 2))
+  
   const cleaned: any = {}
   for (const key in palette) {
     const color = palette[key]
@@ -16,6 +18,9 @@ function cleanPalette(palette: any): any {
       ? color.slice(0, 7) 
       : color
   }
+  
+  console.log('🎨 CLEANING PALETTE - AFTER:', JSON.stringify(cleaned, null, 2))
+  
   return cleaned
 }
 
