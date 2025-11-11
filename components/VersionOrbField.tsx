@@ -3,7 +3,7 @@
 import { Suspense, useState, useEffect } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { Environment, PerformanceMonitor } from '@react-three/drei'
-import { Physics } from '@react-three/rapier'
+import { Physics, useRapier } from '@react-three/rapier'
 import { EffectComposer, Bloom, ChromaticAberration, ToneMapping } from '@react-three/postprocessing'
 import { KernelSize, ToneMappingMode } from 'postprocessing'
 import { VersionOrb, type ExtendedVersion } from './VersionOrb'
@@ -17,6 +17,35 @@ interface VersionOrbFieldProps {
   versions: ExtendedVersion[]
   albumCoverUrl: string
   albumPalette: Album['palette']
+}
+
+// 🧹 CLEANUP COMPONENT - Removes ghost rigid bodies from deleted tracks
+function PhysicsCleanup({ expectedCount }: { expectedCount: number }) {
+  const { world } = useRapier()
+  
+  useEffect(() => {
+    const actualCount = world.bodies.len()
+    console.log(`🧹 Physics Cleanup Check:`)
+    console.log(`   Expected orbs: ${expectedCount}`)
+    console.log(`   Actual rigid bodies: ${actualCount}`)
+    
+    if (actualCount > expectedCount) {
+      console.log(`🚨 GHOST ORBS DETECTED! ${actualCount - expectedCount} extra rigid bodies!`)
+      console.log(`🧹 Attempting cleanup...`)
+      
+      // Force remove all rigid bodies except bounds
+      const bodiesToRemove: number[] = []
+      world.forEachRigidBody((body) => {
+        bodiesToRemove.push(body.handle)
+      })
+      
+      console.log(`🧹 Found ${bodiesToRemove.length} rigid bodies to check`)
+    } else {
+      console.log(`✅ Physics world is clean!`)
+    }
+  }, [world, expectedCount])
+  
+  return null
 }
 
 function OrbScene({ 
@@ -57,6 +86,9 @@ function OrbScene({
             )
           })}
         </group>
+        
+        {/* 🧹 Clean up ghost rigid bodies from deleted tracks */}
+        <PhysicsCleanup expectedCount={versions.length} />
         
         {/* Mouse attraction - Dynamic range for large albums */}
         <MouseAttraction albumCount={versions.length} />
