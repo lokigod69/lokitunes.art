@@ -19,30 +19,29 @@ interface VersionOrbFieldProps {
   albumPalette: Album['palette']
 }
 
-// 🧹 CLEANUP COMPONENT - Removes ghost rigid bodies from deleted tracks
+// 🧹 VERIFICATION COMPONENT - Confirms physics world is clean (no ghost orbs)
 function PhysicsCleanup({ expectedCount }: { expectedCount: number }) {
   const { world } = useRapier()
   
   useEffect(() => {
-    const actualCount = world.bodies.len()
-    console.log(`🧹 Physics Cleanup Check:`)
-    console.log(`   Expected orbs: ${expectedCount}`)
-    console.log(`   Actual rigid bodies: ${actualCount}`)
+    // Delay check to ensure all orbs have mounted
+    const timer = setTimeout(() => {
+      const actualCount = world.bodies.len()
+      console.log(`🧹 Physics World Health Check:`)
+      console.log(`   Expected: ${expectedCount} orbs`)
+      console.log(`   Actual: ${actualCount} rigid bodies`)
+      
+      if (actualCount === expectedCount) {
+        console.log(`✅ PERFECT! Physics world is clean - no ghost orbs!`)
+      } else if (actualCount > expectedCount) {
+        console.log(`🚨 WARNING: ${actualCount - expectedCount} extra rigid bodies detected!`)
+        console.log(`   This suggests ghost orbs still exist - Physics key may not be working`)
+      } else {
+        console.log(`⚠️ FEWER bodies than expected - orbs may still be mounting`)
+      }
+    }, 1000) // Wait 1 second for orbs to mount
     
-    if (actualCount > expectedCount) {
-      console.log(`🚨 GHOST ORBS DETECTED! ${actualCount - expectedCount} extra rigid bodies!`)
-      console.log(`🧹 Attempting cleanup...`)
-      
-      // Force remove all rigid bodies except bounds
-      const bodiesToRemove: number[] = []
-      world.forEachRigidBody((body) => {
-        bodiesToRemove.push(body.handle)
-      })
-      
-      console.log(`🧹 Found ${bodiesToRemove.length} rigid bodies to check`)
-    } else {
-      console.log(`✅ Physics world is clean!`)
-    }
+    return () => clearTimeout(timer)
   }, [world, expectedCount])
   
   return null
@@ -64,10 +63,15 @@ function OrbScene({
   // Calculate dynamic layout based on version count
   const { positions, radius } = calculateOrbLayout(versions.length)
   
+  // 🧹 NUCLEAR GHOST FIX: Force Physics world to remount when versions change
+  // This clears ALL rigid bodies and prevents ghost orbs from deleted tracks
+  const physicsKey = versions.map(v => v.id).sort().join('-')
+  
   console.log(`🎵 Rendering ${versions.length} version orbs with radius ${radius}`)
+  console.log(`🧹 Physics World Key: ${physicsKey.slice(0, 30)}... (forces remount on version changes)`)
   
   return (
-    <Physics gravity={[0, 0, 0]}>
+    <Physics key={physicsKey} gravity={[0, 0, 0]}>
       <Suspense fallback={null}>
         <group>
           {versions.map((version, index) => {

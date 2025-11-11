@@ -22,11 +22,12 @@ function MouseAttractionComponent({ albumCount }: { albumCount?: number }) {
   
   // Dynamic attraction settings based on album size
   // AGGRESSIVE scaling for large albums - more orbs need MUCH stronger pull
-  const attractorRange = !albumCount ? 20 :
-                         albumCount > 20 ? 50 :   // Very large (25+ orbs)
-                         albumCount > 15 ? 40 :   // Large (16-20 orbs)
-                         albumCount > 10 ? 30 :   // Medium (11-15 orbs)
-                         20                       // Small (≤10 orbs)
+  // 🚨 INCREASED BASE RANGE: Platypus orbs are 26+ units away, old range of 20 was too small!
+  const attractorRange = !albumCount ? 35 :
+                         albumCount > 20 ? 60 :   // Very large (25+ orbs)
+                         albumCount > 15 ? 50 :   // Large (16-20 orbs)
+                         albumCount > 10 ? 40 :   // Medium (11-15 orbs)
+                         35                       // Small (≤10 orbs) - INCREASED from 20 to 35!
   
   const attractorStrength = !albumCount ? 100 :
                             albumCount > 20 ? 300 :  // Very large
