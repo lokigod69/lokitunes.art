@@ -17,26 +17,25 @@ function MouseAttractionComponent({ albumCount }: { albumCount?: number }) {
   const { camera, pointer } = useThree()
   const [attractorPos, setAttractorPos] = useState<[number, number, number]>([0, 0, 0])
   
-  // Dynamic attraction settings based on album size
-  // AGGRESSIVE scaling for large albums - more orbs need MUCH stronger pull
-  const attractorRange = !albumCount ? 40 :
-                         albumCount > 20 ? 80 :   // Very large (25+ orbs) - BIGGER RANGE
-                         albumCount > 15 ? 70 :   // Large (16-20 orbs) - BIGGER RANGE
-                         albumCount > 10 ? 60 :   // Medium (11-15 orbs) - BIGGER RANGE
-                         40                       // Small (≤10 orbs) - BIGGER RANGE
-  
-  const attractorStrength = !albumCount ? 300 :
-                            albumCount > 20 ? 1000 :  // Very large - MUCH STRONGER
-                            albumCount > 15 ? 800 :   // Large - MUCH STRONGER
-                            albumCount > 10 ? 600 :   // Medium - MUCH STRONGER
-                            300                       // Small - MUCH STRONGER
-  
-  // 🎯🎯🎯 DEBUG: Log mount/unmount and settings
+  // 🎯🎯🎯 DEBUG: Log mount/unmount
   useEffect(() => {
     console.log('🎯🎯🎯 MouseAttraction MOUNTED for album with', albumCount, 'orbs')
-    console.log('🎯 Settings: range=', attractorRange, 'strength=', attractorStrength)
     return () => console.log('🎯🎯🎯 MouseAttraction UNMOUNTED')
-  }, [albumCount, attractorRange, attractorStrength])
+  }, [albumCount])
+  
+  // Dynamic attraction settings based on album size
+  // AGGRESSIVE scaling for large albums - more orbs need MUCH stronger pull
+  const attractorRange = !albumCount ? 20 :
+                         albumCount > 20 ? 50 :   // Very large (25+ orbs)
+                         albumCount > 15 ? 40 :   // Large (16-20 orbs)
+                         albumCount > 10 ? 30 :   // Medium (11-15 orbs)
+                         20                       // Small (≤10 orbs)
+  
+  const attractorStrength = !albumCount ? 100 :
+                            albumCount > 20 ? 300 :  // Very large
+                            albumCount > 15 ? 200 :  // Large
+                            albumCount > 10 ? 150 :  // Medium
+                            100                      // Small
   
   useFrame(() => {
     // Convert 2D mouse pointer to 3D world position
