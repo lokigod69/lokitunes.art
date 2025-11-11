@@ -100,9 +100,8 @@ export function VersionOrb({
   const isMobile = deviceTier === 'low' || deviceTier === 'medium'
 
   // Use album's dominant color for glow, fallback to voltage blue
-  // STRIP ALPHA: THREE.js only accepts 6-char hex (#RRGGBB), not 8-char (#RRGGBBAA)
-  const rawGlowColor = albumPalette?.dominant || albumPalette?.accent1 || '#4F9EFF'
-  const glowColor = rawGlowColor.slice(0, 7) // Strip alpha if present
+  // Palette colors are now cleaned at the source (queries.ts)
+  const glowColor = albumPalette?.dominant || albumPalette?.accent1 || '#4F9EFF'
   const normalizedIntensity = normalizeEmissiveIntensity(glowColor)
   
   // Mobile gets brighter glow for better visibility

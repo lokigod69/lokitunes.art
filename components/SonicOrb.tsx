@@ -55,9 +55,8 @@ export function SonicOrb({ album, position, radius, onHover, onNavigate }: OrbPr
 
   const seed = album.id.charCodeAt(0) * 137.5
 
-  // STRIP ALPHA: THREE.js only accepts 6-char hex (#RRGGBB), not 8-char (#RRGGBBAA)
-  const rawAccentColor = album.palette?.accent1 || '#4F9EFF'
-  const accentColor = rawAccentColor.slice(0, 7) // Strip alpha if present
+  // Palette colors are now cleaned at the source (queries.ts)
+  const accentColor = album.palette?.accent1 || '#4F9EFF'
 
   useFrame((state) => {
     if (!ref.current) return

@@ -2,6 +2,24 @@ import { supabase, Album, AlbumWithSongs, Song, SongVersion } from './supabase'
 import { getSongCoverUrl } from './supabase-images'
 
 /**
+ * Clean palette colors by stripping alpha channel
+ * THREE.js requires 6-char hex (#RRGGBB), not 8-char (#RRGGBBAA)
+ */
+function cleanPalette(palette: any): any {
+  if (!palette || typeof palette !== 'object') return palette
+  
+  const cleaned: any = {}
+  for (const key in palette) {
+    const color = palette[key]
+    // Strip alpha if color is a string with 8+ characters (#RRGGBBAA → #RRGGBB)
+    cleaned[key] = (typeof color === 'string' && color.length > 7) 
+      ? color.slice(0, 7) 
+      : color
+  }
+  return cleaned
+}
+
+/**
  * Fetch all public albums with version counts for orb sizing
  */
 export async function getAlbumsWithVersionCounts(): Promise<Album[]> {
@@ -40,7 +58,7 @@ export async function getAlbumsWithVersionCounts(): Promise<Album[]> {
       slug: album.slug,
       title: album.title,
       cover_url: album.cover_url,
-      palette: album.palette,
+      palette: cleanPalette(album.palette), // ✅ Strip alpha from palette colors
       is_public: album.is_public,
       created_at: album.created_at,
       total_versions,
@@ -106,6 +124,7 @@ export async function getAlbumBySlug(slug: string): Promise<AlbumWithSongs | nul
 
   return {
     ...album,
+    palette: cleanPalette(album.palette), // ✅ Strip alpha from palette colors
     songs: songsWithVersions,
   }
 }
