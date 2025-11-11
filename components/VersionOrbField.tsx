@@ -84,6 +84,15 @@ export function VersionOrbField({
   albumCoverUrl, 
   albumPalette 
 }: VersionOrbFieldProps) {
+  // 🔥 DEBUG: Log palette received by VersionOrbField
+  console.log('🔥 VersionOrbField received palette:', {
+    palette: albumPalette,
+    dominant: albumPalette?.dominant,
+    dominantLength: albumPalette?.dominant?.length,
+    accent1: albumPalette?.accent1,
+    accent1Length: albumPalette?.accent1?.length,
+  })
+
   const [deviceTier, setDeviceTier] = useState<DeviceTier>('high')
   const [dpr, setDpr] = useState(1.5)
   

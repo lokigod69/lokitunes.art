@@ -22,11 +22,23 @@ interface AlbumPageProps {
 }
 
 export function AlbumPage({ album }: AlbumPageProps) {
+  // 🔥🔥🔥 DEBUG: Log exact palette received on CLIENT
+  console.log('🔥🔥🔥 CLIENT (AlbumPage): Received album:', album.slug, {
+    palette: album.palette,
+    dominantColor: album.palette?.dominant,
+    dominantLength: album.palette?.dominant?.length,
+    accent1Color: album.palette?.accent1,
+    accent1Length: album.palette?.accent1?.length,
+  })
+
   const palette = album.palette || {
     dominant: '#090B0D',
     accent1: '#4F9EFF',
     accent2: '#FF6B4A',
   }
+  
+  // 🔥 DEBUG: Log processed palette
+  console.log('🔥 CLIENT (AlbumPage): Using palette:', palette)
 
   // Flatten all versions for orb field (each MP3 = one orb)
   const allVersions: ExtendedVersion[] = useMemo(() => {

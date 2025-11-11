@@ -102,6 +102,17 @@ export function VersionOrb({
   // Use album's dominant color for glow, fallback to voltage blue
   // Palette colors are now cleaned at the source (queries.ts)
   const glowColor = albumPalette?.dominant || albumPalette?.accent1 || '#4F9EFF'
+  
+  // 🔥🔥🔥 DEBUG: Log exact color being used for THREE.js
+  console.log('🔥🔥🔥 VersionOrb glowColor:', {
+    glowColor,
+    glowColorLength: glowColor?.length,
+    albumPalette,
+    dominantColor: albumPalette?.dominant,
+    dominantLength: albumPalette?.dominant?.length,
+    versionLabel: version.label
+  })
+  
   const normalizedIntensity = normalizeEmissiveIntensity(glowColor)
   
   // Mobile gets brighter glow for better visibility
@@ -192,7 +203,11 @@ export function VersionOrb({
         {/* Inner glow - PULSING (enhanced when playing) */}
         <pointLight
           ref={glowRef}
-          color={glowColor}
+          color={(() => {
+            const safeColor = (glowColor || '#4F9EFF').slice(0, 7)
+            console.log('🔥🔥🔥 NUCLEAR: pointLight color:', { original: glowColor, safe: safeColor, length: safeColor.length })
+            return safeColor
+          })()}
           intensity={normalizedIntensity}
           distance={radius * 5}
         />
@@ -238,7 +253,11 @@ export function VersionOrb({
             />
             <meshStandardMaterial
               map={texture}
-              emissive={glowColor}
+              emissive={(() => {
+                const safeColor = (glowColor || '#4F9EFF').slice(0, 7)
+                console.log('🔥🔥🔥 NUCLEAR: meshStandardMaterial emissive:', { original: glowColor, safe: safeColor, length: safeColor.length })
+                return safeColor
+              })()}
               emissiveIntensity={isThisPlaying ? 6.0 : (hovered ? 4.0 : 3.0)}
               metalness={0.3}
               roughness={0.1}
@@ -259,8 +278,15 @@ export function VersionOrb({
               ]} 
             />
             <meshStandardMaterial 
-              color={glowColor}
-              emissive={glowColor}
+              color={(() => {
+                const safeColor = (glowColor || '#4F9EFF').slice(0, 7)
+                console.log('🔥🔥🔥 NUCLEAR: fallback color:', { original: glowColor, safe: safeColor, length: safeColor.length })
+                return safeColor
+              })()}
+              emissive={(() => {
+                const safeColor = (glowColor || '#4F9EFF').slice(0, 7)
+                return safeColor
+              })()}
               emissiveIntensity={isThisPlaying ? 2.5 : 1.5}
               toneMapped={false}
               dispose={null}
