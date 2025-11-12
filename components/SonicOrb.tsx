@@ -15,7 +15,8 @@ interface OrbProps {
   onNavigate: (slug: string) => void
 }
 
-export function SonicOrb({ album, position, radius, onHover, onNavigate }: OrbProps) {
+export function SonicOrb({ album, position, radius, deviceTier, onHover, onNavigate }: OrbProps) {
+  console.log('🟠 SonicOrb rendering:', album.title, '| NO glass layer | roughness: 0.6 | NO emissive')
   const ref = useRef<RapierRigidBody>(null)
   const glowRef = useRef<THREE.PointLight>(null)
   const meshRef = useRef<THREE.Mesh>(null)

@@ -49,6 +49,7 @@ export function BubbleOrb({
   onHover, 
   onNavigate 
 }: BubbleOrbProps) {
+  console.log('🔵 BubbleOrb rendering:', album.title, '| roughness: 0.7 | emissive: 1.0/0.5 | pointLight: 0.2x')
   const ref = useRef<RapierRigidBody>(null)
   const glowRef = useRef<THREE.PointLight>(null)
   const innerMeshRef = useRef<THREE.Mesh>(null)
