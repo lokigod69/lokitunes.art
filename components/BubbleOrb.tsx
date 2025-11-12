@@ -154,7 +154,7 @@ export function BubbleOrb({
         <pointLight
           ref={glowRef}
           color={glowColor}
-          intensity={normalizedIntensity}
+          intensity={normalizedIntensity * 0.2}  // 🎨 OPTION C: Maximum texture visibility
           distance={radius * 5}
         />
 
@@ -190,6 +190,10 @@ export function BubbleOrb({
         </mesh>
 
         {/* Inner album art sphere - HUGE and SUPER BRIGHT */}
+        {/* ═══════════════════════════════════════════════════════════════════════════════
+            🎨 TEXTURE VISIBILITY - Option C (Maximum - 90% visibility)
+            Matches VersionOrb settings for consistency
+            ═══════════════════════════════════════════════════════════════════════════════ */}
         {texture && (
           <mesh ref={innerMeshRef} scale={0.95}>
             <sphereGeometry 
@@ -202,9 +206,9 @@ export function BubbleOrb({
             <meshStandardMaterial
               map={texture}
               emissive={glowColor}
-              emissiveIntensity={hovered ? 4.0 : 3.0}
+              emissiveIntensity={hovered ? 1.0 : 0.5}  // 🎨 OPTION C: Was 4.0/3.0
               metalness={0.3}
-              roughness={0.1}
+              roughness={0.7}  // 🎨 OPTION C: Was 0.1
               toneMapped={false}
               dispose={null}
             />
