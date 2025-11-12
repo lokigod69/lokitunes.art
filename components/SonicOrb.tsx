@@ -60,13 +60,32 @@ export function SonicOrb({ album, pushTrigger, position, radius, deviceTier, onH
   // Palette colors are now cleaned at the source (queries.ts)
   const accentColor = album.palette?.accent1 || '#4F9EFF'
 
+  // Depth interaction constants - Path B: Gentle, floaty
+  const PUSH_FORCE = -15        // Moderate push
+  const SPRING_STRENGTH = 0.3   // Gentle pull
+  const DAMPING = 0.5            // Smooth stop
+  const HOME_Z = 0               // Front position
+  const DEAD_ZONE = -2           // Don't spring until past this
+  const MAX_DEPTH = -40          // Don't push beyond this
+
   // Depth interaction: Push orb backward when triggered
   useEffect(() => {
     if (!ref.current || pushTrigger === 0) return
     
-    console.log('🟠 Pushing', album.title, 'backward')
-    ref.current.applyImpulse({ x: 0, y: 0, z: -15 }, true)
-  }, [pushTrigger, album.title])
+    const body = ref.current
+    const currentZ = body.translation().z
+    
+    // Only push if not at max depth
+    if (currentZ > MAX_DEPTH) {
+      console.log('🟠 Pushing', album.title, 'backward from Z:', currentZ.toFixed(2))
+      
+      // CRITICAL: Wake up body before applying force
+      body.wakeUp()
+      body.applyImpulse({ x: 0, y: 0, z: PUSH_FORCE }, true)
+    } else {
+      console.log('⚠️', album.title, 'already at max depth:', currentZ.toFixed(2))
+    }
+  }, [pushTrigger, album.title, PUSH_FORCE, MAX_DEPTH])
 
   useFrame((state) => {
     if (!ref.current) return
@@ -113,24 +132,29 @@ export function SonicOrb({ album, pushTrigger, position, radius, deviceTier, onH
     }
 
     // SPRING RETURN TO FRONT - Depth interaction
-    if (pos.z < 0) {  // Only if behind home position
-      const HOME_Z = 0
+    // Only activate spring if pushed past dead zone
+    if (pos.z < (HOME_Z - DEAD_ZONE)) {
       const vel = body.linvel()
+      
+      // CRITICAL: Wake up sleeping bodies!
+      body.wakeUp()
       
       // Natural variation per orb (using album ID as seed)
       const springVariation = 0.8 + (seed % 5) * 0.1  // 0.8 to 1.2
-      const SPRING_STRENGTH = 0.8 * springVariation
-      const DAMPING = 0.3
+      const adjustedSpring = SPRING_STRENGTH * springVariation
       
-      // Spring force: pulls toward home
-      const displacement = HOME_Z - pos.z
-      const springForce = displacement * SPRING_STRENGTH
+      // QUADRATIC spring: stronger pull when further away
+      const distance = Math.abs(HOME_Z - pos.z)
+      const springForce = distance * distance * adjustedSpring
       
-      // Damping force: opposes velocity (prevents oscillation)
-      const dampingForce = vel.z * DAMPING
+      // SMART DAMPING: Only damp when moving away from home
+      let dampingForce = 0
+      if (vel.z < 0) {  // Moving backward (away from home)
+        dampingForce = -vel.z * DAMPING
+      }
       
       // Combined return force
-      const returnForce = springForce - dampingForce
+      const returnForce = springForce + dampingForce
       
       body.applyImpulse({ x: 0, y: 0, z: returnForce }, true)
     }

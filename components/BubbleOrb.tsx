@@ -91,39 +91,32 @@ export function BubbleOrb({
   // Mobile gets brighter glow for better visibility
   const mobileIntensityBoost = isMobile ? 1.5 : 1.0
 
+  // Depth interaction constants - Path B: Gentle, floaty
+  const PUSH_FORCE = -15        // Moderate push
+  const SPRING_STRENGTH = 0.3   // Gentle pull (was 0.8)
+  const DAMPING = 0.5            // Smooth stop (was 0.3)
+  const HOME_Z = 0               // Front position
+  const DEAD_ZONE = -2           // Don't spring until past this
+  const MAX_DEPTH = -40          // Don't push beyond this
+
   // Depth interaction: Push orb backward when triggered
   useEffect(() => {
     if (!ref.current || pushTrigger === 0) return
     
     const body = ref.current
-    const posBefore = body.translation()
-    const velBefore = body.linvel()
+    const currentZ = body.translation().z
     
-    console.log('🟦 Pushing', album.title, 'backward')
-    console.log('  📍 Position BEFORE:', { x: posBefore.x.toFixed(2), y: posBefore.y.toFixed(2), z: posBefore.z.toFixed(2) })
-    console.log('  💨 Velocity BEFORE:', { x: velBefore.x.toFixed(2), y: velBefore.y.toFixed(2), z: velBefore.z.toFixed(2) })
-    
-    // TEST 1: Try impulse (10x stronger)
-    console.log('  ⚡ TEST 1: Applying impulse:', { x: 0, y: 0, z: -150 })
-    body.applyImpulse({ x: 0, y: 0, z: -150 }, true)
-    
-    // TEST 2: Also try direct position change
-    console.log('  🔧 TEST 2: Direct position change')
-    body.setTranslation({ 
-      x: posBefore.x, 
-      y: posBefore.y, 
-      z: posBefore.z - 10  // Move back 10 units
-    }, true)
-    
-    // Check immediately after
-    setTimeout(() => {
-      const posAfter = body.translation()
-      const velAfter = body.linvel()
-      console.log('  📍 Position AFTER:', { x: posAfter.x.toFixed(2), y: posAfter.y.toFixed(2), z: posAfter.z.toFixed(2) })
-      console.log('  💨 Velocity AFTER:', { x: velAfter.x.toFixed(2), y: velAfter.y.toFixed(2), z: velAfter.z.toFixed(2) })
-      console.log('  ✅ Z changed by:', (posAfter.z - posBefore.z).toFixed(2))
-    }, 100)
-  }, [pushTrigger, album.title])
+    // Only push if not at max depth
+    if (currentZ > MAX_DEPTH) {
+      console.log('🟦 Pushing', album.title, 'backward from Z:', currentZ.toFixed(2))
+      
+      // CRITICAL: Wake up body before applying force
+      body.wakeUp()
+      body.applyImpulse({ x: 0, y: 0, z: PUSH_FORCE }, true)
+    } else {
+      console.log('⚠️', album.title, 'already at max depth:', currentZ.toFixed(2))
+    }
+  }, [pushTrigger, album.title, PUSH_FORCE, MAX_DEPTH])
 
   useFrame((state) => {
     if (!ref.current) return
@@ -172,29 +165,29 @@ export function BubbleOrb({
     }
 
     // SPRING RETURN TO FRONT - Depth interaction
-    if (pos.z < 0) {  // Only if behind home position
-      const HOME_Z = 0
+    // Only activate spring if pushed past dead zone
+    if (pos.z < (HOME_Z - DEAD_ZONE)) {
       const vel = body.linvel()
+      
+      // CRITICAL: Wake up sleeping bodies!
+      body.wakeUp()
       
       // Natural variation per orb (using album ID as seed)
       const springVariation = 0.8 + (seed % 5) * 0.1  // 0.8 to 1.2
-      const SPRING_STRENGTH = 0.8 * springVariation
-      const DAMPING = 0.3
+      const adjustedSpring = SPRING_STRENGTH * springVariation
       
-      // Spring force: pulls toward home
-      const displacement = HOME_Z - pos.z
-      const springForce = displacement * SPRING_STRENGTH
+      // QUADRATIC spring: stronger pull when further away
+      const distance = Math.abs(HOME_Z - pos.z)
+      const springForce = distance * distance * adjustedSpring
       
-      // Damping force: opposes velocity (prevents oscillation)
-      const dampingForce = vel.z * DAMPING
+      // SMART DAMPING: Only damp when moving away from home
+      let dampingForce = 0
+      if (vel.z < 0) {  // Moving backward (away from home)
+        dampingForce = -vel.z * DAMPING
+      }
       
       // Combined return force
-      const returnForce = springForce - dampingForce
-      
-      // DEBUG: Log spring activity
-      if (Math.abs(returnForce) > 0.1) {
-        console.log('⚡ Spring returning', album.title, 'from Z:', pos.z.toFixed(2), 'force:', returnForce.toFixed(2))
-      }
+      const returnForce = springForce + dampingForce
       
       body.applyImpulse({ x: 0, y: 0, z: returnForce }, true)
     }
