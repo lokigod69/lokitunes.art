@@ -96,16 +96,44 @@ export function BubbleOrb({
   const SPRING_STRENGTH = 0.3   // Gentle pull
   const HOME_Z = 0               // Front position
 
+  // DEBUG: Check ref on mount
+  useEffect(() => {
+    if (!ref.current) return
+    const body = ref.current
+    const pos = body.translation()
+    console.log('🔍', album.title, 'ref check:', {
+      hasRef: !!ref.current,
+      refType: body.constructor.name,
+      canGetPosition: !!body.translation,
+      startZ: pos.z.toFixed(2),
+      mass: body.mass(),
+      isSleeping: body.isSleeping()
+    })
+  }, [])
+
   // Depth interaction: Push orb backward when triggered
   useEffect(() => {
     if (!ref.current || pushTrigger === 0) return
     
     const body = ref.current
+    const posBefore = body.translation()
+    const velBefore = body.linvel()
+    
     console.log('🟦 Pushing', album.title, 'backward')
+    console.log('  Before: Z=', posBefore.z.toFixed(2), 'velZ=', velBefore.z.toFixed(2))
+    console.log('  Sleeping?', body.isSleeping())
     
     // CRITICAL: Wake up body before applying force
     body.wakeUp()
     body.applyImpulse({ x: 0, y: 0, z: PUSH_FORCE }, true)
+    
+    // Check after 100ms
+    setTimeout(() => {
+      const posAfter = body.translation()
+      const velAfter = body.linvel()
+      console.log('  After: Z=', posAfter.z.toFixed(2), 'velZ=', velAfter.z.toFixed(2))
+      console.log('  Delta Z:', (posAfter.z - posBefore.z).toFixed(2))
+    }, 100)
   }, [pushTrigger, album.title, PUSH_FORCE])
 
   useFrame((state) => {

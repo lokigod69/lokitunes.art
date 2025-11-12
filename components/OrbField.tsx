@@ -193,6 +193,31 @@ export function OrbField({ albums }: OrbFieldProps) {
           <p className="text-bone/50 text-lg">No albums available</p>
         </div>
       )}
+
+      {/* DEBUG TEST BUTTON */}
+      <button
+        onClick={() => {
+          console.log('🧪 TEST BUTTON CLICKED - Attempting direct Z manipulation')
+          console.log('pushTrigger:', pushTrigger)
+          setPushTrigger(prev => prev + 1)
+        }}
+        style={{
+          position: 'fixed',
+          top: '100px',
+          left: '20px',
+          zIndex: 9999,
+          padding: '15px 20px',
+          background: '#ff0000',
+          color: 'white',
+          border: 'none',
+          borderRadius: '8px',
+          cursor: 'pointer',
+          fontWeight: 'bold',
+          fontSize: '14px'
+        }}
+      >
+        🧪 TEST PUSH (trigger={pushTrigger})
+      </button>
     </>
   )
 }
