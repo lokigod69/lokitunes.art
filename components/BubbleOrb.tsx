@@ -91,32 +91,22 @@ export function BubbleOrb({
   // Mobile gets brighter glow for better visibility
   const mobileIntensityBoost = isMobile ? 1.5 : 1.0
 
-  // Depth interaction constants - Path B: Gentle, floaty
+  // Depth interaction constants - SIMPLIFIED
   const PUSH_FORCE = -15        // Moderate push
-  const SPRING_STRENGTH = 0.3   // Gentle pull (was 0.8)
-  const DAMPING = 0.5            // Smooth stop (was 0.3)
+  const SPRING_STRENGTH = 0.3   // Gentle pull
   const HOME_Z = 0               // Front position
-  const DEAD_ZONE = -2           // Don't spring until past this
-  const MAX_DEPTH = -40          // Don't push beyond this
 
   // Depth interaction: Push orb backward when triggered
   useEffect(() => {
     if (!ref.current || pushTrigger === 0) return
     
     const body = ref.current
-    const currentZ = body.translation().z
+    console.log('🟦 Pushing', album.title, 'backward')
     
-    // Only push if not at max depth
-    if (currentZ > MAX_DEPTH) {
-      console.log('🟦 Pushing', album.title, 'backward from Z:', currentZ.toFixed(2))
-      
-      // CRITICAL: Wake up body before applying force
-      body.wakeUp()
-      body.applyImpulse({ x: 0, y: 0, z: PUSH_FORCE }, true)
-    } else {
-      console.log('⚠️', album.title, 'already at max depth:', currentZ.toFixed(2))
-    }
-  }, [pushTrigger, album.title, PUSH_FORCE, MAX_DEPTH])
+    // CRITICAL: Wake up body before applying force
+    body.wakeUp()
+    body.applyImpulse({ x: 0, y: 0, z: PUSH_FORCE }, true)
+  }, [pushTrigger, album.title, PUSH_FORCE])
 
   useFrame((state) => {
     if (!ref.current) return
@@ -165,10 +155,8 @@ export function BubbleOrb({
     }
 
     // SPRING RETURN TO FRONT - Depth interaction
-    // Only activate spring if pushed past dead zone
-    if (pos.z < (HOME_Z - DEAD_ZONE)) {
-      const vel = body.linvel()
-      
+    // Only activate if pushed back past -0.5
+    if (pos.z < -0.5) {
       // CRITICAL: Wake up sleeping bodies!
       body.wakeUp()
       
@@ -177,19 +165,10 @@ export function BubbleOrb({
       const adjustedSpring = SPRING_STRENGTH * springVariation
       
       // QUADRATIC spring: stronger pull when further away
-      const distance = Math.abs(HOME_Z - pos.z)
+      const distance = Math.abs(pos.z)
       const springForce = distance * distance * adjustedSpring
       
-      // SMART DAMPING: Only damp when moving away from home
-      let dampingForce = 0
-      if (vel.z < 0) {  // Moving backward (away from home)
-        dampingForce = -vel.z * DAMPING
-      }
-      
-      // Combined return force
-      const returnForce = springForce + dampingForce
-      
-      body.applyImpulse({ x: 0, y: 0, z: returnForce }, true)
+      body.applyImpulse({ x: 0, y: 0, z: springForce }, true)
     }
   })
 
