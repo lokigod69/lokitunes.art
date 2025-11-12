@@ -15,22 +15,22 @@ export function InvisibleBounds({ size = 25 }: InvisibleBoundsProps) {
     <>
       {/* Top wall - LOWER to account for header (keep orbs below) */}
       <RigidBody type="fixed" position={[0, 10, 0]}>
-        <CuboidCollider args={[size, 0.5, size / 2]} />
+        <CuboidCollider args={[size, 0.5, 30]} />
       </RigidBody>
 
       {/* Bottom wall */}
       <RigidBody type="fixed" position={[0, -15, 0]}>
-        <CuboidCollider args={[size, 0.5, size / 2]} />
+        <CuboidCollider args={[size, 0.5, 30]} />
       </RigidBody>
 
       {/* Left wall */}
       <RigidBody type="fixed" position={[-20, 0, 0]}>
-        <CuboidCollider args={[0.5, size, size / 2]} />
+        <CuboidCollider args={[0.5, size, 30]} />
       </RigidBody>
 
       {/* Right wall */}
       <RigidBody type="fixed" position={[20, 0, 0]}>
-        <CuboidCollider args={[0.5, size, size / 2]} />
+        <CuboidCollider args={[0.5, size, 30]} />
       </RigidBody>
       
       {/* Front wall - keep orbs from going too far forward */}
