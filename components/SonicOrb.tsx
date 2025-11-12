@@ -142,6 +142,7 @@ export function SonicOrb({ album, pushTrigger, position, radius, deviceTier, onH
   return (
     <RigidBody
       ref={ref}
+      type="dynamic"            // CRITICAL: Must be dynamic to respond to forces!
       colliders="ball"
       restitution={0.8}         // Match BubbleOrb/VersionOrb (was 0.7)
       friction={0.1}            // Match BubbleOrb/VersionOrb (was 0.2)

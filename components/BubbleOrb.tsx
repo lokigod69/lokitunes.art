@@ -204,6 +204,7 @@ export function BubbleOrb({
   return (
     <RigidBody
       ref={ref}
+      type="dynamic"            // CRITICAL: Must be dynamic to respond to forces!
       colliders="ball"
       restitution={0.8}         // More bouncy
       friction={0.1}            // Less friction = more slippery
