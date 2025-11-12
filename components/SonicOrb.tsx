@@ -8,6 +8,7 @@ import type { Album } from '@/lib/supabase'
 
 interface OrbProps {
   album: Album
+  pushTrigger?: number
   position: [number, number, number]
   radius: number
   deviceTier?: 'low' | 'medium' | 'high'
@@ -15,7 +16,7 @@ interface OrbProps {
   onNavigate: (slug: string) => void
 }
 
-export function SonicOrb({ album, position, radius, deviceTier, onHover, onNavigate }: OrbProps) {
+export function SonicOrb({ album, pushTrigger, position, radius, deviceTier, onHover, onNavigate }: OrbProps) {
   console.log('🟠 SonicOrb rendering:', album.title, '| NO glass layer | roughness: 0.6 | NO emissive')
   const ref = useRef<RapierRigidBody>(null)
   const glowRef = useRef<THREE.PointLight>(null)
@@ -59,6 +60,14 @@ export function SonicOrb({ album, position, radius, deviceTier, onHover, onNavig
   // Palette colors are now cleaned at the source (queries.ts)
   const accentColor = album.palette?.accent1 || '#4F9EFF'
 
+  // Depth interaction: Push orb backward when triggered
+  useEffect(() => {
+    if (!ref.current || pushTrigger === 0) return
+    
+    console.log('🟠 Pushing', album.title, 'backward')
+    ref.current.applyImpulse({ x: 0, y: 0, z: -15 }, true)
+  }, [pushTrigger, album.title])
+
   useFrame((state) => {
     if (!ref.current) return
 
@@ -101,6 +110,29 @@ export function SonicOrb({ album, position, radius, deviceTier, onHover, onNavig
     // Gentle rotation
     if (meshRef.current) {
       meshRef.current.rotation.y = t * 0.1
+    }
+
+    // SPRING RETURN TO FRONT - Depth interaction
+    if (pos.z < 0) {  // Only if behind home position
+      const HOME_Z = 0
+      const vel = body.linvel()
+      
+      // Natural variation per orb (using album ID as seed)
+      const springVariation = 0.8 + (seed % 5) * 0.1  // 0.8 to 1.2
+      const SPRING_STRENGTH = 0.8 * springVariation
+      const DAMPING = 0.3
+      
+      // Spring force: pulls toward home
+      const displacement = HOME_Z - pos.z
+      const springForce = displacement * SPRING_STRENGTH
+      
+      // Damping force: opposes velocity (prevents oscillation)
+      const dampingForce = vel.z * DAMPING
+      
+      // Combined return force
+      const returnForce = springForce - dampingForce
+      
+      body.applyImpulse({ x: 0, y: 0, z: returnForce }, true)
     }
   })
 

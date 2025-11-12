@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useState, useEffect } from 'react'
+import { Suspense, useState, useEffect, useCallback } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { Environment, PerformanceMonitor } from '@react-three/drei'
 import { Physics } from '@react-three/rapier'
@@ -20,8 +20,9 @@ interface OrbFieldProps {
   albums: Album[]
 }
 
-function OrbScene({ albums, onHover, onNavigate, deviceTier, useGlassBubbles }: {
+function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGlassBubbles }: {
   albums: Album[]
+  pushTrigger: number
   onHover: (title: string | null) => void
   onNavigate: (slug: string) => void
   deviceTier: DeviceTier
@@ -40,6 +41,7 @@ function OrbScene({ albums, onHover, onNavigate, deviceTier, useGlassBubbles }: 
             <OrbComponent
               key={album.id}
               album={album}
+              pushTrigger={pushTrigger}
               position={positions[index]}
               radius={radius}
               deviceTier={deviceTier}
@@ -93,6 +95,7 @@ export function OrbField({ albums }: OrbFieldProps) {
   const [deviceTier, setDeviceTier] = useState<DeviceTier>('high')
   const [dpr, setDpr] = useState(1.5)
   const [useGlassBubbles, setUseGlassBubbles] = useState(true)
+  const [pushTrigger, setPushTrigger] = useState(0)
   
   const quality = getQualitySettings(deviceTier)
 
@@ -110,10 +113,16 @@ export function OrbField({ albums }: OrbFieldProps) {
     router.push(`/album/${slug}`)
   }
 
+  const handleDepthPush = useCallback(() => {
+    console.log('🎯 Depth push triggered!')
+    setPushTrigger(prev => prev + 1)
+  }, [])
+
   return (
     <>
       {/* 3D Canvas - Fullscreen */}
       <Canvas
+        onPointerMissed={handleDepthPush}
         dpr={dpr}
         camera={{ 
           position: [0, 0, cameraDistance],
@@ -154,6 +163,7 @@ export function OrbField({ albums }: OrbFieldProps) {
         
         <OrbScene
           albums={albums}
+          pushTrigger={pushTrigger}
           onHover={setHoveredTitle}
           onNavigate={handleNavigate}
           deviceTier={deviceTier}

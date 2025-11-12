@@ -33,6 +33,7 @@ function normalizeEmissiveIntensity(colorHex: string): number {
 
 interface BubbleOrbProps {
   album: Album
+  pushTrigger?: number
   position: [number, number, number]
   radius: number
   deviceTier: DeviceTier
@@ -42,7 +43,8 @@ interface BubbleOrbProps {
 
 
 export function BubbleOrb({ 
-  album, 
+  album,
+  pushTrigger,
   position,
   radius,
   deviceTier,
@@ -89,6 +91,14 @@ export function BubbleOrb({
   // Mobile gets brighter glow for better visibility
   const mobileIntensityBoost = isMobile ? 1.5 : 1.0
 
+  // Depth interaction: Push orb backward when triggered
+  useEffect(() => {
+    if (!ref.current || pushTrigger === 0) return
+    
+    console.log('🟦 Pushing', album.title, 'backward')
+    ref.current.applyImpulse({ x: 0, y: 0, z: -15 }, true)
+  }, [pushTrigger, album.title])
+
   useFrame((state) => {
     if (!ref.current) return
 
@@ -133,6 +143,29 @@ export function BubbleOrb({
     // Gentle rotation for inner sphere
     if (innerMeshRef.current) {
       innerMeshRef.current.rotation.y = t * 0.1
+    }
+
+    // SPRING RETURN TO FRONT - Depth interaction
+    if (pos.z < 0) {  // Only if behind home position
+      const HOME_Z = 0
+      const vel = body.linvel()
+      
+      // Natural variation per orb (using album ID as seed)
+      const springVariation = 0.8 + (seed % 5) * 0.1  // 0.8 to 1.2
+      const SPRING_STRENGTH = 0.8 * springVariation
+      const DAMPING = 0.3
+      
+      // Spring force: pulls toward home
+      const displacement = HOME_Z - pos.z
+      const springForce = displacement * SPRING_STRENGTH
+      
+      // Damping force: opposes velocity (prevents oscillation)
+      const dampingForce = vel.z * DAMPING
+      
+      // Combined return force
+      const returnForce = springForce - dampingForce
+      
+      body.applyImpulse({ x: 0, y: 0, z: returnForce }, true)
     }
   })
 

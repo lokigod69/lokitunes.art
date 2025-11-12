@@ -39,7 +39,7 @@ export function InvisibleBounds({ size = 25 }: InvisibleBoundsProps) {
       </RigidBody>
       
       {/* Back wall - keep orbs from going too far back */}
-      <RigidBody type="fixed" position={[0, 0, -5]}>
+      <RigidBody type="fixed" position={[0, 0, -50]}>
         <CuboidCollider args={[size, size, 0.5]} />
       </RigidBody>
     </>
