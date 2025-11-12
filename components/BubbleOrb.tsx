@@ -95,8 +95,34 @@ export function BubbleOrb({
   useEffect(() => {
     if (!ref.current || pushTrigger === 0) return
     
+    const body = ref.current
+    const posBefore = body.translation()
+    const velBefore = body.linvel()
+    
     console.log('🟦 Pushing', album.title, 'backward')
-    ref.current.applyImpulse({ x: 0, y: 0, z: -15 }, true)
+    console.log('  📍 Position BEFORE:', { x: posBefore.x.toFixed(2), y: posBefore.y.toFixed(2), z: posBefore.z.toFixed(2) })
+    console.log('  💨 Velocity BEFORE:', { x: velBefore.x.toFixed(2), y: velBefore.y.toFixed(2), z: velBefore.z.toFixed(2) })
+    
+    // TEST 1: Try impulse (10x stronger)
+    console.log('  ⚡ TEST 1: Applying impulse:', { x: 0, y: 0, z: -150 })
+    body.applyImpulse({ x: 0, y: 0, z: -150 }, true)
+    
+    // TEST 2: Also try direct position change
+    console.log('  🔧 TEST 2: Direct position change')
+    body.setTranslation({ 
+      x: posBefore.x, 
+      y: posBefore.y, 
+      z: posBefore.z - 10  // Move back 10 units
+    }, true)
+    
+    // Check immediately after
+    setTimeout(() => {
+      const posAfter = body.translation()
+      const velAfter = body.linvel()
+      console.log('  📍 Position AFTER:', { x: posAfter.x.toFixed(2), y: posAfter.y.toFixed(2), z: posAfter.z.toFixed(2) })
+      console.log('  💨 Velocity AFTER:', { x: velAfter.x.toFixed(2), y: velAfter.y.toFixed(2), z: velAfter.z.toFixed(2) })
+      console.log('  ✅ Z changed by:', (posAfter.z - posBefore.z).toFixed(2))
+    }, 100)
   }, [pushTrigger, album.title])
 
   useFrame((state) => {
@@ -164,6 +190,11 @@ export function BubbleOrb({
       
       // Combined return force
       const returnForce = springForce - dampingForce
+      
+      // DEBUG: Log spring activity
+      if (Math.abs(returnForce) > 0.1) {
+        console.log('⚡ Spring returning', album.title, 'from Z:', pos.z.toFixed(2), 'force:', returnForce.toFixed(2))
+      }
       
       body.applyImpulse({ x: 0, y: 0, z: returnForce }, true)
     }
