@@ -194,7 +194,7 @@ export function VersionOrb({
         <pointLight
           ref={glowRef}
           color={(glowColor || '#4F9EFF').slice(0, 7)}
-          intensity={normalizedIntensity * 0.5}  // 🎨 OPTION A: Reduced from 1.0
+          intensity={normalizedIntensity * 0.2}  // 🎨 OPTION C: Maximum texture visibility
           distance={radius * 5}
         />
 
@@ -231,7 +231,7 @@ export function VersionOrb({
         {/* ═══════════════════════════════════════════════════════════════════════════════
             🎨 TEXTURE VISIBILITY OPTIONS - Easy to switch!
             ═══════════════════════════════════════════════════════════════════════════════
-            CURRENT: Option A (Subtle Enhancement - 60% visibility)
+            CURRENT: Option C (Maximum Visibility - 90% visibility)
             
             To switch options, change the 3 values marked with 🎨:
             
@@ -267,9 +267,9 @@ export function VersionOrb({
             <meshStandardMaterial
               map={texture}
               emissive={(glowColor || '#4F9EFF').slice(0, 7)}
-              emissiveIntensity={isThisPlaying ? 3.0 : (hovered ? 2.0 : 1.5)}  // 🎨 OPTION A: Was 6.0/4.0/3.0
+              emissiveIntensity={isThisPlaying ? 1.5 : (hovered ? 1.0 : 0.5)}  // 🎨 OPTION C: Maximum texture visibility
               metalness={0.3}
-              roughness={0.3}  // 🎨 OPTION A: Was 0.1
+              roughness={0.7}  // 🎨 OPTION C: More diffuse for better texture detail
               toneMapped={false}
               dispose={null}
             />
