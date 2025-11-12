@@ -177,8 +177,8 @@ export function BubbleOrb({
         >
           <sphereGeometry args={[radius, quality.sphereSegments, quality.sphereSegments]} />
           <MeshTransmissionMaterial
-            transmission={0.1}
-            thickness={0.1}
+            transmission={0.98}  // 🎨 MATCH VersionOrb: Was 0.1 (too opaque!)
+            thickness={0.08}     // 🎨 MATCH VersionOrb: Was 0.1
             roughness={0.2}
             chromaticAberration={0}
             anisotropicBlur={0}
@@ -186,7 +186,7 @@ export function BubbleOrb({
             samples={quality.samples}
             toneMapped={false}
             color="white"
-            opacity={0.3}
+            opacity={0.12}       // 🎨 MATCH VersionOrb: Was 0.3 (too opaque!)
           />
         </mesh>
 
