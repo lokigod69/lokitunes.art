@@ -3,14 +3,13 @@
 import { useRef, useState, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { RigidBody, type RapierRigidBody } from '@react-three/rapier'
-import { MeshTransmissionMaterial, Text, Html } from '@react-three/drei'
+import { MeshTransmissionMaterial } from '@react-three/drei'
 import * as THREE from 'three'
 import type { Album } from '@/lib/supabase'
 import type { DeviceTier } from '@/lib/device-detection'
 import { getQualitySettings } from '@/lib/device-detection'
 import { getAlbumCoverUrl } from '@/lib/supabase-images'
 import { useSmartTexture } from '@/hooks/useSmartTexture'
-import { getContrastColor, getOutlineColor } from '@/lib/colorUtils'
 
 /**
  * Normalize emissive intensity based on color brightness
@@ -93,22 +92,8 @@ export function BubbleOrb({
   const glowColor = album.palette?.dominant || album.palette?.accent1 || '#4F9EFF'
   const normalizedIntensity = normalizeEmissiveIntensity(glowColor)
   
-  // Calculate dynamic tooltip colors for optimal contrast
-  const tooltipBgColor = album.palette?.dominant || '#4F9EFF'
-  const tooltipTextColor = getContrastColor(tooltipBgColor)
-  const tooltipOutlineColor = getOutlineColor(tooltipTextColor)
-  
-  // 🔍 DEBUG: Log tooltip colors on hover
-  useEffect(() => {
-    if (hovered) {
-      console.log('🎨 TOOLTIP DEBUG:', album.title, {
-        palette: album.palette,
-        tooltipBgColor,
-        tooltipTextColor,
-        tooltipOutlineColor
-      })
-    }
-  }, [hovered, album.palette, album.title, tooltipBgColor, tooltipTextColor, tooltipOutlineColor])
+  // Hover state is now managed by parent OrbField component
+  // Album info displays in bottom-left InfoDisplayCube
   
   // Mobile gets brighter glow for better visibility
   const mobileIntensityBoost = isMobile ? 1.5 : 1.0
@@ -338,35 +323,7 @@ export function BubbleOrb({
           </mesh>
         )}
         
-        {/* HTML tooltip - always faces camera (billboard effect) with color-matched styling */}
-        {hovered && (
-          <Html
-            position={[0, radius + 1, 0]}
-            center
-            distanceFactor={10}
-            zIndexRange={[100, 0]}
-            style={{ pointerEvents: 'none' }}
-          >
-            <div
-              style={{
-                background: tooltipBgColor,
-                color: tooltipTextColor,
-                padding: '10px 20px',
-                borderRadius: '8px',
-                fontSize: '16px',
-                fontFamily: 'monospace',
-                fontWeight: 'bold',
-                border: `2px solid ${tooltipTextColor}`,
-                whiteSpace: 'nowrap',
-                transition: 'all 0.3s ease',
-                boxShadow: `0 0 20px ${tooltipBgColor}80, 0 4px 6px rgba(0, 0, 0, 0.3)`,
-                backdropFilter: 'blur(4px)',
-              }}
-            >
-              {album.title}
-            </div>
-          </Html>
-        )}
+        {/* Tooltip removed - album info now displays in bottom-left InfoDisplayCube */}
       </group>
     </RigidBody>
   )

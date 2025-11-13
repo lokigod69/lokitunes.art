@@ -12,6 +12,7 @@ import { SonicOrb } from './SonicOrb'
 import { InvisibleBounds } from './InvisibleBounds'
 import { MouseAttraction } from './MouseAttraction'
 import { PulsingWireframe } from './PulsingWireframe'
+import { InfoDisplayCube } from './InfoDisplayCube'
 import { NeonHeader } from './NeonHeader'
 import type { Album } from '@/lib/supabase'
 import { detectDeviceTier, getQualitySettings, type DeviceTier } from '@/lib/device-detection'
@@ -22,7 +23,7 @@ interface OrbFieldProps {
   albums: Album[]
 }
 
-function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGlassBubbles, onRegisterRigidBody, onReset }: {
+function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGlassBubbles, onRegisterRigidBody, onReset, hoveredAlbum }: {
   albums: Album[]
   pushTrigger: number
   onHover: (title: string | null) => void
@@ -31,6 +32,7 @@ function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGla
   useGlassBubbles: boolean
   onRegisterRigidBody: (id: string, body: RapierRigidBody, initialPos: [number, number, number]) => void
   onReset: number
+  hoveredAlbum: Album | null
 }) {
   const OrbComponent = useGlassBubbles ? BubbleOrb : SonicOrb
   
@@ -86,7 +88,8 @@ function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGla
       {/* DECORATIVE PULSING WIREFRAMES */}
       <PulsingWireframe position={[-10, 5, -10]} size={[3, 3, 3]} color="#ff00ff" />
       <PulsingWireframe position={[10, 5, -10]} size={[2, 4, 2]} color="#00ffff" />
-      <PulsingWireframe position={[-10, -5, 10]} size={[4, 2, 4]} color="#00ff88" />
+      {/* Bottom-left cube now displays album info on hover */}
+      <InfoDisplayCube position={[-10, -5, 10]} size={[4, 2, 4]} baseColor="#00ff88" hoveredAlbum={hoveredAlbum} />
       <PulsingWireframe position={[10, -5, 10]} size={[3, 3, 3]} color="#ff00ff" />
       
       {/* CORNER MARKERS */}
@@ -101,6 +104,7 @@ function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGla
 export function OrbField({ albums }: OrbFieldProps) {
   const router = useRouter()
   const [hoveredTitle, setHoveredTitle] = useState<string | null>(null)
+  const [hoveredAlbum, setHoveredAlbum] = useState<Album | null>(null)
   const [deviceTier, setDeviceTier] = useState<DeviceTier>('high')
   const [dpr, setDpr] = useState(1.5)
   const [useGlassBubbles, setUseGlassBubbles] = useState(true)
@@ -125,6 +129,17 @@ export function OrbField({ albums }: OrbFieldProps) {
   const handleNavigate = (slug: string) => {
     router.push(`/album/${slug}`)
   }
+  
+  // Handle hover - find album and set both title and album object
+  const handleHover = useCallback((title: string | null) => {
+    setHoveredTitle(title)
+    if (title) {
+      const album = albums.find(a => a.title === title)
+      setHoveredAlbum(album || null)
+    } else {
+      setHoveredAlbum(null)
+    }
+  }, [albums])
 
   const handleDepthPush = useCallback(() => {
     console.log('🎯 Depth push triggered!')
@@ -199,12 +214,13 @@ export function OrbField({ albums }: OrbFieldProps) {
         <OrbScene
           albums={albums}
           pushTrigger={pushTrigger}
-          onHover={setHoveredTitle}
+          onHover={handleHover}
           onNavigate={handleNavigate}
           deviceTier={deviceTier}
           useGlassBubbles={useGlassBubbles}
           onRegisterRigidBody={handleRegisterRigidBody}
           onReset={resetTrigger}
+          hoveredAlbum={hoveredAlbum}
         />
         
         {/* Post-processing effects */}

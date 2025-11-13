@@ -110,18 +110,6 @@ export function VersionOrb({
   const tooltipBgColor = albumPalette?.dominant || '#4F9EFF'
   const tooltipTextColor = getContrastColor(tooltipBgColor)
   
-  // 🔍 DEBUG: Log tooltip colors on hover
-  useEffect(() => {
-    if (hovered) {
-      console.log('🎨 TOOLTIP DEBUG:', version.label, {
-        albumPalette,
-        tooltipBgColor,
-        tooltipTextColor,
-        isThisPlaying
-      })
-    }
-  }, [hovered, albumPalette, tooltipBgColor, tooltipTextColor, version.label, isThisPlaying])
-  
   // Mobile gets brighter glow for better visibility
   const mobileIntensityBoost = isMobile ? 1.5 : 1.0
 
