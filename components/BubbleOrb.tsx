@@ -95,6 +95,11 @@ export function BubbleOrb({
   const PUSH_FORCE = -15        // Moderate push
   const SPRING_STRENGTH = 0.3   // Gentle pull
   const HOME_Z = 0               // Front position
+  const SETTLE_TIME = 2000       // Wait 2 seconds before returning
+  const MAX_SETTLE_TIME = 5000   // Safety: force return after 5 seconds
+  
+  // Track when last pushed (for settle time)
+  const lastPushTime = useRef(0)
 
   // DEBUG: Check ref on mount
   useEffect(() => {
@@ -116,30 +121,20 @@ export function BubbleOrb({
     if (!ref.current || pushTrigger === 0) return
     
     const body = ref.current
-    const posBefore = body.translation()
     const velBefore = body.linvel()
     
-    console.log('💥 NUCLEAR: Setting velocity directly for', album.title)
-    console.log('  Before: Z=', posBefore.z.toFixed(2), 'velZ=', velBefore.z.toFixed(2))
+    console.log('🟦 Pushing', album.title, 'backward')
     
-    // NUCLEAR OPTION 1: Set velocity directly (bypasses impulse system)
+    // RESET timer on each push (allows extending settle time)
+    lastPushTime.current = Date.now()
+    
+    // Set velocity directly (bypasses impulse system)
     body.wakeUp()
     body.setLinvel({ 
       x: velBefore.x, 
       y: velBefore.y, 
       z: -20  // Strong backward velocity
     }, true)
-    
-    console.log('  Set velocity to z=-20')
-    
-    // Check after 100ms
-    setTimeout(() => {
-      const posAfter = body.translation()
-      const velAfter = body.linvel()
-      console.log('  After: Z=', posAfter.z.toFixed(2), 'velZ=', velAfter.z.toFixed(2))
-      console.log('  Delta Z:', (posAfter.z - posBefore.z).toFixed(2))
-      console.log('  MOVED?', Math.abs(posAfter.z - posBefore.z) > 0.1 ? 'YES! ✅' : 'NO ❌')
-    }, 100)
   }, [pushTrigger, album.title])
 
   useFrame((state) => {
@@ -191,18 +186,27 @@ export function BubbleOrb({
     // SPRING RETURN TO FRONT - Depth interaction
     // Only activate if pushed back past -0.5
     if (pos.z < -0.5) {
-      // CRITICAL: Wake up sleeping bodies!
-      body.wakeUp()
+      const timeSincePush = Date.now() - lastPushTime.current
       
-      // Natural variation per orb (using album ID as seed)
-      const springVariation = 0.8 + (seed % 5) * 0.1  // 0.8 to 1.2
-      const adjustedSpring = SPRING_STRENGTH * springVariation
+      // SETTLE TIME: Wait before returning (RESET + SAFETY)
+      // - Each push resets timer (playful interaction)
+      // - But force return after MAX_SETTLE_TIME (safety)
+      const shouldReturn = timeSincePush > SETTLE_TIME || timeSincePush > MAX_SETTLE_TIME
       
-      // QUADRATIC spring: stronger pull when further away
-      const distance = Math.abs(pos.z)
-      const springForce = distance * distance * adjustedSpring
-      
-      body.applyImpulse({ x: 0, y: 0, z: springForce }, true)
+      if (shouldReturn) {
+        // CRITICAL: Wake up sleeping bodies!
+        body.wakeUp()
+        
+        // Natural variation per orb (using album ID as seed)
+        const springVariation = 0.8 + (seed % 5) * 0.1  // 0.8 to 1.2
+        const adjustedSpring = SPRING_STRENGTH * springVariation
+        
+        // QUADRATIC spring: stronger pull when further away
+        const distance = Math.abs(pos.z)
+        const springForce = distance * distance * adjustedSpring
+        
+        body.applyImpulse({ x: 0, y: 0, z: springForce }, true)
+      }
     }
   })
 
