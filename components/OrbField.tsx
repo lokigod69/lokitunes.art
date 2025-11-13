@@ -63,8 +63,8 @@ function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGla
         {/* Invisible physics boundaries */}
         <InvisibleBounds size={25} />
         
-        {/* SOPHISTICATED NEON HEADER - 3D */}
-        <NeonHeader position={[0, 12, -5]} />
+        {/* SOPHISTICATED NEON HEADER - 3D (Bigger, Higher, Forward) */}
+        <NeonHeader />
       </Suspense>
       
       {/* MULTI-LAYER NEON GRIDS - Cyberpunk aesthetic */}

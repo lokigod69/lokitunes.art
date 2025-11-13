@@ -1,40 +1,11 @@
 'use client'
 
-import { useRef, useState, useMemo } from 'react'
+import { useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Text } from '@react-three/drei'
 import * as THREE from 'three'
 
-interface WireframeLineProps {
-  start: [number, number, number]
-  end: [number, number, number]
-  color: string
-  flicker: number
-  opacity?: number
-}
-
-function WireframeLine({ start, end, color, flicker, opacity = 1 }: WireframeLineProps) {
-  const points = useMemo(() => [
-    new THREE.Vector3(...start),
-    new THREE.Vector3(...end)
-  ], [start, end])
-  
-  const lineGeometry = useMemo(() => 
-    new THREE.BufferGeometry().setFromPoints(points),
-    [points]
-  )
-  
-  return (
-    <primitive object={new THREE.Line(lineGeometry, new THREE.LineBasicMaterial({ 
-      color, 
-      opacity: opacity * flicker,
-      transparent: true,
-      linewidth: 2
-    }))} />
-  )
-}
-
-export function NeonHeader({ position = [0, 12, -5] }: { position?: [number, number, number] }) {
+export function NeonHeader({ position = [0, 16, 2] }: { position?: [number, number, number] }) {
   const groupRef = useRef<THREE.Group>(null)
   const [flicker, setFlicker] = useState(1)
   
@@ -53,110 +24,112 @@ export function NeonHeader({ position = [0, 12, -5] }: { position?: [number, num
   
   return (
     <group ref={groupRef} position={position}>
-      {/* Main text "LOKI TUNES" - Cyan */}
+      {/* Main text "LOKI TUNES" - Cyan - FRONT LAYER */}
       <Text
-        position={[0, 0, 0.3]}
-        fontSize={1.8}
+        position={[0, 0, 0]}
+        fontSize={3.5}
         color="#00ffff"
         anchorX="center"
         anchorY="middle"
-        outlineWidth={0.03}
+        outlineWidth={0.05}
         outlineColor="#000000"
-        letterSpacing={0.1}
       >
         LOKI TUNES
       </Text>
       
-      {/* Glowing layer behind text */}
+      {/* Glow layer 1 - slightly behind */}
       <Text
-        position={[0, 0, 0.25]}
-        fontSize={1.85}
+        position={[0, 0, -0.1]}
+        fontSize={3.5}
         color="#00ffff"
         anchorX="center"
         anchorY="middle"
         fillOpacity={0.5 * flicker}
-        letterSpacing={0.1}
       >
         LOKI TUNES
       </Text>
       
-      {/* Extra glow layer */}
+      {/* Glow layer 2 - further behind */}
       <Text
-        position={[0, 0, 0.2]}
-        fontSize={1.9}
+        position={[0, 0, -0.2]}
+        fontSize={3.5}
         color="#00ffff"
         anchorX="center"
         anchorY="middle"
         fillOpacity={0.2 * flicker}
-        letterSpacing={0.1}
       >
         LOKI TUNES
       </Text>
       
-      {/* 3D WIREFRAME ACCENT LINES - Sparse, multi-color, sophisticated */}
+      {/* 3D SHADOW EFFECT - Text outlines at different depths */}
       
-      {/* L - Red accent lines (3 lines) */}
-      <WireframeLine start={[-7.5, 0.8, 0.4]} end={[-7.0, 1.0, 0.6]} color="#ff0000" flicker={flicker} opacity={0.8} />
-      <WireframeLine start={[-7.5, -0.8, 0.3]} end={[-7.0, -0.6, 0.5]} color="#ff0000" flicker={flicker} opacity={0.7} />
-      <WireframeLine start={[-7.2, 0.2, 0.2]} end={[-6.8, -0.3, 0.7]} color="#ff0000" flicker={flicker} opacity={0.6} />
+      {/* Red shadow - bottom right offset */}
+      <Text
+        position={[0.15, -0.15, -0.3]}
+        fontSize={3.5}
+        color="#ff0000"
+        anchorX="center"
+        anchorY="middle"
+        fillOpacity={0}
+        outlineWidth={0.02}
+        outlineColor="#ff0000"
+        outlineOpacity={0.8 * flicker}
+      >
+        LOKI TUNES
+      </Text>
       
-      {/* O - Purple accent lines (4 lines) */}
-      <WireframeLine start={[-6.0, 0.7, 0.5]} end={[-5.5, 0.9, 0.3]} color="#ff00ff" flicker={flicker} opacity={0.8} />
-      <WireframeLine start={[-6.0, -0.7, 0.4]} end={[-5.5, -0.5, 0.6]} color="#ff00ff" flicker={flicker} opacity={0.7} />
-      <WireframeLine start={[-5.8, 0.3, 0.3]} end={[-5.3, 0.5, 0.5]} color="#ff00ff" flicker={flicker} opacity={0.6} />
-      <WireframeLine start={[-5.7, -0.2, 0.6]} end={[-5.4, -0.4, 0.4]} color="#ff00ff" flicker={flicker} opacity={0.5} />
+      {/* Purple shadow - left offset */}
+      <Text
+        position={[-0.1, 0, -0.4]}
+        fontSize={3.5}
+        color="#ff00ff"
+        anchorX="center"
+        anchorY="middle"
+        fillOpacity={0}
+        outlineWidth={0.02}
+        outlineColor="#ff00ff"
+        outlineOpacity={0.7 * flicker}
+      >
+        LOKI TUNES
+      </Text>
       
-      {/* K - Green accent lines (3 lines) */}
-      <WireframeLine start={[-4.5, 0.8, 0.4]} end={[-4.0, 0.6, 0.6]} color="#00ff00" flicker={flicker} opacity={0.8} />
-      <WireframeLine start={[-4.5, -0.8, 0.3]} end={[-4.0, -0.6, 0.5]} color="#00ff00" flicker={flicker} opacity={0.7} />
-      <WireframeLine start={[-4.3, 0.0, 0.5]} end={[-3.8, 0.4, 0.3]} color="#00ff00" flicker={flicker} opacity={0.6} />
+      {/* Green shadow - top left offset */}
+      <Text
+        position={[-0.08, 0.08, -0.5]}
+        fontSize={3.5}
+        color="#00ff00"
+        anchorX="center"
+        anchorY="middle"
+        fillOpacity={0}
+        outlineWidth={0.02}
+        outlineColor="#00ff00"
+        outlineOpacity={0.6 * flicker}
+      >
+        LOKI TUNES
+      </Text>
       
-      {/* I - Cyan accent lines (2 lines) */}
-      <WireframeLine start={[-3.0, 0.9, 0.4]} end={[-2.7, 0.7, 0.6]} color="#00ffff" flicker={flicker} opacity={0.8} />
-      <WireframeLine start={[-3.0, -0.9, 0.3]} end={[-2.7, -0.7, 0.5]} color="#00ffff" flicker={flicker} opacity={0.7} />
-      
-      {/* T - Red/Cyan mix (3 lines) */}
-      <WireframeLine start={[-1.5, 0.9, 0.5]} end={[-1.0, 0.8, 0.3]} color="#ff0000" flicker={flicker} opacity={0.8} />
-      <WireframeLine start={[-1.3, 0.3, 0.4]} end={[-0.9, -0.7, 0.6]} color="#00ffff" flicker={flicker} opacity={0.7} />
-      <WireframeLine start={[-1.2, -0.9, 0.3]} end={[-0.8, -0.6, 0.5]} color="#ff0000" flicker={flicker} opacity={0.6} />
-      
-      {/* U - Purple accent lines (4 lines) */}
-      <WireframeLine start={[0.5, 0.8, 0.4]} end={[1.0, 0.6, 0.6]} color="#ff00ff" flicker={flicker} opacity={0.8} />
-      <WireframeLine start={[0.5, -0.8, 0.3]} end={[1.0, -0.6, 0.5]} color="#ff00ff" flicker={flicker} opacity={0.7} />
-      <WireframeLine start={[0.7, 0.2, 0.5]} end={[1.2, 0.0, 0.3]} color="#ff00ff" flicker={flicker} opacity={0.6} />
-      <WireframeLine start={[0.8, -0.3, 0.4]} end={[1.3, -0.5, 0.6]} color="#ff00ff" flicker={flicker} opacity={0.5} />
-      
-      {/* N - Green accent lines (3 lines) */}
-      <WireframeLine start={[2.0, 0.9, 0.5]} end={[2.5, 0.7, 0.3]} color="#00ff00" flicker={flicker} opacity={0.8} />
-      <WireframeLine start={[2.0, -0.9, 0.4]} end={[2.5, -0.7, 0.6]} color="#00ff00" flicker={flicker} opacity={0.7} />
-      <WireframeLine start={[2.2, 0.3, 0.3]} end={[2.7, -0.2, 0.5]} color="#00ff00" flicker={flicker} opacity={0.6} />
-      
-      {/* E - Cyan accent lines (3 lines) */}
-      <WireframeLine start={[3.5, 0.8, 0.4]} end={[4.0, 0.6, 0.6]} color="#00ffff" flicker={flicker} opacity={0.8} />
-      <WireframeLine start={[3.5, 0.0, 0.5]} end={[4.0, 0.2, 0.3]} color="#00ffff" flicker={flicker} opacity={0.7} />
-      <WireframeLine start={[3.5, -0.8, 0.3]} end={[4.0, -0.6, 0.5]} color="#00ffff" flicker={flicker} opacity={0.6} />
-      
-      {/* S - Red/Purple mix (4 lines) */}
-      <WireframeLine start={[5.0, 0.8, 0.5]} end={[5.5, 0.6, 0.3]} color="#ff0000" flicker={flicker} opacity={0.8} />
-      <WireframeLine start={[5.0, 0.2, 0.4]} end={[5.5, 0.0, 0.6]} color="#ff00ff" flicker={flicker} opacity={0.7} />
-      <WireframeLine start={[5.0, -0.3, 0.3]} end={[5.5, -0.5, 0.5]} color="#ff0000" flicker={flicker} opacity={0.6} />
-      <WireframeLine start={[5.2, -0.8, 0.4]} end={[5.7, -0.6, 0.6]} color="#ff00ff" flicker={flicker} opacity={0.5} />
-      
-      {/* Bottom border - Multi-color continuous line */}
-      <WireframeLine start={[-8, -1.2, 0.3]} end={[-5, -1.2, 0.3]} color="#ff0000" flicker={flicker} opacity={0.6} />
-      <WireframeLine start={[-5, -1.2, 0.3]} end={[-2, -1.2, 0.3]} color="#ff00ff" flicker={flicker} opacity={0.6} />
-      <WireframeLine start={[-2, -1.2, 0.3]} end={[1, -1.2, 0.3]} color="#00ff00" flicker={flicker} opacity={0.6} />
-      <WireframeLine start={[1, -1.2, 0.3]} end={[4, -1.2, 0.3]} color="#00ffff" flicker={flicker} opacity={0.6} />
-      <WireframeLine start={[4, -1.2, 0.3]} end={[6.5, -1.2, 0.3]} color="#ff00ff" flicker={flicker} opacity={0.6} />
-      
-      {/* Top accent line - Sparse segments */}
-      <WireframeLine start={[-7, 1.2, 0.4]} end={[-5, 1.2, 0.4]} color="#00ffff" flicker={flicker} opacity={0.5} />
-      <WireframeLine start={[-3, 1.2, 0.4]} end={[-1, 1.2, 0.4]} color="#ff00ff" flicker={flicker} opacity={0.5} />
-      <WireframeLine start={[1, 1.2, 0.4]} end={[3, 1.2, 0.4]} color="#00ff00" flicker={flicker} opacity={0.5} />
-      <WireframeLine start={[4, 1.2, 0.4]} end={[6, 1.2, 0.4]} color="#ff0000" flicker={flicker} opacity={0.5} />
+      {/* Cyan shadow - deep background */}
+      <Text
+        position={[0.05, -0.05, -0.6]}
+        fontSize={3.5}
+        color="#00ffff"
+        anchorX="center"
+        anchorY="middle"
+        fillOpacity={0}
+        outlineWidth={0.015}
+        outlineColor="#00ffff"
+        outlineOpacity={0.5 * flicker}
+      >
+        LOKI TUNES
+      </Text>
       
       {/* Point light for extra glow */}
-      <pointLight position={[0, 0, 2]} intensity={1.5 * flicker} color="#00ffff" distance={15} />
+      <pointLight 
+        position={[0, 0, 1]} 
+        color="#00ffff"
+        intensity={2 * flicker}
+        distance={15}
+      />
     </group>
   )
 }
