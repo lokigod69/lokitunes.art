@@ -63,20 +63,22 @@ export function InfoDisplayCube({
         />
       </mesh>
       
-      {/* 3D Text inside cube - edges pass in front for depth effect! */}
+      {/* 3D Text inside cube - colored text with white glow! */}
       {hoveredAlbum && (
         <Text
-          position={[0, 0, 0]}  // Center of cube
-          fontSize={1}          // Adjust to fit inside cube
-          color={textColor}     // Dynamic contrast color
+          position={[0, 0, 0]}     // Center of cube
+          fontSize={0.4}            // Smaller, more refined size
+          color={displayColor}      // Text IS the album color! ✨
           anchorX="center"
           anchorY="middle"
-          maxWidth={3.5}        // Fit within cube width
+          maxWidth={3.5}            // Force wrapping for long names
           textAlign="center"
           letterSpacing={0.05}
-          outlineWidth={0.08}   // Thick outline for readability
-          outlineColor={displayColor}  // Album color outline
-          outlineOpacity={0.9}
+          overflowWrap="break-word" // Allow text wrapping
+          whiteSpace="normal"       // Enable line breaks
+          outlineWidth={0.08}       // Thick white glow
+          outlineColor="#ffffff"    // White outline for readability! ✨
+          outlineOpacity={0.9}      // Strong white glow
           // Text is 3D geometry - depth testing enabled by default!
           // Cube edges will naturally pass in front as they rotate
         >
