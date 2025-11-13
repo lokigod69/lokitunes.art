@@ -10,6 +10,7 @@ import type { DeviceTier } from '@/lib/device-detection'
 import { getQualitySettings } from '@/lib/device-detection'
 import { getAlbumCoverUrl } from '@/lib/supabase-images'
 import { useSmartTexture } from '@/hooks/useSmartTexture'
+import { getContrastColor, getOutlineColor } from '@/lib/colorUtils'
 
 /**
  * Normalize emissive intensity based on color brightness
@@ -91,6 +92,11 @@ export function BubbleOrb({
   // Palette colors are now cleaned at the source (queries.ts)
   const glowColor = album.palette?.dominant || album.palette?.accent1 || '#4F9EFF'
   const normalizedIntensity = normalizeEmissiveIntensity(glowColor)
+  
+  // Calculate dynamic tooltip colors for optimal contrast
+  const tooltipBgColor = album.palette?.dominant || '#4F9EFF'
+  const tooltipTextColor = getContrastColor(tooltipBgColor)
+  const tooltipOutlineColor = getOutlineColor(tooltipTextColor)
   
   // Mobile gets brighter glow for better visibility
   const mobileIntensityBoost = isMobile ? 1.5 : 1.0
@@ -320,16 +326,16 @@ export function BubbleOrb({
           </mesh>
         )}
         
-        {/* Text label on hover - reduced size with spacing */}
+        {/* Text label on hover - color-matched to album palette */}
         {hovered && (
           <Text
             position={[0, 0, radius * 1.1]}
             fontSize={radius * 0.25}
-            color="white"
+            color={tooltipTextColor}
             anchorX="center"
             anchorY="middle"
             outlineWidth={0.03}
-            outlineColor="black"
+            outlineColor={tooltipOutlineColor}
             outlineBlur={0.1}
             maxWidth={radius * 2.5}
             textAlign="center"
