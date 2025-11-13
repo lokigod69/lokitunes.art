@@ -12,6 +12,7 @@ import { SonicOrb } from './SonicOrb'
 import { InvisibleBounds } from './InvisibleBounds'
 import { MouseAttraction } from './MouseAttraction'
 import { PulsingWireframe } from './PulsingWireframe'
+import { NeonHeader } from './NeonHeader'
 import type { Album } from '@/lib/supabase'
 import { detectDeviceTier, getQualitySettings, type DeviceTier } from '@/lib/device-detection'
 import { calculateOrbLayout, calculateCameraDistance } from '@/lib/orb-layout'
@@ -61,6 +62,9 @@ function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGla
         
         {/* Invisible physics boundaries */}
         <InvisibleBounds size={25} />
+        
+        {/* SOPHISTICATED NEON HEADER - 3D */}
+        <NeonHeader position={[0, 12, -5]} />
       </Suspense>
       
       {/* MULTI-LAYER NEON GRIDS - Cyberpunk aesthetic */}
@@ -227,7 +231,7 @@ export function OrbField({ albums }: OrbFieldProps) {
         </div>
       )}
 
-      {/* RESET BUTTON */}
+      {/* RESET BUTTON - Minimal, echoes header style (20% intensity) */}
       <button
         onClick={handleReset}
         style={{
@@ -236,33 +240,34 @@ export function OrbField({ albums }: OrbFieldProps) {
           left: '50%',
           transform: 'translateX(-50%)',
           zIndex: 9999,
-          padding: '15px 30px',
+          padding: '12px 24px',
           background: 'transparent',
-          color: '#ff00ff',
-          border: '2px solid #ff00ff',
-          borderRadius: '8px',
+          color: '#00ffff',
+          border: '1px solid rgba(0, 255, 255, 0.3)',
+          borderRadius: '4px',
           cursor: 'pointer',
           fontWeight: 'bold',
-          fontSize: '16px',
+          fontSize: '14px',
           fontFamily: 'monospace',
           textTransform: 'uppercase',
-          letterSpacing: '2px',
-          backdropFilter: 'blur(10px)',
-          boxShadow: '0 0 20px rgba(255, 0, 255, 0.3)',
-          transition: 'all 0.3s ease'
+          letterSpacing: '3px',
+          backdropFilter: 'blur(5px)',
+          boxShadow: '0 0 10px rgba(0, 255, 255, 0.2)',
+          transition: 'all 0.3s ease',
+          opacity: 0.7
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.background = '#ff00ff'
-          e.currentTarget.style.color = '#0a0b0d'
-          e.currentTarget.style.boxShadow = '0 0 30px rgba(255, 0, 255, 0.6)'
+          e.currentTarget.style.borderColor = 'rgba(0, 255, 255, 0.6)'
+          e.currentTarget.style.boxShadow = '0 0 15px rgba(0, 255, 255, 0.4)'
+          e.currentTarget.style.opacity = '1'
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.background = 'transparent'
-          e.currentTarget.style.color = '#ff00ff'
-          e.currentTarget.style.boxShadow = '0 0 20px rgba(255, 0, 255, 0.3)'
+          e.currentTarget.style.borderColor = 'rgba(0, 255, 255, 0.3)'
+          e.currentTarget.style.boxShadow = '0 0 10px rgba(0, 255, 255, 0.2)'
+          e.currentTarget.style.opacity = '0.7'
         }}
       >
-        🔄 RESET
+        RESET
       </button>
     </>
   )

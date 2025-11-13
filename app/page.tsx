@@ -59,10 +59,10 @@ export default function Home() {
             <OrbField albums={albums} />
           </div>
           
-          {/* Header - Always on top (z-50) */}
-          <div className="fixed top-8 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
+          {/* Header - Now 3D in Canvas (NeonHeader component) */}
+          {/* <div className="fixed top-8 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
             <Logo3D />
-          </div>
+          </div> */}
           
           {/* Scanline CRT Effect */}
           <ScanlineEffect />
