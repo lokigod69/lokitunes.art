@@ -3,7 +3,7 @@
 import { useRef, useState, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { RigidBody, type RapierRigidBody } from '@react-three/rapier'
-import { MeshTransmissionMaterial, Text } from '@react-three/drei'
+import { MeshTransmissionMaterial, Text, Html } from '@react-three/drei'
 import * as THREE from 'three'
 import type { Album } from '@/lib/supabase'
 import type { DeviceTier } from '@/lib/device-detection'
@@ -338,23 +338,34 @@ export function BubbleOrb({
           </mesh>
         )}
         
-        {/* 🔥 MAGENTA TEST - If you don't see bright magenta, code isn't deploying! */}
+        {/* HTML tooltip - always faces camera (billboard effect) with color-matched styling */}
         {hovered && (
-          <Text
-            position={[0, 0, radius * 1.1]}
-            fontSize={radius * 0.6}
-            color="#FF00FF"
-            anchorX="center"
-            anchorY="middle"
-            outlineWidth={0.1}
-            outlineColor="#00FF00"
-            outlineBlur={0}
-            maxWidth={radius * 3}
-            textAlign="center"
-            letterSpacing={0.1}
+          <Html
+            position={[0, radius + 1, 0]}
+            center
+            distanceFactor={10}
+            zIndexRange={[100, 0]}
+            style={{ pointerEvents: 'none' }}
           >
-            🔥 MAGENTA TEST 🔥
-          </Text>
+            <div
+              style={{
+                background: tooltipBgColor,
+                color: tooltipTextColor,
+                padding: '10px 20px',
+                borderRadius: '8px',
+                fontSize: '16px',
+                fontFamily: 'monospace',
+                fontWeight: 'bold',
+                border: `2px solid ${tooltipTextColor}`,
+                whiteSpace: 'nowrap',
+                transition: 'all 0.3s ease',
+                boxShadow: `0 0 20px ${tooltipBgColor}80, 0 4px 6px rgba(0, 0, 0, 0.3)`,
+                backdropFilter: 'blur(4px)',
+              }}
+            >
+              {album.title}
+            </div>
+          </Html>
         )}
       </group>
     </RigidBody>
