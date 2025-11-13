@@ -88,9 +88,12 @@ function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGla
       {/* DECORATIVE PULSING WIREFRAMES */}
       <PulsingWireframe position={[-10, 5, -10]} size={[3, 3, 3]} color="#ff00ff" />
       <PulsingWireframe position={[10, 5, -10]} size={[2, 4, 2]} color="#00ffff" />
-      {/* Bottom-left cube now displays album info on hover */}
+      
+      {/* INFO DISPLAY CUBES - Bottom corners show album info on hover */}
+      {/* Bottom-left cube - Cyan base color */}
       <InfoDisplayCube position={[-10, -5, 10]} size={[4, 2, 4]} baseColor="#00ff88" hoveredAlbum={hoveredAlbum} />
-      <PulsingWireframe position={[10, -5, 10]} size={[3, 3, 3]} color="#ff00ff" />
+      {/* Bottom-right cube - Magenta base color */}
+      <InfoDisplayCube position={[10, -5, 10]} size={[3, 3, 3]} baseColor="#ff00ff" hoveredAlbum={hoveredAlbum} />
       
       {/* CORNER MARKERS */}
       <PulsingWireframe position={[-15, 0, -15]} size={[1, 1, 1]} color="#ff0000" />
