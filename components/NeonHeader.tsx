@@ -25,14 +25,12 @@ function WireframeLine({ start, end, color, flicker, opacity = 1 }: WireframeLin
   )
   
   return (
-    <line geometry={lineGeometry}>
-      <lineBasicMaterial 
-        color={color} 
-        opacity={opacity * flicker}
-        transparent
-        linewidth={2}
-      />
-    </line>
+    <primitive object={new THREE.Line(lineGeometry, new THREE.LineBasicMaterial({ 
+      color, 
+      opacity: opacity * flicker,
+      transparent: true,
+      linewidth: 2
+    }))} />
   )
 }
 
