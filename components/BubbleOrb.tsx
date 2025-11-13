@@ -338,22 +338,22 @@ export function BubbleOrb({
           </mesh>
         )}
         
-        {/* Text label on hover - color-matched to album palette */}
+        {/* 🔥 MAGENTA TEST - If you don't see bright magenta, code isn't deploying! */}
         {hovered && (
           <Text
             position={[0, 0, radius * 1.1]}
-            fontSize={radius * 0.25}
-            color={tooltipTextColor}
+            fontSize={radius * 0.6}
+            color="#FF00FF"
             anchorX="center"
             anchorY="middle"
-            outlineWidth={0.03}
-            outlineColor={tooltipOutlineColor}
-            outlineBlur={0.1}
-            maxWidth={radius * 2.5}
+            outlineWidth={0.1}
+            outlineColor="#00FF00"
+            outlineBlur={0}
+            maxWidth={radius * 3}
             textAlign="center"
-            letterSpacing={0.05}
+            letterSpacing={0.1}
           >
-            {album.title}
+            🔥 MAGENTA TEST 🔥
           </Text>
         )}
       </group>
