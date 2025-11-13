@@ -39,6 +39,8 @@ interface BubbleOrbProps {
   deviceTier: DeviceTier
   onHover: (title: string | null) => void
   onNavigate: (slug: string) => void
+  onRegisterRigidBody?: (body: RapierRigidBody) => void
+  resetTrigger?: number
 }
 
 
@@ -49,7 +51,9 @@ export function BubbleOrb({
   radius,
   deviceTier,
   onHover, 
-  onNavigate 
+  onNavigate,
+  onRegisterRigidBody,
+  resetTrigger
 }: BubbleOrbProps) {
   console.log('🔵 BubbleOrb rendering:', album.title, '| roughness: 0.7 | emissive: 1.0/0.5 | pointLight: 0.2x')
   const ref = useRef<RapierRigidBody>(null)
@@ -101,20 +105,25 @@ export function BubbleOrb({
   // Track when last pushed (for settle time)
   const lastPushTime = useRef(0)
 
-  // DEBUG: Check ref on mount
+  // Register rigid body on mount
   useEffect(() => {
     if (!ref.current) return
     const body = ref.current
-    const pos = body.translation()
-    console.log('🔍', album.title, 'ref check:', {
-      hasRef: !!ref.current,
-      refType: body.constructor.name,
-      canGetPosition: !!body.translation,
-      startZ: pos.z.toFixed(2),
-      mass: body.mass(),
-      isSleeping: body.isSleeping()
-    })
-  }, [])
+    
+    // Register with parent for reset functionality
+    if (onRegisterRigidBody) {
+      onRegisterRigidBody(body)
+    }
+  }, [onRegisterRigidBody])
+
+  // Handle reset trigger
+  useEffect(() => {
+    if (!ref.current || resetTrigger === 0) return
+    
+    // Reset is handled by parent, but we can add any orb-specific reset logic here
+    // For now, just reset the lastPushTime
+    lastPushTime.current = 0
+  }, [resetTrigger])
 
   // Depth interaction: Push orb backward when triggered
   useEffect(() => {

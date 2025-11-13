@@ -14,9 +14,11 @@ interface OrbProps {
   deviceTier?: 'low' | 'medium' | 'high'
   onHover: (title: string | null) => void
   onNavigate: (slug: string) => void
+  onRegisterRigidBody?: (body: RapierRigidBody) => void
+  resetTrigger?: number
 }
 
-export function SonicOrb({ album, pushTrigger, position, radius, deviceTier, onHover, onNavigate }: OrbProps) {
+export function SonicOrb({ album, pushTrigger, position, radius, deviceTier, onHover, onNavigate, onRegisterRigidBody, resetTrigger }: OrbProps) {
   console.log('🟠 SonicOrb rendering:', album.title, '| NO glass layer | roughness: 0.6 | NO emissive')
   const ref = useRef<RapierRigidBody>(null)
   const glowRef = useRef<THREE.PointLight>(null)
@@ -69,6 +71,26 @@ export function SonicOrb({ album, pushTrigger, position, radius, deviceTier, onH
   
   // Track when last pushed (for settle time)
   const lastPushTime = useRef(0)
+
+  // Register rigid body on mount
+  useEffect(() => {
+    if (!ref.current) return
+    const body = ref.current
+    
+    // Register with parent for reset functionality
+    if (onRegisterRigidBody) {
+      onRegisterRigidBody(body)
+    }
+  }, [onRegisterRigidBody])
+
+  // Handle reset trigger
+  useEffect(() => {
+    if (!ref.current || resetTrigger === 0) return
+    
+    // Reset is handled by parent, but we can add any orb-specific reset logic here
+    // For now, just reset the lastPushTime
+    lastPushTime.current = 0
+  }, [resetTrigger])
 
   // Depth interaction: Push orb backward when triggered
   useEffect(() => {

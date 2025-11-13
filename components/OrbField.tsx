@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useState, useEffect, useCallback } from 'react'
+import { Suspense, useState, useEffect, useCallback, useRef } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { Environment, PerformanceMonitor } from '@react-three/drei'
 import { Physics } from '@react-three/rapier'
@@ -15,18 +15,21 @@ import { PulsingWireframe } from './PulsingWireframe'
 import type { Album } from '@/lib/supabase'
 import { detectDeviceTier, getQualitySettings, type DeviceTier } from '@/lib/device-detection'
 import { calculateOrbLayout, calculateCameraDistance } from '@/lib/orb-layout'
+import type { RapierRigidBody } from '@react-three/rapier'
 
 interface OrbFieldProps {
   albums: Album[]
 }
 
-function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGlassBubbles }: {
+function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGlassBubbles, onRegisterRigidBody, onReset }: {
   albums: Album[]
   pushTrigger: number
   onHover: (title: string | null) => void
   onNavigate: (slug: string) => void
   deviceTier: DeviceTier
   useGlassBubbles: boolean
+  onRegisterRigidBody: (id: string, body: RapierRigidBody, initialPos: [number, number, number]) => void
+  onReset: number
 }) {
   const OrbComponent = useGlassBubbles ? BubbleOrb : SonicOrb
   
@@ -47,6 +50,8 @@ function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGla
               deviceTier={deviceTier}
               onHover={onHover}
               onNavigate={onNavigate}
+              onRegisterRigidBody={(body) => onRegisterRigidBody(album.id, body, positions[index])}
+              resetTrigger={onReset}
             />
           ))}
         </group>
@@ -96,6 +101,10 @@ export function OrbField({ albums }: OrbFieldProps) {
   const [dpr, setDpr] = useState(1.5)
   const [useGlassBubbles, setUseGlassBubbles] = useState(true)
   const [pushTrigger, setPushTrigger] = useState(0)
+  const [resetTrigger, setResetTrigger] = useState(0)
+  
+  // Track rigid bodies and their initial positions
+  const rigidBodies = useRef(new Map<string, { body: RapierRigidBody, initialPos: [number, number, number] }>())
   
   const quality = getQualitySettings(deviceTier)
 
@@ -116,6 +125,28 @@ export function OrbField({ albums }: OrbFieldProps) {
   const handleDepthPush = useCallback(() => {
     console.log('🎯 Depth push triggered!')
     setPushTrigger(prev => prev + 1)
+  }, [])
+
+  const handleRegisterRigidBody = useCallback((id: string, body: RapierRigidBody, initialPos: [number, number, number]) => {
+    rigidBodies.current.set(id, { body, initialPos })
+  }, [])
+
+  const handleReset = useCallback(() => {
+    console.log('🔄 Resetting all orbs to initial positions')
+    
+    rigidBodies.current.forEach(({ body, initialPos }) => {
+      // Reset position
+      body.setTranslation({ x: initialPos[0], y: initialPos[1], z: initialPos[2] }, true)
+      
+      // Stop all movement
+      body.setLinvel({ x: 0, y: 0, z: 0 }, true)
+      body.setAngvel({ x: 0, y: 0, z: 0 }, true)
+      
+      // Wake up body
+      body.wakeUp()
+    })
+    
+    setResetTrigger(prev => prev + 1)
   }, [])
 
   return (
@@ -168,6 +199,8 @@ export function OrbField({ albums }: OrbFieldProps) {
           onNavigate={handleNavigate}
           deviceTier={deviceTier}
           useGlassBubbles={useGlassBubbles}
+          onRegisterRigidBody={handleRegisterRigidBody}
+          onReset={resetTrigger}
         />
         
         {/* Post-processing effects */}
@@ -194,29 +227,42 @@ export function OrbField({ albums }: OrbFieldProps) {
         </div>
       )}
 
-      {/* DEBUG TEST BUTTON */}
+      {/* RESET BUTTON */}
       <button
-        onClick={() => {
-          console.log('🧪 TEST BUTTON CLICKED - Attempting direct Z manipulation')
-          console.log('pushTrigger:', pushTrigger)
-          setPushTrigger(prev => prev + 1)
-        }}
+        onClick={handleReset}
         style={{
           position: 'fixed',
-          top: '100px',
-          left: '20px',
+          bottom: '40px',
+          left: '50%',
+          transform: 'translateX(-50%)',
           zIndex: 9999,
-          padding: '15px 20px',
-          background: '#ff0000',
-          color: 'white',
-          border: 'none',
+          padding: '15px 30px',
+          background: 'transparent',
+          color: '#ff00ff',
+          border: '2px solid #ff00ff',
           borderRadius: '8px',
           cursor: 'pointer',
           fontWeight: 'bold',
-          fontSize: '14px'
+          fontSize: '16px',
+          fontFamily: 'monospace',
+          textTransform: 'uppercase',
+          letterSpacing: '2px',
+          backdropFilter: 'blur(10px)',
+          boxShadow: '0 0 20px rgba(255, 0, 255, 0.3)',
+          transition: 'all 0.3s ease'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = '#ff00ff'
+          e.currentTarget.style.color = '#0a0b0d'
+          e.currentTarget.style.boxShadow = '0 0 30px rgba(255, 0, 255, 0.6)'
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = 'transparent'
+          e.currentTarget.style.color = '#ff00ff'
+          e.currentTarget.style.boxShadow = '0 0 20px rgba(255, 0, 255, 0.3)'
         }}
       >
-        🧪 TEST PUSH (trigger={pushTrigger})
+        🔄 RESET
       </button>
     </>
   )
