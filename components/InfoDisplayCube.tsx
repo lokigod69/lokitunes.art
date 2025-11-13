@@ -77,7 +77,7 @@ export function InfoDisplayCube({
               color: textColor,
               padding: '15px 25px',
               borderRadius: '8px',
-              fontSize: '18px',
+              fontSize: '24px',
               fontFamily: 'monospace',
               fontWeight: 'bold',
               border: `3px solid ${textColor}`,
