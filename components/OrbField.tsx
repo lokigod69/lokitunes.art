@@ -13,6 +13,7 @@ import { InvisibleBounds } from './InvisibleBounds'
 import { MouseAttraction } from './MouseAttraction'
 import { PulsingWireframe } from './PulsingWireframe'
 import { InfoDisplayCube } from './InfoDisplayCube'
+import { GridTextDisplay } from './GridTextDisplay'
 import { NeonHeader } from './NeonHeader'
 import type { Album } from '@/lib/supabase'
 import { detectDeviceTier, getQualitySettings, type DeviceTier } from '@/lib/device-detection'
@@ -83,6 +84,12 @@ function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGla
         args={[100, 50, '#00ff88', '#004422']}
         position={[0, -14, 0]} 
         rotation={[0, -Math.PI / 4, 0]}
+      />
+      
+      {/* GRID TEXT DISPLAY - Shows album name on floor when hovering */}
+      <GridTextDisplay 
+        album={hoveredAlbum}
+        visible={!!hoveredAlbum}
       />
       
       {/* DECORATIVE PULSING WIREFRAMES - Color-sync with hovered album */}
