@@ -70,12 +70,18 @@ export function SonicOrb({ album, pushTrigger, position, radius, deviceTier, onH
     if (!ref.current || pushTrigger === 0) return
     
     const body = ref.current
-    console.log('🟠 Pushing', album.title, 'backward')
+    const velBefore = body.linvel()
     
-    // CRITICAL: Wake up body before applying force
+    console.log('💥 NUCLEAR: Setting velocity directly for', album.title)
+    
+    // NUCLEAR OPTION 1: Set velocity directly (bypasses impulse system)
     body.wakeUp()
-    body.applyImpulse({ x: 0, y: 0, z: PUSH_FORCE }, true)
-  }, [pushTrigger, album.title, PUSH_FORCE])
+    body.setLinvel({ 
+      x: velBefore.x, 
+      y: velBefore.y, 
+      z: -20  // Strong backward velocity
+    }, true)
+  }, [pushTrigger, album.title])
 
   useFrame((state) => {
     if (!ref.current) return

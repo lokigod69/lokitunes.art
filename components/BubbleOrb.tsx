@@ -119,13 +119,18 @@ export function BubbleOrb({
     const posBefore = body.translation()
     const velBefore = body.linvel()
     
-    console.log('🟦 Pushing', album.title, 'backward')
+    console.log('💥 NUCLEAR: Setting velocity directly for', album.title)
     console.log('  Before: Z=', posBefore.z.toFixed(2), 'velZ=', velBefore.z.toFixed(2))
-    console.log('  Sleeping?', body.isSleeping())
     
-    // CRITICAL: Wake up body before applying force
+    // NUCLEAR OPTION 1: Set velocity directly (bypasses impulse system)
     body.wakeUp()
-    body.applyImpulse({ x: 0, y: 0, z: PUSH_FORCE }, true)
+    body.setLinvel({ 
+      x: velBefore.x, 
+      y: velBefore.y, 
+      z: -20  // Strong backward velocity
+    }, true)
+    
+    console.log('  Set velocity to z=-20')
     
     // Check after 100ms
     setTimeout(() => {
@@ -133,8 +138,9 @@ export function BubbleOrb({
       const velAfter = body.linvel()
       console.log('  After: Z=', posAfter.z.toFixed(2), 'velZ=', velAfter.z.toFixed(2))
       console.log('  Delta Z:', (posAfter.z - posBefore.z).toFixed(2))
+      console.log('  MOVED?', Math.abs(posAfter.z - posBefore.z) > 0.1 ? 'YES! ✅' : 'NO ❌')
     }, 100)
-  }, [pushTrigger, album.title, PUSH_FORCE])
+  }, [pushTrigger, album.title])
 
   useFrame((state) => {
     if (!ref.current) return
