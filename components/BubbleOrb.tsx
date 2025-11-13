@@ -98,6 +98,18 @@ export function BubbleOrb({
   const tooltipTextColor = getContrastColor(tooltipBgColor)
   const tooltipOutlineColor = getOutlineColor(tooltipTextColor)
   
+  // 🔍 DEBUG: Log tooltip colors on hover
+  useEffect(() => {
+    if (hovered) {
+      console.log('🎨 TOOLTIP DEBUG:', album.title, {
+        palette: album.palette,
+        tooltipBgColor,
+        tooltipTextColor,
+        tooltipOutlineColor
+      })
+    }
+  }, [hovered, album.palette, album.title, tooltipBgColor, tooltipTextColor, tooltipOutlineColor])
+  
   // Mobile gets brighter glow for better visibility
   const mobileIntensityBoost = isMobile ? 1.5 : 1.0
 
