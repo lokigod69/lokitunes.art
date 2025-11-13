@@ -60,7 +60,6 @@ export function NeonHeader({ position = [0, 12, -5] }: { position?: [number, num
         color="#00ffff"
         anchorX="center"
         anchorY="middle"
-        font="/fonts/SpaceMono-Bold.ttf"
         outlineWidth={0.03}
         outlineColor="#000000"
         letterSpacing={0.1}
@@ -75,7 +74,6 @@ export function NeonHeader({ position = [0, 12, -5] }: { position?: [number, num
         color="#00ffff"
         anchorX="center"
         anchorY="middle"
-        font="/fonts/SpaceMono-Bold.ttf"
         fillOpacity={0.5 * flicker}
         letterSpacing={0.1}
       >
@@ -89,7 +87,6 @@ export function NeonHeader({ position = [0, 12, -5] }: { position?: [number, num
         color="#00ffff"
         anchorX="center"
         anchorY="middle"
-        font="/fonts/SpaceMono-Bold.ttf"
         fillOpacity={0.2 * flicker}
         letterSpacing={0.1}
       >
