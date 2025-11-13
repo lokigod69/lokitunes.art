@@ -2,7 +2,7 @@
 
 import { useFrame } from '@react-three/fiber'
 import { useRef } from 'react'
-import { Html } from '@react-three/drei'
+import { Text } from '@react-three/drei'
 import * as THREE from 'three'
 import type { Album } from '@/lib/supabase'
 import { getContrastColor } from '@/lib/colorUtils'
@@ -17,6 +17,7 @@ interface InfoDisplayCubeProps {
 /**
  * Enhanced Pulsing Wireframe Cube with Info Display
  * Shows album information when user hovers over orbs
+ * Text is actual 3D geometry - cube edges pass in front for depth effect!
  */
 export function InfoDisplayCube({ 
   position, 
@@ -62,34 +63,25 @@ export function InfoDisplayCube({
         />
       </mesh>
       
-      {/* Info display inside cube - always faces camera */}
+      {/* 3D Text inside cube - edges pass in front for depth effect! */}
       {hoveredAlbum && (
-        <Html
+        <Text
           position={[0, 0, 0]}  // Center of cube
-          center
-          distanceFactor={15}
-          zIndexRange={[100, 0]}
-          style={{ pointerEvents: 'none' }}
+          fontSize={1}          // Adjust to fit inside cube
+          color={textColor}     // Dynamic contrast color
+          anchorX="center"
+          anchorY="middle"
+          maxWidth={3.5}        // Fit within cube width
+          textAlign="center"
+          letterSpacing={0.05}
+          outlineWidth={0.08}   // Thick outline for readability
+          outlineColor={displayColor}  // Album color outline
+          outlineOpacity={0.9}
+          // Text is 3D geometry - depth testing enabled by default!
+          // Cube edges will naturally pass in front as they rotate
         >
-          <div
-            style={{
-              background: displayColor,
-              color: textColor,
-              padding: '15px 25px',
-              borderRadius: '8px',
-              fontSize: '24px',
-              fontFamily: 'monospace',
-              fontWeight: 'bold',
-              border: `3px solid ${textColor}`,
-              whiteSpace: 'nowrap',
-              boxShadow: `0 0 30px ${displayColor}, 0 4px 6px rgba(0, 0, 0, 0.3)`,
-              backdropFilter: 'blur(4px)',
-              transition: 'all 0.3s ease',
-            }}
-          >
-            {hoveredAlbum.title}
-          </div>
-        </Html>
+          {hoveredAlbum.title}
+        </Text>
       )}
     </group>
   )
