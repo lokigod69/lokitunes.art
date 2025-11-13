@@ -85,9 +85,9 @@ function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGla
         rotation={[0, -Math.PI / 4, 0]}
       />
       
-      {/* DECORATIVE PULSING WIREFRAMES */}
-      <PulsingWireframe position={[-10, 5, -10]} size={[3, 3, 3]} color="#ff00ff" />
-      <PulsingWireframe position={[10, 5, -10]} size={[2, 4, 2]} color="#00ffff" />
+      {/* DECORATIVE PULSING WIREFRAMES - Color-sync with hovered album */}
+      <PulsingWireframe position={[-10, 5, -10]} size={[3, 3, 3]} color="#ff00ff" hoveredAlbum={hoveredAlbum} />
+      <PulsingWireframe position={[10, 5, -10]} size={[2, 4, 2]} color="#00ffff" hoveredAlbum={hoveredAlbum} />
       
       {/* INFO DISPLAY CUBES - Bottom corners show album info on hover */}
       {/* Bottom-left cube - Cyan base color */}
@@ -95,11 +95,11 @@ function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGla
       {/* Bottom-right cube - Magenta base color */}
       <InfoDisplayCube position={[10, -5, 10]} size={[3, 3, 3]} baseColor="#ff00ff" hoveredAlbum={hoveredAlbum} />
       
-      {/* CORNER MARKERS */}
-      <PulsingWireframe position={[-15, 0, -15]} size={[1, 1, 1]} color="#ff0000" />
-      <PulsingWireframe position={[15, 0, -15]} size={[1, 1, 1]} color="#ff0000" />
-      <PulsingWireframe position={[-15, 0, 15]} size={[1, 1, 1]} color="#ff0000" />
-      <PulsingWireframe position={[15, 0, 15]} size={[1, 1, 1]} color="#ff0000" />
+      {/* CORNER MARKERS - Color-sync with hovered album */}
+      <PulsingWireframe position={[-15, 0, -15]} size={[1, 1, 1]} color="#ff0000" hoveredAlbum={hoveredAlbum} />
+      <PulsingWireframe position={[15, 0, -15]} size={[1, 1, 1]} color="#ff0000" hoveredAlbum={hoveredAlbum} />
+      <PulsingWireframe position={[-15, 0, 15]} size={[1, 1, 1]} color="#ff0000" hoveredAlbum={hoveredAlbum} />
+      <PulsingWireframe position={[15, 0, 15]} size={[1, 1, 1]} color="#ff0000" hoveredAlbum={hoveredAlbum} />
     </Physics>
   )
 }
