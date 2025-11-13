@@ -76,9 +76,9 @@ export function InfoDisplayCube({
           letterSpacing={0.05}
           overflowWrap="break-word" // Allow text wrapping
           whiteSpace="normal"       // Enable line breaks
-          outlineWidth={0.08}       // Thick white glow
-          outlineColor="#ffffff"    // White outline for readability! ✨
-          outlineOpacity={0.9}      // Strong white glow
+          outlineWidth={0.03}       // Subtle white outline
+          outlineColor="#ffffff"    // White outline for readability
+          outlineOpacity={0.4}      // Subtle glow - color dominates!
           // Text is 3D geometry - depth testing enabled by default!
           // Cube edges will naturally pass in front as they rotate
         >
