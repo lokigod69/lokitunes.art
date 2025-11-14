@@ -13,6 +13,7 @@ import { AlbumGridTextDisplay } from './AlbumGridTextDisplay'
 import { detectDeviceTier, getQualitySettings, type DeviceTier } from '@/lib/device-detection'
 import { calculateOrbLayout, calculateCameraDistance } from '@/lib/orb-layout'
 import type { Album } from '@/lib/supabase'
+import { useAudioStore } from '@/lib/audio-store'
 
 interface VersionOrbFieldProps {
   versions: ExtendedVersion[]
@@ -53,6 +54,7 @@ function OrbScene({
   albumCoverUrl,
   albumPalette,
   hoveredVersion,
+  playingVersion,
   onHover, 
   deviceTier 
 }: {
@@ -60,6 +62,7 @@ function OrbScene({
   albumCoverUrl: string
   albumPalette: Album['palette']
   hoveredVersion: ExtendedVersion | null
+  playingVersion: ExtendedVersion | null
   onHover: (version: ExtendedVersion | null) => void
   deviceTier: DeviceTier
 }) {
@@ -104,11 +107,11 @@ function OrbScene({
         <InvisibleBounds size={25} />
       </Suspense>
       
-      {/* CENTERED GRID TEXT - Shows hovered version label on album grid */}
+      {/* CENTERED GRID TEXT - Shows hovered or playing version label on album grid */}
       <AlbumGridTextDisplay 
-        version={hoveredVersion}
+        hoveredVersion={hoveredVersion}
+        playingVersion={playingVersion}
         albumPalette={albumPalette}
-        visible={!!hoveredVersion}
       />
       
       {/* MINIMAL GRID - Album page style (clean background) */}
@@ -142,7 +145,15 @@ export function VersionOrbField({
   const [deviceTier, setDeviceTier] = useState<DeviceTier>('high')
   const [dpr, setDpr] = useState(1.5)
   const [hoveredVersion, setHoveredVersion] = useState<ExtendedVersion | null>(null)
-  
+
+  // Global audio store - currently playing version
+  const { currentVersion, isPlaying } = useAudioStore()
+
+  // Map current playing SongVersion to ExtendedVersion from this album page
+  const playingVersion: ExtendedVersion | null = (isPlaying && currentVersion)
+    ? (versions.find(v => v.id === currentVersion.id) || null)
+    : null
+
   const quality = getQualitySettings(deviceTier)
 
   useEffect(() => {
@@ -203,6 +214,7 @@ export function VersionOrbField({
           albumCoverUrl={albumCoverUrl}
           albumPalette={albumPalette}
           hoveredVersion={hoveredVersion}
+          playingVersion={playingVersion}
           onHover={setHoveredVersion}
           deviceTier={deviceTier}
         />

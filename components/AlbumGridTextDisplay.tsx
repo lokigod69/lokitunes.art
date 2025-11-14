@@ -8,19 +8,19 @@ import type { Album } from '@/lib/supabase'
 import type { ExtendedVersion } from './VersionOrb'
 
 interface AlbumGridTextDisplayProps {
-  version: ExtendedVersion | null
+  hoveredVersion: ExtendedVersion | null
+  playingVersion: ExtendedVersion | null
   albumPalette: Album['palette'] | null
-  visible: boolean
 }
 
 /**
  * AlbumGridTextDisplay
  * - Used on ALBUM PAGES only (VersionOrbField scene)
- * - Shows the HOVERED version label
+ * - Shows the HOVERED version label, or falls back to currently PLAYING version
  * - Always centered on the album grid
  * - Uses album color palette for neon styling
  */
-export function AlbumGridTextDisplay({ version, albumPalette, visible }: AlbumGridTextDisplayProps) {
+export function AlbumGridTextDisplay({ hoveredVersion, playingVersion, albumPalette }: AlbumGridTextDisplayProps) {
   const groupRef = useRef<THREE.Group>(null)
   const [flicker, setFlicker] = useState(1)
   const [shadowFlicker1, setShadowFlicker1] = useState(1)
@@ -60,16 +60,19 @@ export function AlbumGridTextDisplay({ version, albumPalette, visible }: AlbumGr
     }
   })
 
-  // Only show when hovering a version
-  if (!version || !visible) return null
+  // PRIORITY: hovered version wins, otherwise show playing version
+  const displayVersion = hoveredVersion || playingVersion
 
-  const label = version.label || 'Untitled Version'
+  // Nothing hovered and nothing playing → show nothing
+  if (!displayVersion) return null
+
+  const label = displayVersion.label || 'Untitled Version'
 
   return (
     <group
       ref={groupRef}
       position={position}
-      rotation={[-Math.PI / 8, 0, 0]} // Stand up with a subtle tilt toward the camera
+      rotation={[-Math.PI / 12, 0, 0]} // Stand up with a subtle backward tilt so it sits in the 3D space
     >
       {/* Inner white glow - subtle, under colored text */}
       <Text
