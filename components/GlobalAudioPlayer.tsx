@@ -105,7 +105,7 @@ export function GlobalAudioPlayer() {
                     ? pause()
                     : play(currentVersion, currentVersion.song_id)
                 }
-                className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center hover:opacity-90 transition-transform hover:scale-105"
+                className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center hover:opacity-90 transition-transform hover:scale-105 cursor-pointer"
                 style={{ backgroundColor: accentColor }}
                 aria-label={isPlaying ? 'Pause' : 'Play'}
               >
