@@ -27,9 +27,9 @@ export function AlbumGridTextDisplay({ version, albumPalette, visible }: AlbumGr
   const [shadowFlicker2, setShadowFlicker2] = useState(1)
 
   // Centered position on album grid
-  // Y = -13.9 sits just above grid at -15
-  // Z = -15 pushes text to middle/back of visible grid
-  const position: [number, number, number] = [0, -13.9, -15]
+  // Y = -12 raises text above grid a bit so it's easier to read when vertical
+  // Z = -15 keeps text in the middle/back of the visible grid
+  const position: [number, number, number] = [0, -12, -15]
 
   // Use album palette passed from scene
   const palette = albumPalette || {
@@ -69,12 +69,12 @@ export function AlbumGridTextDisplay({ version, albumPalette, visible }: AlbumGr
     <group
       ref={groupRef}
       position={position}
-      rotation={[-Math.PI / 2, 0, 0]} // Lay flat on grid
+      rotation={[-Math.PI / 8, 0, 0]} // Stand up with a subtle tilt toward the camera
     >
       {/* Inner white glow - subtle, under colored text */}
       <Text
         position={[0, 0, 0.01]}
-        fontSize={3.0}
+        fontSize={4.0}
         color="#ffffff"
         anchorX="center"
         anchorY="middle"
@@ -88,7 +88,7 @@ export function AlbumGridTextDisplay({ version, albumPalette, visible }: AlbumGr
       {/* Main text layer - album dominant color (BIG, always full opacity) */}
       <Text
         position={[0, 0, 0.02]}
-        fontSize={3.0}
+        fontSize={4.0}
         color={mainColor}
         anchorX="center"
         anchorY="middle"
@@ -104,7 +104,7 @@ export function AlbumGridTextDisplay({ version, albumPalette, visible }: AlbumGr
       {/* Bright color glow very close behind */}
       <Text
         position={[0, 0, -0.05]}
-        fontSize={3.0}
+        fontSize={4.0}
         color={mainColor}
         anchorX="center"
         anchorY="middle"
@@ -118,7 +118,7 @@ export function AlbumGridTextDisplay({ version, albumPalette, visible }: AlbumGr
       {/* Softer outer glow layer */}
       <Text
         position={[0, 0, -0.15]}
-        fontSize={3.0}
+        fontSize={4.0}
         color={mainColor}
         anchorX="center"
         anchorY="middle"
@@ -132,7 +132,7 @@ export function AlbumGridTextDisplay({ version, albumPalette, visible }: AlbumGr
       {/* Shadow 1 - accent1 color, slight offset */}
       <Text
         position={[0.15, 0, -0.25]}
-        fontSize={3.0}
+        fontSize={4.0}
         color={accent1}
         anchorX="center"
         anchorY="middle"
@@ -149,7 +149,7 @@ export function AlbumGridTextDisplay({ version, albumPalette, visible }: AlbumGr
       {/* Shadow 2 - accent2 color, opposite offset */}
       <Text
         position={[-0.12, 0, -0.35]}
-        fontSize={3.0}
+        fontSize={4.0}
         color={accent2}
         anchorX="center"
         anchorY="middle"
