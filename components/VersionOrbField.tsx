@@ -9,6 +9,7 @@ import { KernelSize, ToneMappingMode } from 'postprocessing'
 import { VersionOrb, type ExtendedVersion } from './VersionOrb'
 import { InvisibleBounds } from './InvisibleBounds'
 import { MouseAttraction } from './MouseAttraction'
+import { AlbumGridTextDisplay } from './AlbumGridTextDisplay'
 import { detectDeviceTier, getQualitySettings, type DeviceTier } from '@/lib/device-detection'
 import { calculateOrbLayout, calculateCameraDistance } from '@/lib/orb-layout'
 import type { Album } from '@/lib/supabase'
@@ -100,6 +101,9 @@ function OrbScene({
         {/* Invisible physics boundaries */}
         <InvisibleBounds size={25} />
       </Suspense>
+      
+      {/* CENTERED GRID TEXT - Shows currently playing version label */}
+      <AlbumGridTextDisplay albumPalette={albumPalette} />
       
       {/* MINIMAL GRID - Album page style (clean background) */}
       <gridHelper 
