@@ -1,11 +1,10 @@
 'use client'
 
-import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
+import { useRef, useState, type PointerEvent as ReactPointerEvent, type MouseEvent as ReactMouseEvent } from 'react'
 import { usePathname } from 'next/navigation'
 import { useAudioStore } from '@/lib/audio-store'
-import { Play, Pause, SkipForward, SkipBack, Volume2 } from 'lucide-react'
+import { Play, Pause, Volume2 } from 'lucide-react'
 import Image from 'next/image'
-import { useWaveformPeaks } from '@/hooks/useWaveformPeaks'
 
 function formatTime(seconds: number): string {
   if (!isFinite(seconds)) return '0:00'
@@ -31,284 +30,167 @@ export function GlobalAudioPlayer() {
     volume,
     play, 
     pause, 
-    next, 
-    previous,
     setCurrentTime,
-    setDuration,
     setVolume,
-    updateTime,
   } = useAudioStore()
   
   // Use album palette colors for themed player
   const accentColor = currentPalette?.accent1 || '#4F9EFF'
   const bgColor = currentPalette?.dominant || '#090B0D'
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0
-  
-  // Half-pipe SVG path animation state (Phase 2)
-  const pathRef = useRef<SVGPathElement | null>(null)
-  const [pathLength, setPathLength] = useState(0)
-  const [isDragging, setIsDragging] = useState(false)
-  const [orbPosition, setOrbPosition] = useState({ x: 0, y: 0 })
-  const progressContainerRef = useRef<HTMLDivElement | null>(null)
-  const [curveFlicker, setCurveFlicker] = useState(1)
+  const progressBarRef = useRef<HTMLDivElement | null>(null)
+  const [isScrubbing, setIsScrubbing] = useState(false)
 
-  useEffect(() => {
-    if (pathRef.current && pathLength === 0) {
-      setPathLength(pathRef.current.getTotalLength())
-    }
-  }, [pathLength])
-
-  useEffect(() => {
-    if (!pathRef.current || pathLength === 0) return
-    const distance = (progress / 100) * pathLength
-    const point = pathRef.current.getPointAtLength(distance)
-    setOrbPosition({ x: point.x, y: point.y })
-  }, [progress, pathLength])
-
-  useEffect(() => {
-    let frameId: number
-    const tick = () => {
-      if (Math.random() < 0.02) {
-        setCurveFlicker(Math.random() < 0.5 ? 0.4 : 1)
-      }
-      frameId = requestAnimationFrame(tick)
-    }
-    frameId = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(frameId)
-  }, [])
-
-  const dashOffset = pathLength > 0 ? pathLength * (1 - progress / 100) : 0
-
-  const handleOrbPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
-    if (!progressContainerRef.current) return
-    e.preventDefault()
-    e.currentTarget.setPointerCapture(e.pointerId)
-    setIsDragging(true)
-  }
-
-  const handleOrbPointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
-    if (!isDragging || !progressContainerRef.current || !duration) return
-    const rect = progressContainerRef.current.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const percent = x / rect.width
+  const seekFromClientX = (clientX: number) => {
+    if (!progressBarRef.current || !duration) return
+    const rect = progressBarRef.current.getBoundingClientRect()
+    const percent = (clientX - rect.left) / rect.width
     const clamped = Math.max(0, Math.min(1, percent))
     const newTime = clamped * duration
     setCurrentTime(newTime)
   }
 
-  const handleOrbPointerUp = (e: ReactPointerEvent<HTMLDivElement>) => {
-    if (!isDragging) return
-    e.currentTarget.releasePointerCapture(e.pointerId)
-    setIsDragging(false)
+  const handleBarClick = (e: ReactMouseEvent<HTMLDivElement>) => {
+    if (!duration || isScrubbing) return
+    seekFromClientX(e.clientX)
   }
-  
-  // Extract real waveform peaks from audio
-  const { peaks } = useWaveformPeaks(currentVersion?.audio_url || '', 50)
+
+  const handleKnobPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (!progressBarRef.current) return
+    e.preventDefault()
+    e.currentTarget.setPointerCapture(e.pointerId)
+    setIsScrubbing(true)
+  }
+
+  const handleKnobPointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (!isScrubbing) return
+    seekFromClientX(e.clientX)
+  }
+
+  const handleKnobPointerUp = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (!isScrubbing) return
+    e.currentTarget.releasePointerCapture(e.pointerId)
+    setIsScrubbing(false)
+  }
   
   return (
     <>
       {/* Player UI only shows when there's a track */}
       {currentVersion && (
-        <div 
+        <div
           className="fixed bottom-0 left-0 right-0 bg-void/95 backdrop-blur-lg border-t z-50"
           style={{ borderColor: `${accentColor}30` }}
         >
-      
-      <div className="max-w-screen-2xl mx-auto px-3 sm:px-4 py-2 sm:py-3">
-        {/* Compact left-aligned layout: cover, title, controls, volume all grouped on the left */}
-        <div className="flex items-center gap-4 w-full">
-          <div className="flex items-center gap-4">
-            {/* Cover */}
-            {currentVersion.cover_url && (
-              <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded overflow-hidden flex-shrink-0 bg-void">
-                <Image
-                  src={currentVersion.cover_url}
-                  alt={currentVersion.label}
-                  fill
-                  className="object-cover"
-                />
+          <div className="max-w-screen-2xl mx-auto px-4 py-3">
+            <div className="flex items-center gap-4">
+              {/* Left: Cover + Info */}
+              <div className="flex items-center gap-3 min-w-0">
+                {currentVersion.cover_url && (
+                  <div className="relative w-12 h-12 rounded overflow-hidden flex-shrink-0 bg-void">
+                    <Image
+                      src={currentVersion.cover_url}
+                      alt={currentVersion.label}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                )}
+
+                <div className="flex flex-col min-w-[120px]">
+                  <p className="text-sm font-medium text-bone truncate">
+                    {currentVersion.label}
+                  </p>
+                  <p className="text-xs text-bone/60">
+                    {formatTime(currentTime)} / {formatTime(duration)}
+                  </p>
+                </div>
               </div>
-            )}
 
-            {/* Track info */}
-            <div className="flex flex-col min-w-0">
-              <p className="text-xs sm:text-sm font-medium text-bone truncate">{currentVersion.label}</p>
-              <p className="text-xs text-bone/50 truncate">
-                {formatTime(currentTime)} / {formatTime(duration)}
-              </p>
-            </div>
-
-            {/* Playback controls */}
-            <div className="flex items-center gap-1 sm:gap-2">
-              <button 
-                onClick={previous} 
-                className="p-2 hover:bg-voltage/20 rounded-full transition-colors cursor-pointer"
-                aria-label="Previous"
-              >
-                <SkipBack className="w-4 h-4 sm:w-5 sm:h-5 text-bone" />
-              </button>
-              
-              <button 
-                onClick={() => isPlaying ? pause() : play(currentVersion, currentVersion.song_id)}
-                className="p-2 sm:p-3 rounded-full transition-all hover:scale-105 cursor-pointer"
+              {/* Center: Play/Pause only */}
+              <button
+                onClick={() =>
+                  isPlaying
+                    ? pause()
+                    : play(currentVersion, currentVersion.song_id)
+                }
+                className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center hover:opacity-90 transition-transform hover:scale-105"
                 style={{ backgroundColor: accentColor }}
                 aria-label={isPlaying ? 'Pause' : 'Play'}
               >
                 {isPlaying ? (
-                  <Pause className="w-4 h-4 sm:w-5 sm:h-5 text-void" fill="currentColor" />
+                  <Pause className="w-5 h-5 text-void" fill="currentColor" />
                 ) : (
-                  <Play className="w-4 h-4 sm:w-5 sm:h-5 text-void ml-0.5" fill="currentColor" />
+                  <Play className="w-5 h-5 text-void ml-0.5" fill="currentColor" />
                 )}
               </button>
-              
-              <button 
-                onClick={next} 
-                className="p-2 hover:bg-voltage/20 rounded-full transition-colors cursor-pointer"
-                aria-label="Next"
-              >
-                <SkipForward className="w-4 h-4 sm:w-5 sm:h-5 text-bone" />
-              </button>
-            </div>
 
-            {/* Volume - Desktop only, right next to controls */}
-            <div className="hidden md:flex items-center gap-2">
-              <Volume2 className="w-4 h-4 text-bone/70" />
-              <input 
-                type="range"
-                min="0"
-                max="1"
-                step="0.01"
-                value={volume}
-                onChange={(e) => setVolume(parseFloat(e.target.value))}
-                className="w-24 accent-voltage cursor-pointer 
-                           [&::-webkit-slider-thumb]:appearance-none 
-                           [&::-webkit-slider-thumb]:w-3.5 
-                           [&::-webkit-slider-thumb]:h-3.5 
-                           [&::-webkit-slider-thumb]:rounded-full 
-                           [&::-webkit-slider-thumb]:bg-voltage
-                           [&::-webkit-slider-thumb]:cursor-pointer"
-              />
-            </div>
-          </div>
-
-          {/* Right side spacer to keep group compact on the left */}
-          <div className="flex-1" />
-        </div>
-        
-        {/* Progress Bar with Waveform Visualization */}
-        <div className="mt-2 space-y-1.5">
-          {/* Waveform bars - Real audio peaks */}
-          <div className="flex items-center gap-0.5 h-6">
-            {(peaks.length > 0 ? peaks : Array(50).fill(0.5)).map((peak, i) => {
-              const height = Math.abs(peak) * 100
-              const isActive = (i / (peaks.length || 50)) * 100 < progress
-              return (
+              {/* Progress bar with knob */}
+              <div className="flex-1">
                 <div
-                  key={i}
-                  className="flex-1 rounded-full transition-all duration-150"
-                  style={{ 
-                    height: `${Math.max(height, 20)}%`,
-                    backgroundColor: isActive ? accentColor : `${accentColor}30`,
-                    opacity: isActive ? 1 : 0.5
-                  }}
-                />
-              )
-            })}
-          </div>
-          
-          {/* Progress bar */}
-          <div
-            ref={progressContainerRef}
-            className="relative w-full h-10 cursor-pointer group"
-            onClick={(e) => {
-              if (!duration || isDragging) return
-              const rect = e.currentTarget.getBoundingClientRect()
-              const clickX = e.clientX - rect.left
-              const percent = clickX / rect.width
-              const clamped = Math.max(0, Math.min(1, percent))
-              const newTime = clamped * duration
-              setCurrentTime(newTime)
-            }}
-          >
-            <svg
-              className="absolute inset-0 w-full h-full"
-              viewBox="0 0 100 100"
-              preserveAspectRatio="none"
-            >
-              <defs>
-                <linearGradient id="halfpipe-depth" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="rgba(0,0,0,0.9)" />
-                  <stop offset="50%" stopColor="rgba(0,0,0,0.3)" />
-                  <stop offset="100%" stopColor="rgba(0,0,0,0.9)" />
-                </linearGradient>
-              </defs>
+                  ref={progressBarRef}
+                  className="relative h-1.5 bg-bone/10 rounded-full cursor-pointer"
+                  onClick={handleBarClick}
+                >
+                  {/* Filled progress */}
+                  <div
+                    className="absolute inset-y-0 left-0 rounded-full"
+                    style={{
+                      width: `${progress}%`,
+                      backgroundColor: accentColor,
+                    }}
+                  />
 
-              <path
-                d="M 0 0 L 20 0 Q 40 100 66 100 Q 80 100 80 0 L 100 0 L 100 100 L 0 100 Z"
-                fill="url(#halfpipe-depth)"
-                opacity={0.6}
-              />
+                  {/* Draggable knob */}
+                  <div
+                    className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full cursor-grab active:cursor-grabbing"
+                    style={{
+                      left: `${progress}%`,
+                      transform: 'translate(-50%, -50%)',
+                      backgroundColor: accentColor,
+                      boxShadow: `0 0 8px ${accentColor}`,
+                    }}
+                    onPointerDown={handleKnobPointerDown}
+                    onPointerMove={handleKnobPointerMove}
+                    onPointerUp={handleKnobPointerUp}
+                    onPointerCancel={handleKnobPointerUp}
+                  />
 
-              <path
-                ref={pathRef}
-                d="M 0 0 L 20 0 Q 40 100 66 100 Q 80 100 80 0 L 100 0"
-                fill="none"
-                stroke={accentColor}
-                strokeWidth={2}
-                strokeOpacity={0.6 * curveFlicker}
-                strokeDasharray={pathLength || undefined}
-                strokeDashoffset={pathLength ? dashOffset : undefined}
-                style={{
-                  transition: 'stroke-dashoffset 120ms linear',
-                  filter: `drop-shadow(0 0 6px ${accentColor}) drop-shadow(0 0 12px ${accentColor})`,
-                }}
-              />
-            </svg>
-
-            <div className="absolute left-0 right-0 bottom-2 h-1.5 bg-bone/10 rounded-full">
-              <div 
-                className="absolute h-full rounded-full transition-all"
-                style={{ 
-                  width: `${progress}%`,
-                  backgroundColor: accentColor
-                }}
-              />
-            </div>
-            
-            {/* Seek input */}
-            <input
-              type="range"
-              min="0"
-              max={duration || 0}
-              value={currentTime}
-              onChange={(e) => {
-                const time = parseFloat(e.target.value)
-                setCurrentTime(time)
-              }}
-              className="absolute inset-0 w-full opacity-0 cursor-pointer"
-            />
-
-            {duration > 0 && (
-              <div
-                className="absolute flex items-center justify-center"
-                style={{
-                  left: `${orbPosition.x}%`,
-                  top: `${orbPosition.y}%`,
-                  transform: 'translate(-50%, -50%)',
-                  width: '44px',
-                  height: '44px',
-                }}
-                onPointerDown={handleOrbPointerDown}
-                onPointerMove={handleOrbPointerMove}
-                onPointerUp={handleOrbPointerUp}
-                onPointerCancel={handleOrbPointerUp}
-              >
-                <div className="w-4 h-4 rounded-full bg-voltage shadow-lg" />
+                  {/* Hidden range for accessibility */}
+                  <input
+                    type="range"
+                    min="0"
+                    max={duration || 0}
+                    value={currentTime}
+                    onChange={(e) => {
+                      const time = parseFloat(e.target.value)
+                      setCurrentTime(time)
+                    }}
+                    className="absolute inset-0 w-full opacity-0 cursor-pointer"
+                  />
+                </div>
               </div>
-            )}
+
+              {/* Right: Volume */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <Volume2 className="w-4 h-4 text-bone/70" />
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value={volume}
+                  onChange={(e) => setVolume(parseFloat(e.target.value))}
+                  className="w-24 accent-voltage cursor-pointer 
+                             [&::-webkit-slider-thumb]:appearance-none 
+                             [&::-webkit-slider-thumb]:w-3.5 
+                             [&::-webkit-slider-thumb]:h-3.5 
+                             [&::-webkit-slider-thumb]:rounded-full 
+                             [&::-webkit-slider-thumb]:bg-voltage
+                             [&::-webkit-slider-thumb]:cursor-pointer"
+                />
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
         </div>
       )}
     </>

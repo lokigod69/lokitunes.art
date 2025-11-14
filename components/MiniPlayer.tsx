@@ -6,7 +6,7 @@ import { useAudioStore } from '@/lib/audio-store'
 import { formatTime } from '@/lib/utils'
 
 export function MiniPlayer() {
-  const { currentVersion, isPlaying, currentTime, duration, play, pause } = useAudioStore()
+  const { currentVersion, currentPalette, isPlaying, currentTime, duration, play, pause } = useAudioStore()
   const miniPlayerRef = useRef<HTMLDivElement>(null)
 
   // Keyboard shortcuts
@@ -41,17 +41,20 @@ export function MiniPlayer() {
   }
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0
+  const accentColor = currentPalette?.accent1 || '#4F9EFF'
+  const bgColor = currentPalette?.dominant || '#090B0D'
 
   return (
     <div
       ref={miniPlayerRef}
-      className="fixed bottom-0 left-0 right-0 h-16 bg-void/95 backdrop-blur-md border-t border-bone/10 z-50"
+      className="fixed bottom-0 left-0 right-0 h-16 backdrop-blur-md border-t border-bone/10 z-50"
+      style={{ backgroundColor: `${bgColor}F2` }}
     >
       {/* Progress bar */}
       <div className="absolute top-0 left-0 right-0 h-0.5 bg-bone/10">
         <div
-          className="h-full bg-voltage transition-all duration-100"
-          style={{ width: `${progress}%` }}
+          className="h-full transition-all duration-100"
+          style={{ width: `${progress}%`, backgroundColor: accentColor }}
         />
       </div>
 
@@ -65,7 +68,8 @@ export function MiniPlayer() {
               play(currentVersion, currentVersion.song_id)
             }
           }}
-          className="flex-shrink-0 w-10 h-10 rounded-full bg-voltage hover:bg-voltage/80 transition-colors flex items-center justify-center"
+          className="flex-shrink-0 w-10 h-10 rounded-full transition-colors flex items-center justify-center hover:opacity-90"
+          style={{ backgroundColor: accentColor }}
           aria-label={isPlaying ? 'Pause' : 'Play'}
         >
           {isPlaying ? (

@@ -45,13 +45,17 @@ export const useAudioStore = create<AudioState>((set, get) => ({
 
   play: (version, songId, palette) => {
     const current = get()
+
+    // If no palette is provided, preserve the existing one
+    const resolvedPalette =
+      palette !== undefined ? palette : current.currentPalette
     
     // If switching to a different version, reset time
     if (current.currentVersion?.id !== version.id) {
       set({
         currentVersion: version,
         currentSongId: songId,
-        currentPalette: palette || null,
+        currentPalette: resolvedPalette ?? null,
         isPlaying: true,
         currentTime: 0,
         queue: [version],

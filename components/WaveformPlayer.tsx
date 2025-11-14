@@ -32,6 +32,9 @@ export function WaveformPlayer({ version, songId, accentColor = '#4F9EFF' }: Wav
     setDuration,
   } = useAudioStore()
 
+  const { currentPalette } = useAudioStore()
+  const waveformColor = currentPalette?.accent1 || accentColor
+
   const isActive = currentVersion?.id === version.id && currentSongId === songId
   const isCurrentlyPlaying = isActive && isPlaying
 
@@ -44,8 +47,8 @@ export function WaveformPlayer({ version, songId, accentColor = '#4F9EFF' }: Wav
     const ws = WaveSurfer.create({
       container: waveformRef.current,
       waveColor: '#4A5568',
-      progressColor: accentColor,
-      cursorColor: accentColor,
+      progressColor: waveformColor,
+      cursorColor: waveformColor,
       barWidth: 2,
       barGap: 1,
       barRadius: 2,
@@ -91,7 +94,7 @@ export function WaveformPlayer({ version, songId, accentColor = '#4F9EFF' }: Wav
     return () => {
       ws.destroy()
     }
-  }, [version.audio_url, accentColor])
+  }, [version.audio_url, waveformColor])
 
   // Sync playback state
   useEffect(() => {
