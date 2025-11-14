@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { useAudioStore } from '@/lib/audio-store'
 import { Play, Pause, SkipForward, SkipBack, Volume2 } from 'lucide-react'
@@ -42,6 +43,18 @@ export function GlobalAudioPlayer() {
   const accentColor = currentPalette?.accent1 || '#4F9EFF'
   const bgColor = currentPalette?.dominant || '#090B0D'
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0
+  
+  // Half-pipe SVG path animation state (Phase 2)
+  const pathRef = useRef<SVGPathElement | null>(null)
+  const [pathLength, setPathLength] = useState(0)
+
+  useEffect(() => {
+    if (pathRef.current && pathLength === 0) {
+      setPathLength(pathRef.current.getTotalLength())
+    }
+  }, [pathLength])
+
+  const dashOffset = pathLength > 0 ? pathLength * (1 - progress / 100) : 0
   
   // Extract real waveform peaks from audio
   const { peaks } = useWaveformPeaks(currentVersion?.audio_url || '', 50)
@@ -176,11 +189,15 @@ export function GlobalAudioPlayer() {
               preserveAspectRatio="none"
             >
               <path
+                ref={pathRef}
                 d="M 0 0 L 20 0 Q 40 100 66 100 Q 80 100 80 0 L 100 0"
                 fill="none"
                 stroke={accentColor}
                 strokeWidth={2}
                 strokeOpacity={0.6}
+                strokeDasharray={pathLength || undefined}
+                strokeDashoffset={pathLength ? dashOffset : undefined}
+                style={{ transition: 'stroke-dashoffset 120ms linear' }}
               />
             </svg>
 
