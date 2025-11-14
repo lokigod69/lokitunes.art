@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AudioEngine } from "@/components/AudioEngine";
 import { GlobalAudioPlayer } from "@/components/GlobalAudioPlayer";
+import MonochromeToggle from "@/components/MonochromeToggle";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,6 +30,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <MonochromeToggle />
         {/* Hidden audio engine - always mounted so playback persists across routes */}
         <AudioEngine />
 

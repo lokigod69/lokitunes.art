@@ -64,6 +64,19 @@ html {
   }
 }
 
+/* Monochrome mode - global grayscale with contrast boost */
+html.monochrome {
+  filter: grayscale(100%) contrast(1.2);
+  transition: filter 0.3s ease;
+}
+
+/* Optional: keep 3D canvas and album/cover images in color for contrast */
+html.monochrome canvas,
+html.monochrome img[class*="album"],
+html.monochrome img[class*="cover"] {
+  filter: none !important;
+}
+
 /* Focus visible styles for accessibility */
 *:focus-visible {
   outline: 2px solid var(--album-accent2);

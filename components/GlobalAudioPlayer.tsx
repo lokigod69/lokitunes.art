@@ -142,9 +142,10 @@ export function GlobalAudioPlayer() {
 
                   {/* Draggable knob */}
                   <div
-                    className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full cursor-grab active:cursor-grabbing"
+                    className="absolute w-3 h-3 rounded-full cursor-grab active:cursor-grabbing"
                     style={{
                       left: `${progress}%`,
+                      top: '50%',
                       transform: 'translate(-50%, -50%)',
                       backgroundColor: accentColor,
                       boxShadow: `0 0 8px ${accentColor}`,
