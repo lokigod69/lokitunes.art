@@ -158,15 +158,41 @@ export function GlobalAudioPlayer() {
           </div>
           
           {/* Progress bar */}
-          <div className="relative w-full h-1.5 bg-bone/10 rounded-full cursor-pointer group">
-            {/* Filled progress */}
-            <div 
-              className="absolute h-full rounded-full transition-all"
-              style={{ 
-                width: `${progress}%`,
-                backgroundColor: accentColor
-              }}
-            />
+          <div
+            className="relative w-full h-10 cursor-pointer group"
+            onClick={(e) => {
+              if (!duration) return
+              const rect = e.currentTarget.getBoundingClientRect()
+              const clickX = e.clientX - rect.left
+              const percent = clickX / rect.width
+              const clamped = Math.max(0, Math.min(1, percent))
+              const newTime = clamped * duration
+              setCurrentTime(newTime)
+            }}
+          >
+            <svg
+              className="absolute inset-0 w-full h-full"
+              viewBox="0 0 100 100"
+              preserveAspectRatio="none"
+            >
+              <path
+                d="M 0 0 L 20 0 Q 40 100 66 100 Q 80 100 80 0 L 100 0"
+                fill="none"
+                stroke={accentColor}
+                strokeWidth={2}
+                strokeOpacity={0.6}
+              />
+            </svg>
+
+            <div className="absolute left-0 right-0 bottom-2 h-1.5 bg-bone/10 rounded-full">
+              <div 
+                className="absolute h-full rounded-full transition-all"
+                style={{ 
+                  width: `${progress}%`,
+                  backgroundColor: accentColor
+                }}
+              />
+            </div>
             
             {/* Seek input */}
             <input
