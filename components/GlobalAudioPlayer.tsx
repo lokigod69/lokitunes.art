@@ -3,7 +3,6 @@
 import { usePathname } from 'next/navigation'
 import { useAudioStore } from '@/lib/audio-store'
 import { Play, Pause, SkipForward, SkipBack, Volume2 } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import { useWaveformPeaks } from '@/hooks/useWaveformPeaks'
 
@@ -47,61 +46,8 @@ export function GlobalAudioPlayer() {
   // Extract real waveform peaks from audio
   const { peaks } = useWaveformPeaks(currentVersion?.audio_url || '', 50)
   
-  const audioRef = useRef<HTMLAudioElement>(null)
-  
-  // Load new track when currentVersion changes (src is set by JSX prop)
-  useEffect(() => {
-    if (!audioRef.current || !currentVersion) return
-    audioRef.current.load()
-  }, [currentVersion?.id])
-  
-  // Control playback - triggers when isPlaying changes OR when track changes
-  useEffect(() => {
-    if (!audioRef.current) return
-    
-    if (isPlaying) {
-      audioRef.current.play().catch(console.error)
-    } else {
-      audioRef.current.pause()
-    }
-  }, [isPlaying, currentVersion?.id])
-  
-  // Set up audio event listeners
-  useEffect(() => {
-    const audio = audioRef.current
-    if (!audio) return
-    
-    const handleTimeUpdate = () => updateTime(audio.currentTime)
-    const handleLoadedMetadata = () => setDuration(audio.duration)
-    const handleEnded = () => next()
-    
-    audio.addEventListener('timeupdate', handleTimeUpdate)
-    audio.addEventListener('loadedmetadata', handleLoadedMetadata)
-    audio.addEventListener('ended', handleEnded)
-    
-    return () => {
-      audio.removeEventListener('timeupdate', handleTimeUpdate)
-      audio.removeEventListener('loadedmetadata', handleLoadedMetadata)
-      audio.removeEventListener('ended', handleEnded)
-    }
-  }, [next, setDuration, updateTime])
-  
-  // Apply volume changes
-  useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.volume = volume
-    }
-  }, [volume])
-  
   return (
     <>
-      {/* Audio element ALWAYS rendered - event listeners need it in DOM */}
-      <audio 
-        ref={audioRef}
-        src={currentVersion?.audio_url || ''}
-        style={{ display: 'none' }}
-      />
-      
       {/* Player UI only shows when there's a track */}
       {currentVersion && (
         <div 
@@ -110,10 +56,10 @@ export function GlobalAudioPlayer() {
         >
       
       <div className="max-w-screen-2xl mx-auto px-3 sm:px-4 py-2 sm:py-3">
-        {/* Main Controls Row - Three Column Layout */}
-        <div className="flex items-center justify-between w-full gap-4">
-          {/* LEFT: Track Info & Time */}
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+        {/* Compact left-aligned layout: cover, title, controls, volume all grouped on the left */}
+        <div className="flex items-center gap-4 w-full">
+          <div className="flex items-center gap-4">
+            {/* Cover */}
             {currentVersion.cover_url && (
               <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded overflow-hidden flex-shrink-0 bg-void">
                 <Image
@@ -124,65 +70,70 @@ export function GlobalAudioPlayer() {
                 />
               </div>
             )}
-            <div className="min-w-0 flex-1">
+
+            {/* Track info */}
+            <div className="flex flex-col min-w-0">
               <p className="text-xs sm:text-sm font-medium text-bone truncate">{currentVersion.label}</p>
               <p className="text-xs text-bone/50 truncate">
                 {formatTime(currentTime)} / {formatTime(duration)}
               </p>
             </div>
+
+            {/* Playback controls */}
+            <div className="flex items-center gap-1 sm:gap-2">
+              <button 
+                onClick={previous} 
+                className="p-2 hover:bg-voltage/20 rounded-full transition-colors cursor-pointer"
+                aria-label="Previous"
+              >
+                <SkipBack className="w-4 h-4 sm:w-5 sm:h-5 text-bone" />
+              </button>
+              
+              <button 
+                onClick={() => isPlaying ? pause() : play(currentVersion, currentVersion.song_id)}
+                className="p-2 sm:p-3 rounded-full transition-all hover:scale-105 cursor-pointer"
+                style={{ backgroundColor: accentColor }}
+                aria-label={isPlaying ? 'Pause' : 'Play'}
+              >
+                {isPlaying ? (
+                  <Pause className="w-4 h-4 sm:w-5 sm:h-5 text-void" fill="currentColor" />
+                ) : (
+                  <Play className="w-4 h-4 sm:w-5 sm:h-5 text-void ml-0.5" fill="currentColor" />
+                )}
+              </button>
+              
+              <button 
+                onClick={next} 
+                className="p-2 hover:bg-voltage/20 rounded-full transition-colors cursor-pointer"
+                aria-label="Next"
+              >
+                <SkipForward className="w-4 h-4 sm:w-5 sm:h-5 text-bone" />
+              </button>
+            </div>
+
+            {/* Volume - Desktop only, right next to controls */}
+            <div className="hidden md:flex items-center gap-2">
+              <Volume2 className="w-4 h-4 text-bone/70" />
+              <input 
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={volume}
+                onChange={(e) => setVolume(parseFloat(e.target.value))}
+                className="w-24 accent-voltage cursor-pointer 
+                           [&::-webkit-slider-thumb]:appearance-none 
+                           [&::-webkit-slider-thumb]:w-3.5 
+                           [&::-webkit-slider-thumb]:h-3.5 
+                           [&::-webkit-slider-thumb]:rounded-full 
+                           [&::-webkit-slider-thumb]:bg-voltage
+                           [&::-webkit-slider-thumb]:cursor-pointer"
+              />
+            </div>
           </div>
-          
-          {/* CENTER: Playback Controls */}
-          <div className="flex items-center justify-center gap-1 sm:gap-2 flex-shrink-0">
-            <button 
-              onClick={previous} 
-              className="p-2 hover:bg-voltage/20 rounded-full transition-colors cursor-pointer"
-              aria-label="Previous"
-            >
-              <SkipBack className="w-4 h-4 sm:w-5 sm:h-5 text-bone" />
-            </button>
-            
-            <button 
-              onClick={() => isPlaying ? pause() : play(currentVersion, currentVersion.song_id)}
-              className="p-2 sm:p-3 rounded-full transition-all hover:scale-105 cursor-pointer"
-              style={{ backgroundColor: accentColor }}
-              aria-label={isPlaying ? 'Pause' : 'Play'}
-            >
-              {isPlaying ? (
-                <Pause className="w-4 h-4 sm:w-5 sm:h-5 text-void" fill="currentColor" />
-              ) : (
-                <Play className="w-4 h-4 sm:w-5 sm:h-5 text-void ml-0.5" fill="currentColor" />
-              )}
-            </button>
-            
-            <button 
-              onClick={next} 
-              className="p-2 hover:bg-voltage/20 rounded-full transition-colors cursor-pointer"
-              aria-label="Next"
-            >
-              <SkipForward className="w-4 h-4 sm:w-5 sm:h-5 text-bone" />
-            </button>
-          </div>
-          
-          {/* RIGHT: Volume - Desktop Only */}
-          <div className="hidden md:flex items-center gap-2 min-w-[120px] justify-end">
-            <Volume2 className="w-4 h-4 text-bone/70" />
-            <input 
-              type="range"
-              min="0"
-              max="1"
-              step="0.01"
-              value={volume}
-              onChange={(e) => setVolume(parseFloat(e.target.value))}
-              className="w-24 accent-voltage cursor-pointer 
-                         [&::-webkit-slider-thumb]:appearance-none 
-                         [&::-webkit-slider-thumb]:w-3.5 
-                         [&::-webkit-slider-thumb]:h-3.5 
-                         [&::-webkit-slider-thumb]:rounded-full 
-                         [&::-webkit-slider-thumb]:bg-voltage
-                         [&::-webkit-slider-thumb]:cursor-pointer"
-            />
-          </div>
+
+          {/* Right side spacer to keep group compact on the left */}
+          <div className="flex-1" />
         </div>
         
         {/* Progress Bar with Waveform Visualization */}
@@ -226,7 +177,6 @@ export function GlobalAudioPlayer() {
               onChange={(e) => {
                 const time = parseFloat(e.target.value)
                 setCurrentTime(time)
-                if (audioRef.current) audioRef.current.currentTime = time
               }}
               className="absolute inset-0 w-full opacity-0 cursor-pointer"
             />
