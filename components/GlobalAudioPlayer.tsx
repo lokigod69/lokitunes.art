@@ -50,6 +50,7 @@ export function GlobalAudioPlayer() {
   const [isDragging, setIsDragging] = useState(false)
   const [orbPosition, setOrbPosition] = useState({ x: 0, y: 0 })
   const progressContainerRef = useRef<HTMLDivElement | null>(null)
+  const [curveFlicker, setCurveFlicker] = useState(1)
 
   useEffect(() => {
     if (pathRef.current && pathLength === 0) {
@@ -63,6 +64,18 @@ export function GlobalAudioPlayer() {
     const point = pathRef.current.getPointAtLength(distance)
     setOrbPosition({ x: point.x, y: point.y })
   }, [progress, pathLength])
+
+  useEffect(() => {
+    let frameId: number
+    const tick = () => {
+      if (Math.random() < 0.02) {
+        setCurveFlicker(Math.random() < 0.5 ? 0.4 : 1)
+      }
+      frameId = requestAnimationFrame(tick)
+    }
+    frameId = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(frameId)
+  }, [])
 
   const dashOffset = pathLength > 0 ? pathLength * (1 - progress / 100) : 0
 
@@ -222,16 +235,33 @@ export function GlobalAudioPlayer() {
               viewBox="0 0 100 100"
               preserveAspectRatio="none"
             >
+              <defs>
+                <linearGradient id="halfpipe-depth" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="rgba(0,0,0,0.9)" />
+                  <stop offset="50%" stopColor="rgba(0,0,0,0.3)" />
+                  <stop offset="100%" stopColor="rgba(0,0,0,0.9)" />
+                </linearGradient>
+              </defs>
+
+              <path
+                d="M 0 0 L 20 0 Q 40 100 66 100 Q 80 100 80 0 L 100 0 L 100 100 L 0 100 Z"
+                fill="url(#halfpipe-depth)"
+                opacity={0.6}
+              />
+
               <path
                 ref={pathRef}
                 d="M 0 0 L 20 0 Q 40 100 66 100 Q 80 100 80 0 L 100 0"
                 fill="none"
                 stroke={accentColor}
                 strokeWidth={2}
-                strokeOpacity={0.6}
+                strokeOpacity={0.6 * curveFlicker}
                 strokeDasharray={pathLength || undefined}
                 strokeDashoffset={pathLength ? dashOffset : undefined}
-                style={{ transition: 'stroke-dashoffset 120ms linear' }}
+                style={{
+                  transition: 'stroke-dashoffset 120ms linear',
+                  filter: `drop-shadow(0 0 6px ${accentColor}) drop-shadow(0 0 12px ${accentColor})`,
+                }}
               />
             </svg>
 
