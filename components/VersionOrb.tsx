@@ -52,7 +52,7 @@ interface VersionOrbProps {
     accent2: string
   } | null
   albumCoverUrl: string
-  onHover: (label: string | null) => void
+  onHover: (version: ExtendedVersion | null) => void
 }
 
 export function VersionOrb({ 
@@ -208,7 +208,7 @@ export function VersionOrb({
           onClick={handleClick}
           onPointerEnter={() => {
             setHovered(true)
-            onHover(version.label)
+            onHover(version)
             document.body.style.cursor = 'pointer'
           }}
           onPointerLeave={() => {

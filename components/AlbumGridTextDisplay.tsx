@@ -1,37 +1,38 @@
 'use client'
 
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Text } from '@react-three/drei'
 import * as THREE from 'three'
 import type { Album } from '@/lib/supabase'
-import { useAudioStore } from '@/lib/audio-store'
+import type { ExtendedVersion } from './VersionOrb'
 
 interface AlbumGridTextDisplayProps {
+  version: ExtendedVersion | null
   albumPalette: Album['palette'] | null
+  visible: boolean
 }
 
 /**
  * AlbumGridTextDisplay
  * - Used on ALBUM PAGES only (VersionOrbField scene)
- * - Shows the CURRENTLY PLAYING version label
+ * - Shows the HOVERED version label
  * - Always centered on the album grid
  * - Uses album color palette for neon styling
  */
-export function AlbumGridTextDisplay({ albumPalette }: AlbumGridTextDisplayProps) {
+export function AlbumGridTextDisplay({ version, albumPalette, visible }: AlbumGridTextDisplayProps) {
   const groupRef = useRef<THREE.Group>(null)
-  const { currentVersion, currentPalette, isPlaying } = useAudioStore()
-  const [mainFlicker, setMainFlicker] = useState(1)
+  const [flicker, setFlicker] = useState(1)
   const [shadowFlicker1, setShadowFlicker1] = useState(1)
   const [shadowFlicker2, setShadowFlicker2] = useState(1)
 
   // Centered position on album grid
   // Y = -13.9 sits just above grid at -15
-  // Z = -6 is the "sweet spot" for visibility
-  const position: [number, number, number] = [0, -13.9, -6]
+  // Z = -15 pushes text to middle/back of visible grid
+  const position: [number, number, number] = [0, -13.9, -15]
 
-  // Prefer palette from currently playing track, fallback to album palette
-  const palette = currentPalette || albumPalette || {
+  // Use album palette passed from scene
+  const palette = albumPalette || {
     dominant: '#090B0D',
     accent1: '#4F9EFF',
     accent2: '#FF6B4A',
@@ -41,11 +42,11 @@ export function AlbumGridTextDisplay({ albumPalette }: AlbumGridTextDisplayProps
   const accent1 = palette.accent1 || mainColor
   const accent2 = palette.accent2 || accent1
 
-  // Broken neon flickering
+  // Broken neon flickering for shadows / light
   useFrame(() => {
-    // Main flicker (2.5% chance)
+    // Flicker (2.5% chance)
     if (Math.random() < 0.025) {
-      setMainFlicker(Math.random() < 0.3 ? 0.4 : 1)
+      setFlicker(Math.random() < 0.3 ? 0.4 : 1)
     }
 
     // Shadow 1 (accent1) - 3% chance
@@ -59,10 +60,10 @@ export function AlbumGridTextDisplay({ albumPalette }: AlbumGridTextDisplayProps
     }
   })
 
-  // Only show when a version is actively playing
-  if (!currentVersion || !isPlaying) return null
+  // Only show when hovering a version
+  if (!version || !visible) return null
 
-  const label = currentVersion.label || 'Untitled Version'
+  const label = version.label || 'Untitled Version'
 
   return (
     <group
@@ -70,53 +71,68 @@ export function AlbumGridTextDisplay({ albumPalette }: AlbumGridTextDisplayProps
       position={position}
       rotation={[-Math.PI / 2, 0, 0]} // Lay flat on grid
     >
-      {/* Main text layer - album dominant color */}
+      {/* Inner white glow - subtle, under colored text */}
       <Text
-        fontSize={1.5}
+        position={[0, 0, 0.01]}
+        fontSize={3.0}
+        color="#ffffff"
+        anchorX="center"
+        anchorY="middle"
+        maxWidth={30}
+        textAlign="center"
+        fillOpacity={0.3}
+      >
+        {label}
+      </Text>
+
+      {/* Main text layer - album dominant color (BIG, always full opacity) */}
+      <Text
+        position={[0, 0, 0.02]}
+        fontSize={3.0}
         color={mainColor}
         anchorX="center"
         anchorY="middle"
-        maxWidth={30}            // Allow long names to stretch
+        maxWidth={30}
         textAlign="center"
-        outlineWidth={0.05}
+        outlineWidth={0.08}
         outlineColor="#000000"   // Dark outline for readability
-        fillOpacity={mainFlicker}
+        fillOpacity={1.0}
       >
         {label}
       </Text>
 
-      {/* Glow layer 1 */}
+      {/* Bright color glow very close behind */}
       <Text
-        position={[0, 0, -0.1]}
-        fontSize={1.5}
+        position={[0, 0, -0.05]}
+        fontSize={3.0}
         color={mainColor}
         anchorX="center"
         anchorY="middle"
         maxWidth={30}
         textAlign="center"
-        fillOpacity={0.5 * mainFlicker}
+        fillOpacity={0.9}
       >
         {label}
       </Text>
 
-      {/* Glow layer 2 */}
+      {/* Softer outer glow layer */}
       <Text
-        position={[0, 0, -0.2]}
-        fontSize={1.5}
+        position={[0, 0, -0.15]}
+        fontSize={3.0}
         color={mainColor}
         anchorX="center"
         anchorY="middle"
         maxWidth={30}
         textAlign="center"
-        fillOpacity={0.2 * mainFlicker}
+        fillOpacity={0.5}
       >
         {label}
       </Text>
 
       {/* Shadow 1 - accent1 color, slight offset */}
       <Text
-        position={[0.12, 0, -0.25]}
-        fontSize={1.5}
+        position={[0.15, 0, -0.25]}
+        fontSize={3.0}
         color={accent1}
         anchorX="center"
         anchorY="middle"
@@ -132,8 +148,8 @@ export function AlbumGridTextDisplay({ albumPalette }: AlbumGridTextDisplayProps
 
       {/* Shadow 2 - accent2 color, opposite offset */}
       <Text
-        position={[-0.1, 0, -0.35]}
-        fontSize={1.5}
+        position={[-0.12, 0, -0.35]}
+        fontSize={3.0}
         color={accent2}
         anchorX="center"
         anchorY="middle"
@@ -151,7 +167,7 @@ export function AlbumGridTextDisplay({ albumPalette }: AlbumGridTextDisplayProps
       <pointLight
         position={[0, 0, 1]}
         color={mainColor}
-        intensity={1.2 * mainFlicker}
+        intensity={3 * flicker}
         distance={10}
       />
     </group>

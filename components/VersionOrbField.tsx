@@ -52,13 +52,15 @@ function OrbScene({
   versions, 
   albumCoverUrl,
   albumPalette,
+  hoveredVersion,
   onHover, 
   deviceTier 
 }: {
   versions: ExtendedVersion[]
   albumCoverUrl: string
   albumPalette: Album['palette']
-  onHover: (label: string | null) => void
+  hoveredVersion: ExtendedVersion | null
+  onHover: (version: ExtendedVersion | null) => void
   deviceTier: DeviceTier
 }) {
   // Calculate dynamic layout based on version count
@@ -102,8 +104,12 @@ function OrbScene({
         <InvisibleBounds size={25} />
       </Suspense>
       
-      {/* CENTERED GRID TEXT - Shows currently playing version label */}
-      <AlbumGridTextDisplay albumPalette={albumPalette} />
+      {/* CENTERED GRID TEXT - Shows hovered version label on album grid */}
+      <AlbumGridTextDisplay 
+        version={hoveredVersion}
+        albumPalette={albumPalette}
+        visible={!!hoveredVersion}
+      />
       
       {/* MINIMAL GRID - Album page style (clean background) */}
       <gridHelper 
@@ -135,6 +141,7 @@ export function VersionOrbField({
 
   const [deviceTier, setDeviceTier] = useState<DeviceTier>('high')
   const [dpr, setDpr] = useState(1.5)
+  const [hoveredVersion, setHoveredVersion] = useState<ExtendedVersion | null>(null)
   
   const quality = getQualitySettings(deviceTier)
 
@@ -195,7 +202,8 @@ export function VersionOrbField({
           versions={versions}
           albumCoverUrl={albumCoverUrl}
           albumPalette={albumPalette}
-          onHover={() => {}}
+          hoveredVersion={hoveredVersion}
+          onHover={setHoveredVersion}
           deviceTier={deviceTier}
         />
         
