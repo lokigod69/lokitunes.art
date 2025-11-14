@@ -6,16 +6,28 @@ import { Text } from '@react-three/drei'
 import * as THREE from 'three'
 import type { Album } from '@/lib/supabase'
 
-// Predefined spots on grid (away from center orbs, visible from camera)
+// SAFE TEXT SPOTS - Constrained to visible grid area only!
+// Z range: -10 to -3 (visible depth, away from camera)
+// X range: -18 to 18 (visible width)
+// Y: -13.9 (just above grid at -14)
 const GRID_TEXT_SPOTS: [number, number, number][] = [
-  [-20, -13.9, -12],   // Top-left area
-  [18, -13.9, -15],    // Top-right area
-  [-15, -13.9, 10],    // Bottom-left area
-  [20, -13.9, 8],      // Bottom-right area
-  [-8, -13.9, -20],    // Far back left
-  [12, -13.9, -18],    // Far back right
-  [-22, -13.9, 5],     // Mid-left
-  [15, -13.9, 12],     // Mid-right
+  // Left side positions
+  [-15, -13.9, -8],    // Far left, mid-depth
+  [-12, -13.9, -5],    // Mid-left, closer
+  [-18, -13.9, -10],   // Far left, far depth
+  [-10, -13.9, -3],    // Left, near edge
+  
+  // Center positions
+  [-5, -13.9, -7],     // Center-left, mid-depth
+  [0, -13.9, -8],      // Dead center, far
+  [5, -13.9, -6],      // Center-right, mid-depth
+  [0, -13.9, -4],      // Dead center, near
+  
+  // Right side positions
+  [12, -13.9, -5],     // Mid-right, closer
+  [15, -13.9, -8],     // Far right, mid-depth
+  [18, -13.9, -10],    // Far right, far depth
+  [10, -13.9, -3],     // Right, near edge
 ]
 
 interface GridTextDisplayProps {

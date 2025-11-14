@@ -90,31 +90,44 @@ dim: 0.4 (40% brightness)
 
 ---
 
-## 📍 PHASE 3: GRID TEXT DESIGN
+## PHASE 3: GRID TEXT DESIGN
 
 ### **Text Positioning Strategy:**
 
-**RECOMMENDED: Option B (Predefined Spots)**
-
-```typescript
+**RECOMMENDED: Option B// SAFE TEXT SPOTS - Constrained to visible grid area only!
 const GRID_TEXT_SPOTS: [number, number, number][] = [
-  [-20, -13.9, -12],   // Top-left area
-  [18, -13.9, -15],    // Top-right area
-  [-15, -13.9, 10],    // Bottom-left area
-  [20, -13.9, 8],      // Bottom-right area
-  [-8, -13.9, -20],    // Far back left
-  [12, -13.9, -18],    // Far back right
-  [-22, -13.9, 5],     // Mid-left
-  [15, -13.9, 12],     // Mid-right
+  // Left side positions
+  [-15, -13.9, -8],    // Far left, mid-depth
+  [-12, -13.9, -5],    // Mid-left, closer
+  [-18, -13.9, -10],   // Far left, far depth
+  [-10, -13.9, -3],    // Left, near edge
+  
+  // Center positions
+  [-5, -13.9, -7],     // Center-left, mid-depth
+  [0, -13.9, -8],      // Dead center, far
+  [5, -13.9, -6],      // Center-right, mid-depth
+  [0, -13.9, -4],      // Dead center, near
+  
+  // Right side positions
+  [12, -13.9, -5],     // Mid-right, closer
+  [15, -13.9, -8],     // Far right, mid-depth
+  [18, -13.9, -10],    // Far right, far depth
+  [10, -13.9, -3],     // Right, near edge
 ]
 
-// Y = -13.9 (slightly above top grid layer at -14)
+// VISIBLE BOUNDS:
+// Z range: -10 to -3 (visible depth, negative = away from camera)
+// X range: -18 to 18 (visible width)
+// Y: -13.9 (slightly above top grid layer at -14)
 // Prevents z-fighting while keeping text on grid visually
-```
+// NO positive Z values (would be below screen)
+// NO Z < -10 (would be off top of screen)
 
-**Why Predefined Spots:**
-- ✅ Consistent UX (same album always appears in similar area)
-- ✅ Avoids orb overlap (predefined spots are away from center)
+### **Why Predefined Spots:**
+- Consistent UX (same album always appears in similar area)
+- Avoids orb overlap (predefined spots are away from center)
+- Visible from camera angle
+- Predictable performance
 - ✅ Visible from camera angle
 - ✅ Predictable performance
 
