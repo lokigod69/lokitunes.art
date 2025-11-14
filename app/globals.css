@@ -64,47 +64,90 @@ html {
   }
 }
 
-/* Monochrome mode - higher contrast + brightness for better visibility */
-html.monochrome {
-  filter: grayscale(100%) contrast(1.6) brightness(1.2);
+/* === MONOCHROME MODES ===================================================== */
+
+/* OPTION 1: Glassy Cyan (default) */
+html.monochrome-cyan {
+  filter: grayscale(100%) brightness(1.1) sepia(20%) hue-rotate(170deg) saturate(150%);
   transition: filter 0.3s ease;
 }
 
-/* Boost interactive elements so they stand out */
-html.monochrome button,
-html.monochrome .player,
-html.monochrome [role="button"],
-html.monochrome input,
-html.monochrome a:hover {
-  filter: brightness(1.4) contrast(1.2) !important;
+html.monochrome-cyan button,
+html.monochrome-cyan .player,
+html.monochrome-cyan [role="button"],
+html.monochrome-cyan input,
+html.monochrome-cyan a:hover {
+  filter: brightness(1.15) drop-shadow(0 0 8px rgba(100, 200, 255, 0.4));
 }
 
-/* Keep 3D scene partially colored / readable */
-html.monochrome canvas {
-  filter: grayscale(70%) brightness(1.15) !important;
+html.monochrome-cyan canvas {
+  filter: grayscale(80%) brightness(1.1) !important;
 }
 
-/* Keep album/cover images in full color for contrast */
-html.monochrome img[class*="album"],
-html.monochrome img[class*="cover"] {
+html.monochrome-cyan img[class*="album"],
+html.monochrome-cyan img[class*="cover"] {
   filter: none !important;
 }
 
-/* Boost text readability and preserve neon feel */
-html.monochrome h1,
-html.monochrome h2,
-html.monochrome h3,
-html.monochrome [class*="neon"],
-html.monochrome [class*="glow"] {
-  text-shadow: 0 0 3px rgba(255, 255, 255, 0.5),
-               0 0 1px rgba(255, 255, 255, 0.3);
+html.monochrome-cyan [class*="glow"],
+html.monochrome-cyan [class*="neon"] {
+  text-shadow: 0 0 8px rgba(100, 200, 255, 0.5),
+               0 0 4px rgba(100, 200, 255, 0.3);
 }
 
-/* Optional: keep now-playing indicators vivid */
-html.monochrome .is-playing,
-html.monochrome .now-playing {
-  filter: grayscale(0) brightness(1.3) !important;
+/* OPTION 2: Soft Pastel */
+html.monochrome-pastel {
+  filter: grayscale(100%) contrast(0.9) brightness(1.25) saturate(0);
+  transition: filter 0.3s ease;
 }
+
+html.monochrome-pastel button,
+html.monochrome-pastel .player,
+html.monochrome-pastel [role="button"],
+html.monochrome-pastel input,
+html.monochrome-pastel a:hover {
+  filter: brightness(1.2) drop-shadow(0 0 8px rgba(255, 255, 255, 0.3));
+}
+
+html.monochrome-pastel canvas {
+  filter: grayscale(90%) brightness(1.15) !important;
+}
+
+html.monochrome-pastel img[class*="album"],
+html.monochrome-pastel img[class*="cover"] {
+  filter: none !important;
+}
+
+/* OPTION 3: Soft Green Terminal */
+html.monochrome-green {
+  filter: grayscale(100%) brightness(1.15) sepia(30%) hue-rotate(50deg) saturate(200%) contrast(0.95);
+  transition: filter 0.3s ease;
+}
+
+html.monochrome-green button,
+html.monochrome-green .player,
+html.monochrome-green [role="button"],
+html.monochrome-green input,
+html.monochrome-green a:hover {
+  filter: brightness(1.2) drop-shadow(0 0 6px rgba(100, 255, 150, 0.3));
+}
+
+html.monochrome-green canvas {
+  filter: grayscale(80%) brightness(1.1) !important;
+}
+
+html.monochrome-green img[class*="album"],
+html.monochrome-green img[class*="cover"] {
+  filter: none !important;
+}
+
+html.monochrome-green [class*="glow"],
+html.monochrome-green [class*="neon"] {
+  text-shadow: 0 0 8px rgba(100, 255, 150, 0.4),
+               0 0 4px rgba(100, 255, 150, 0.3);
+}
+
+/* Note: .is-playing / .now-playing hooks can be added later per mode if desired */
 
 /* Focus visible styles for accessibility */
 *:focus-visible {
