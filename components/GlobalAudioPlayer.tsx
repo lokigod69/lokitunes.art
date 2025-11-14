@@ -1,7 +1,6 @@
 'use client'
 
 import { useRef, useState, type PointerEvent as ReactPointerEvent, type MouseEvent as ReactMouseEvent } from 'react'
-import { usePathname } from 'next/navigation'
 import { useAudioStore } from '@/lib/audio-store'
 import { Play, Pause, Volume2 } from 'lucide-react'
 import Image from 'next/image'
@@ -14,13 +13,6 @@ function formatTime(seconds: number): string {
 }
 
 export function GlobalAudioPlayer() {
-  const pathname = usePathname()
-  
-  // Hide on home page - MiniPlayer handles audio UI there
-  if (pathname === '/') {
-    return null
-  }
-  
   const { 
     currentVersion, 
     currentPalette,
@@ -78,7 +70,7 @@ export function GlobalAudioPlayer() {
       {/* Player UI only shows when there's a track */}
       {currentVersion && (
         <div
-          className="fixed bottom-0 left-0 right-0 bg-void/95 backdrop-blur-lg border-t z-50"
+          className="player fixed bottom-0 left-0 right-0 bg-void/95 backdrop-blur-lg border-t z-50"
           style={{ borderColor: `${accentColor}30` }}
         >
           <div className="max-w-screen-2xl mx-auto px-4 py-3">

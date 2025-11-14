@@ -64,17 +64,46 @@ html {
   }
 }
 
-/* Monochrome mode - global grayscale with contrast boost */
+/* Monochrome mode - higher contrast + brightness for better visibility */
 html.monochrome {
-  filter: grayscale(100%) contrast(1.2);
+  filter: grayscale(100%) contrast(1.6) brightness(1.2);
   transition: filter 0.3s ease;
 }
 
-/* Optional: keep 3D canvas and album/cover images in color for contrast */
-html.monochrome canvas,
+/* Boost interactive elements so they stand out */
+html.monochrome button,
+html.monochrome .player,
+html.monochrome [role="button"],
+html.monochrome input,
+html.monochrome a:hover {
+  filter: brightness(1.4) contrast(1.2) !important;
+}
+
+/* Keep 3D scene partially colored / readable */
+html.monochrome canvas {
+  filter: grayscale(70%) brightness(1.15) !important;
+}
+
+/* Keep album/cover images in full color for contrast */
 html.monochrome img[class*="album"],
 html.monochrome img[class*="cover"] {
   filter: none !important;
+}
+
+/* Boost text readability and preserve neon feel */
+html.monochrome h1,
+html.monochrome h2,
+html.monochrome h3,
+html.monochrome [class*="neon"],
+html.monochrome [class*="glow"] {
+  text-shadow: 0 0 3px rgba(255, 255, 255, 0.5),
+               0 0 1px rgba(255, 255, 255, 0.3);
+}
+
+/* Optional: keep now-playing indicators vivid */
+html.monochrome .is-playing,
+html.monochrome .now-playing {
+  filter: grayscale(0) brightness(1.3) !important;
 }
 
 /* Focus visible styles for accessibility */
