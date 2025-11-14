@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { usePathname } from 'next/navigation'
 import { useAudioStore } from '@/lib/audio-store'
 import { Play, Pause, SkipForward, SkipBack, Volume2 } from 'lucide-react'
@@ -47,6 +47,9 @@ export function GlobalAudioPlayer() {
   // Half-pipe SVG path animation state (Phase 2)
   const pathRef = useRef<SVGPathElement | null>(null)
   const [pathLength, setPathLength] = useState(0)
+  const [isDragging, setIsDragging] = useState(false)
+  const [orbPosition, setOrbPosition] = useState({ x: 0, y: 0 })
+  const progressContainerRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     if (pathRef.current && pathLength === 0) {
@@ -54,7 +57,37 @@ export function GlobalAudioPlayer() {
     }
   }, [pathLength])
 
+  useEffect(() => {
+    if (!pathRef.current || pathLength === 0) return
+    const distance = (progress / 100) * pathLength
+    const point = pathRef.current.getPointAtLength(distance)
+    setOrbPosition({ x: point.x, y: point.y })
+  }, [progress, pathLength])
+
   const dashOffset = pathLength > 0 ? pathLength * (1 - progress / 100) : 0
+
+  const handleOrbPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (!progressContainerRef.current) return
+    e.preventDefault()
+    e.currentTarget.setPointerCapture(e.pointerId)
+    setIsDragging(true)
+  }
+
+  const handleOrbPointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (!isDragging || !progressContainerRef.current || !duration) return
+    const rect = progressContainerRef.current.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const percent = x / rect.width
+    const clamped = Math.max(0, Math.min(1, percent))
+    const newTime = clamped * duration
+    setCurrentTime(newTime)
+  }
+
+  const handleOrbPointerUp = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (!isDragging) return
+    e.currentTarget.releasePointerCapture(e.pointerId)
+    setIsDragging(false)
+  }
   
   // Extract real waveform peaks from audio
   const { peaks } = useWaveformPeaks(currentVersion?.audio_url || '', 50)
@@ -172,9 +205,10 @@ export function GlobalAudioPlayer() {
           
           {/* Progress bar */}
           <div
+            ref={progressContainerRef}
             className="relative w-full h-10 cursor-pointer group"
             onClick={(e) => {
-              if (!duration) return
+              if (!duration || isDragging) return
               const rect = e.currentTarget.getBoundingClientRect()
               const clickX = e.clientX - rect.left
               const percent = clickX / rect.width
@@ -223,6 +257,25 @@ export function GlobalAudioPlayer() {
               }}
               className="absolute inset-0 w-full opacity-0 cursor-pointer"
             />
+
+            {duration > 0 && (
+              <div
+                className="absolute flex items-center justify-center"
+                style={{
+                  left: `${orbPosition.x}%`,
+                  top: `${orbPosition.y}%`,
+                  transform: 'translate(-50%, -50%)',
+                  width: '44px',
+                  height: '44px',
+                }}
+                onPointerDown={handleOrbPointerDown}
+                onPointerMove={handleOrbPointerMove}
+                onPointerUp={handleOrbPointerUp}
+                onPointerCancel={handleOrbPointerUp}
+              >
+                <div className="w-4 h-4 rounded-full bg-voltage shadow-lg" />
+              </div>
+            )}
           </div>
         </div>
       </div>
