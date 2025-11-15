@@ -282,15 +282,27 @@ export function RatingModal({ isOpen, onClose }: RatingModalProps) {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <p className="text-xs text-bone/60 mb-1">Your rating (1–10)</p>
-                <RatingStars
-                  value={rating}
-                  onChange={setRating}
-                  readOnly={isSubmitting}
-                  size={20}
-                  color={accentColor}
-                />
+              <div className="mb-6">
+                <label className="block text-sm text-bone/60 mb-2">
+                  Your rating (1–10)
+                </label>
+                <div className="flex items-center gap-4">
+                  <RatingStars
+                    value={rating}
+                    onChange={setRating}
+                    readOnly={isSubmitting}
+                    size={20}
+                    color={accentColor}
+                  />
+                  {rating > 0 && (
+                    <span
+                      className="text-2xl font-bold tabular-nums"
+                      style={{ color: accentColor }}
+                    >
+                      {rating}/10
+                    </span>
+                  )}
+                </div>
               </div>
 
               <div>
