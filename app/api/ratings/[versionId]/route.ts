@@ -4,10 +4,10 @@ import { getClientIp, hashIp } from '@/lib/ip-hash'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { versionId: string } }
+  { params }: { params: Promise<{ versionId: string }> }
 ) {
   try {
-    const { versionId } = params
+    const { versionId } = await params
 
     if (!versionId) {
       return NextResponse.json(
