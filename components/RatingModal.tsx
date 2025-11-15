@@ -1,10 +1,8 @@
 'use client'
 
 import { useEffect, useState, type FormEvent } from 'react'
-import { X } from 'lucide-react'
+import { X, Star } from 'lucide-react'
 import { RatingStars } from '@/components/RatingStars'
-import { RatingSummary } from '@/components/RatingSummary'
-import { RatingCommentsList } from '@/components/RatingCommentsList'
 import { useAudioStore } from '@/lib/audio-store'
 
 interface RatingModalProps {
@@ -211,12 +209,12 @@ export function RatingModal({ isOpen, onClose }: RatingModalProps) {
           <div className="space-y-6">
             <div className="p-4 bg-bone/5 rounded border border-bone/10">
               <p className="text-xs text-bone/60 mb-2">Your rating</p>
-              <RatingStars
-                value={userRating.rating}
-                readOnly
-                size={20}
-                color={accentColor}
-              />
+              <div className="flex items-center gap-2">
+                <span className="text-2xl font-bold" style={{ color: accentColor }}>
+                  {userRating.rating}/10
+                </span>
+                <Star size={20} fill={accentColor} color={accentColor} />
+              </div>
               {userRating.comment && (
                 <p className="text-sm text-bone/80 mt-2 italic">"{userRating.comment}"</p>
               )}
@@ -232,18 +230,36 @@ export function RatingModal({ isOpen, onClose }: RatingModalProps) {
             {stats && stats.rating_count > 0 && (
               <div>
                 <p className="text-xs text-bone/60 mb-2">Community rating</p>
-                <RatingSummary
-                  avgRating={stats.avg_rating}
-                  ratingCount={stats.rating_count}
-                  accentColor={accentColor}
-                />
+                <div className="flex items-center gap-2">
+                  <Star size={20} fill={accentColor} color={accentColor} />
+                  <span className="text-lg font-medium text-bone">
+                    {stats.avg_rating.toFixed(1)}/10
+                  </span>
+                  <span className="text-sm text-bone/60">
+                    ({stats.rating_count} {stats.rating_count === 1 ? 'rating' : 'ratings'})
+                  </span>
+                </div>
               </div>
             )}
 
             {comments.length > 0 && (
               <div>
                 <p className="text-xs text-bone/60 mb-2">Recent comments</p>
-                <RatingCommentsList comments={comments} accentColor={accentColor} />
+                <div className="space-y-3 max-h-48 overflow-y-auto pr-2">
+                  {comments.map((c) => (
+                    <div
+                      key={c.id}
+                      className="p-3 bg-bone/5 rounded border-l-2 border-bone/20"
+                    >
+                      <p className="text-sm text-bone/90 mb-1">"{c.comment}"</p>
+                      <div className="flex items-center gap-2 text-xs text-bone/50">
+                        <span>{new Date(c.created_at).toLocaleDateString()}</span>
+                        <span>•</span>
+                        <span>{c.rating}/10</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
