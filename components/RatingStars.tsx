@@ -4,12 +4,13 @@ import { useState } from "react"
 import { Star } from "lucide-react"
 
 interface RatingStarsProps {
-  value: number
+  value: number // 1-10
   onChange?: (value: number) => void
   readOnly?: boolean
+  size?: number
 }
 
-export function RatingStars({ value, onChange, readOnly }: RatingStarsProps) {
+export function RatingStars({ value, onChange, readOnly, size }: RatingStarsProps) {
   const [hoverValue, setHoverValue] = useState<number | null>(null)
 
   const handleClick = (next: number) => {
@@ -28,10 +29,11 @@ export function RatingStars({ value, onChange, readOnly }: RatingStarsProps) {
   }
 
   const currentValue = hoverValue ?? value
+  const starSize = size ?? 20
 
   return (
-    <div className="flex items-center gap-1">
-      {Array.from({ length: 5 }).map((_, index) => {
+    <div className="flex items-center gap-0.5">
+      {Array.from({ length: 10 }).map((_, index) => {
         const starValue = index + 1
         const filled = starValue <= currentValue
 
@@ -47,7 +49,8 @@ export function RatingStars({ value, onChange, readOnly }: RatingStarsProps) {
             aria-label={`${starValue} star${starValue === 1 ? "" : "s"}`}
           >
             <Star
-              className={`w-5 h-5 transition-colors ${
+              size={starSize}
+              className={`transition-colors ${
                 filled ? "text-amber-400" : "text-bone/40"
               }`}
               fill={filled ? "currentColor" : "none"}

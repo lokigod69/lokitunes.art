@@ -49,8 +49,8 @@ export function RatingModal({ isOpen, onClose }: RatingModalProps) {
     event.preventDefault()
     if (isSubmitting) return
 
-    if (rating < 1 || rating > 5) {
-      setError('Please select a rating between 1 and 5 stars.')
+    if (rating < 1 || rating > 10) {
+      setError('Please select a rating between 1 and 10.')
       return
     }
 
@@ -108,11 +108,12 @@ export function RatingModal({ isOpen, onClose }: RatingModalProps) {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <p className="text-xs text-bone/60 mb-1">Your rating</p>
+            <p className="text-xs text-bone/60 mb-1">Your rating (1–10)</p>
             <RatingStars
               value={rating}
               onChange={setRating}
               readOnly={isSubmitting}
+              size={20}
             />
           </div>
 
@@ -154,8 +155,8 @@ export function RatingModal({ isOpen, onClose }: RatingModalProps) {
             </button>
             <button
               type="submit"
-              disabled={isSubmitting}
-              className="px-3 py-1.5 text-xs rounded-md bg-voltage text-void font-medium hover:brightness-110 disabled:opacity-60"
+              disabled={isSubmitting || rating === 0}
+              className="px-3 py-1.5 text-xs rounded-md bg-voltage text-void font-medium hover:brightness-110 disabled:opacity-60 cursor-pointer disabled:cursor-not-allowed"
             >
               {isSubmitting ? 'Saving…' : 'Submit rating'}
             </button>
