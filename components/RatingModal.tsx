@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, type FormEvent } from 'react'
+import { X } from 'lucide-react'
 import { RatingStars } from '@/components/RatingStars'
 import { RatingSummary } from '@/components/RatingSummary'
 import { RatingCommentsList } from '@/components/RatingCommentsList'
@@ -71,17 +72,36 @@ export function RatingModal({ isOpen, onClose }: RatingModalProps) {
     }
   }, [isOpen, currentVersion])
 
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose()
+      }
+    }
+
+    if (isOpen) {
+      window.addEventListener('keydown', handleEscape)
+    }
+
+    return () => {
+      window.removeEventListener('keydown', handleEscape)
+    }
+  }, [isOpen, onClose])
+
   if (!isOpen) return null
 
   if (!currentVersion) {
     return (
-      <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm">
-        <div className="w-full max-w-md rounded-xl bg-void border border-bone/20 p-6 text-bone">
+      <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm" onClick={onClose}>
+        <div
+          className="w-full max-w-md rounded-xl bg-void border border-bone/20 p-6 text-bone"
+          onClick={(e) => e.stopPropagation()}
+        >
           <p className="text-sm mb-4">No song is currently playing.</p>
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 rounded-md bg-bone/10 hover:bg-bone/20 text-sm"
+            className="px-4 py-2 rounded-md bg-bone/10 hover:bg-bone/20 text-sm cursor-pointer"
           >
             Close
           </button>
@@ -161,10 +181,27 @@ export function RatingModal({ isOpen, onClose }: RatingModalProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-xl bg-void border border-bone/20 p-6 text-bone shadow-xl">
-        <h2 className="text-lg font-semibold mb-2">Rate this version</h2>
-        <p className="text-sm text-bone/70 mb-4 truncate">{currentVersion.label}</p>
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-md rounded-xl bg-void border border-bone/20 p-6 text-bone shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex justify-between items-start mb-4">
+          <div>
+            <h2 className="text-lg font-semibold">Rate this version</h2>
+            <p className="text-sm text-bone/70 mt-1 truncate">{currentVersion.label}</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-bone/60 hover:text-bone cursor-pointer"
+          >
+            <X size={18} />
+          </button>
+        </div>
 
         {isLoading ? (
           <div className="text-center py-8">
@@ -186,7 +223,7 @@ export function RatingModal({ isOpen, onClose }: RatingModalProps) {
               <button
                 type="button"
                 onClick={() => setIsEditing(true)}
-                className="text-xs text-cyan-400 hover:text-cyan-300 mt-2 underline"
+                className="text-xs text-cyan-400 hover:text-cyan-300 mt-2 underline cursor-pointer"
               >
                 Edit your rating
               </button>
@@ -211,63 +248,81 @@ export function RatingModal({ isOpen, onClose }: RatingModalProps) {
             )}
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <p className="text-xs text-bone/60 mb-1">Your rating (1–10)</p>
-              <RatingStars
-                value={rating}
-                onChange={setRating}
-                readOnly={isSubmitting}
-                size={20}
-                color={accentColor}
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs text-bone/60 mb-1" htmlFor="rating-comment">
-                Optional comment (max 200 chars)
-              </label>
-              <textarea
-                id="rating-comment"
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                maxLength={200}
-                rows={3}
-                className="w-full rounded-md bg-black/40 border border-bone/20 px-3 py-2 text-sm text-bone placeholder:text-bone/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-voltage/80"
-                placeholder="What did you think of this version?"
-                disabled={isSubmitting}
-              />
-              <p className="mt-1 text-[11px] text-bone/40 text-right">
-                {comment.length}/200
-              </p>
-            </div>
-
-            {error && (
-              <p className="text-xs text-red-400">{error}</p>
-            )}
-
-            {success && (
-              <p className="text-xs text-emerald-400">Thanks for rating!</p>
-            )}
-
-            <div className="flex justify-end gap-2 pt-2">
+          <>
+            {isEditing && (
               <button
                 type="button"
-                onClick={onClose}
-                disabled={isSubmitting}
-                className="px-3 py-1.5 text-xs rounded-md border border-bone/30 text-bone/80 hover:bg-bone/10 disabled:opacity-60"
+                onClick={() => {
+                  setIsEditing(false)
+                  if (userRating) {
+                    setRating(userRating.rating)
+                    setComment(userRating.comment || '')
+                  }
+                }}
+                className="w-full mb-3 text-sm text-bone/60 hover:text-bone cursor-pointer text-left"
               >
-                Cancel
+                ← Cancel editing
               </button>
-              <button
-                type="submit"
-                disabled={isSubmitting || rating === 0}
-                className="px-3 py-1.5 text-xs rounded-md bg-voltage text-void font-medium hover:brightness-110 disabled:opacity-60 cursor-pointer disabled:cursor-not-allowed"
-              >
-                {isSubmitting ? 'Saving…' : isEditing ? 'Update rating' : 'Submit rating'}
-              </button>
-            </div>
-          </form>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <p className="text-xs text-bone/60 mb-1">Your rating (1–10)</p>
+                <RatingStars
+                  value={rating}
+                  onChange={setRating}
+                  readOnly={isSubmitting}
+                  size={20}
+                  color={accentColor}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs text-bone/60 mb-1" htmlFor="rating-comment">
+                  Optional comment (max 200 chars)
+                </label>
+                <textarea
+                  id="rating-comment"
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  maxLength={200}
+                  rows={3}
+                  className="w-full rounded-md bg-black/40 border border-bone/20 px-3 py-2 text-sm text-bone placeholder:text-bone/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-voltage/80"
+                  placeholder="What did you think of this version?"
+                  disabled={isSubmitting}
+                />
+                <p className="mt-1 text-[11px] text-bone/40 text-right">
+                  {comment.length}/200
+                </p>
+              </div>
+
+              {error && (
+                <p className="text-xs text-red-400">{error}</p>
+              )}
+
+              {success && (
+                <p className="text-xs text-emerald-400">Thanks for rating!</p>
+              )}
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  disabled={isSubmitting}
+                  className="px-3 py-1.5 text-xs rounded-md border border-bone/30 text-bone/80 hover:bg-bone/10 disabled:opacity-60 cursor-pointer disabled:cursor-not-allowed"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting || rating === 0}
+                  className="px-3 py-1.5 text-xs rounded-md bg-voltage text-void font-medium hover:brightness-110 disabled:opacity-60 cursor-pointer disabled:cursor-not-allowed"
+                >
+                  {isSubmitting ? 'Saving…' : isEditing ? 'Update rating' : 'Submit rating'}
+                </button>
+              </div>
+            </form>
+          </>
         )}
       </div>
     </div>

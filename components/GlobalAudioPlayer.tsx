@@ -98,7 +98,7 @@ export function GlobalAudioPlayer() {
                     <button
                       type="button"
                       onClick={() => setIsRatingOpen(true)}
-                      className="text-[11px] px-2 py-0.5 rounded-full border border-bone/30 text-bone/80 hover:bg-bone/10 hover:text-bone transition-colors flex-shrink-0"
+                      className="text-[11px] px-2 py-0.5 rounded-full border border-bone/30 text-bone/80 hover:bg-bone/10 hover:text-bone transition-colors flex-shrink-0 cursor-pointer"
                     >
                       Rate
                     </button>
