@@ -2,6 +2,8 @@
 
 import { useEffect, useState, type FormEvent } from 'react'
 import { RatingStars } from '@/components/RatingStars'
+import { RatingSummary } from '@/components/RatingSummary'
+import { RatingCommentsList } from '@/components/RatingCommentsList'
 import { useAudioStore } from '@/lib/audio-store'
 
 interface RatingModalProps {
@@ -10,21 +12,64 @@ interface RatingModalProps {
 }
 
 export function RatingModal({ isOpen, onClose }: RatingModalProps) {
-  const { currentVersion } = useAudioStore()
+  const { currentVersion, currentPalette } = useAudioStore()
   const [rating, setRating] = useState(0)
   const [comment, setComment] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
 
+  const [stats, setStats] = useState<any>(null)
+  const [userRating, setUserRating] = useState<any>(null)
+  const [comments, setComments] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+
+  const accentColor = currentPalette?.accent1 || '#4F9EFF'
+
   useEffect(() => {
-    if (isOpen) {
-      setRating(0)
-      setComment('')
+    if (!isOpen || !currentVersion) return
+
+    let isCancelled = false
+    const load = async () => {
+      setIsLoading(true)
+      setIsEditing(false)
       setError(null)
       setSuccess(false)
+
+      try {
+        const res = await fetch(`/api/ratings/${currentVersion.id}`)
+        if (!res.ok) throw new Error('Failed to load ratings')
+        const data = await res.json()
+
+        if (isCancelled) return
+
+        setStats(data.stats || null)
+        setUserRating(data.userRating || null)
+        setComments(data.comments || [])
+
+        if (data.userRating) {
+          setRating(data.userRating.rating || 0)
+          setComment(data.userRating.comment || '')
+        } else {
+          setRating(0)
+          setComment('')
+        }
+      } catch (err) {
+        console.error('Failed to fetch ratings:', err)
+      } finally {
+        if (!isCancelled) {
+          setIsLoading(false)
+        }
+      }
     }
-  }, [isOpen])
+
+    load()
+
+    return () => {
+      isCancelled = true
+    }
+  }, [isOpen, currentVersion])
 
   if (!isOpen) return null
 
@@ -89,10 +134,25 @@ export function RatingModal({ isOpen, onClose }: RatingModalProps) {
       }
 
       setSuccess(true)
-      // Give the user a brief moment to see success, then close
+
+      if (currentVersion) {
+        try {
+          const refresh = await fetch(`/api/ratings/${currentVersion.id}`)
+          if (refresh.ok) {
+            const data = await refresh.json()
+            setStats(data.stats || null)
+            setUserRating(data.userRating || null)
+            setComments(data.comments || [])
+            setIsEditing(false)
+          }
+        } catch (err) {
+          console.error('Failed to refresh ratings after submit:', err)
+        }
+      }
+
       setTimeout(() => {
-        onClose()
-      }, 800)
+        setSuccess(false)
+      }, 1500)
     } catch (err: any) {
       setError(err?.message || 'Something went wrong while saving your rating.')
     } finally {
@@ -106,62 +166,109 @@ export function RatingModal({ isOpen, onClose }: RatingModalProps) {
         <h2 className="text-lg font-semibold mb-2">Rate this version</h2>
         <p className="text-sm text-bone/70 mb-4 truncate">{currentVersion.label}</p>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <p className="text-xs text-bone/60 mb-1">Your rating (1–10)</p>
-            <RatingStars
-              value={rating}
-              onChange={setRating}
-              readOnly={isSubmitting}
-              size={20}
-            />
+        {isLoading ? (
+          <div className="text-center py-8">
+            <p className="text-bone/60 text-sm">Loading ratings…</p>
           </div>
+        ) : userRating && !isEditing ? (
+          <div className="space-y-6">
+            <div className="p-4 bg-bone/5 rounded border border-bone/10">
+              <p className="text-xs text-bone/60 mb-2">Your rating</p>
+              <RatingStars
+                value={userRating.rating}
+                readOnly
+                size={20}
+                color={accentColor}
+              />
+              {userRating.comment && (
+                <p className="text-sm text-bone/80 mt-2 italic">"{userRating.comment}"</p>
+              )}
+              <button
+                type="button"
+                onClick={() => setIsEditing(true)}
+                className="text-xs text-cyan-400 hover:text-cyan-300 mt-2 underline"
+              >
+                Edit your rating
+              </button>
+            </div>
 
-          <div>
-            <label className="block text-xs text-bone/60 mb-1" htmlFor="rating-comment">
-              Optional comment (max 200 chars)
-            </label>
-            <textarea
-              id="rating-comment"
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              maxLength={200}
-              rows={3}
-              className="w-full rounded-md bg-black/40 border border-bone/20 px-3 py-2 text-sm text-bone placeholder:text-bone/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-voltage/80"
-              placeholder="What did you think of this version?"
-              disabled={isSubmitting}
-            />
-            <p className="mt-1 text-[11px] text-bone/40 text-right">
-              {comment.length}/200
-            </p>
+            {stats && stats.rating_count > 0 && (
+              <div>
+                <p className="text-xs text-bone/60 mb-2">Community rating</p>
+                <RatingSummary
+                  avgRating={stats.avg_rating}
+                  ratingCount={stats.rating_count}
+                  accentColor={accentColor}
+                />
+              </div>
+            )}
+
+            {comments.length > 0 && (
+              <div>
+                <p className="text-xs text-bone/60 mb-2">Recent comments</p>
+                <RatingCommentsList comments={comments} accentColor={accentColor} />
+              </div>
+            )}
           </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <p className="text-xs text-bone/60 mb-1">Your rating (1–10)</p>
+              <RatingStars
+                value={rating}
+                onChange={setRating}
+                readOnly={isSubmitting}
+                size={20}
+                color={accentColor}
+              />
+            </div>
 
-          {error && (
-            <p className="text-xs text-red-400">{error}</p>
-          )}
+            <div>
+              <label className="block text-xs text-bone/60 mb-1" htmlFor="rating-comment">
+                Optional comment (max 200 chars)
+              </label>
+              <textarea
+                id="rating-comment"
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                maxLength={200}
+                rows={3}
+                className="w-full rounded-md bg-black/40 border border-bone/20 px-3 py-2 text-sm text-bone placeholder:text-bone/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-voltage/80"
+                placeholder="What did you think of this version?"
+                disabled={isSubmitting}
+              />
+              <p className="mt-1 text-[11px] text-bone/40 text-right">
+                {comment.length}/200
+              </p>
+            </div>
 
-          {success && (
-            <p className="text-xs text-emerald-400">Thanks for rating!</p>
-          )}
+            {error && (
+              <p className="text-xs text-red-400">{error}</p>
+            )}
 
-          <div className="flex justify-end gap-2 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={isSubmitting}
-              className="px-3 py-1.5 text-xs rounded-md border border-bone/30 text-bone/80 hover:bg-bone/10 disabled:opacity-60"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting || rating === 0}
-              className="px-3 py-1.5 text-xs rounded-md bg-voltage text-void font-medium hover:brightness-110 disabled:opacity-60 cursor-pointer disabled:cursor-not-allowed"
-            >
-              {isSubmitting ? 'Saving…' : 'Submit rating'}
-            </button>
-          </div>
-        </form>
+            {success && (
+              <p className="text-xs text-emerald-400">Thanks for rating!</p>
+            )}
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={isSubmitting}
+                className="px-3 py-1.5 text-xs rounded-md border border-bone/30 text-bone/80 hover:bg-bone/10 disabled:opacity-60"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isSubmitting || rating === 0}
+                className="px-3 py-1.5 text-xs rounded-md bg-voltage text-void font-medium hover:brightness-110 disabled:opacity-60 cursor-pointer disabled:cursor-not-allowed"
+              >
+                {isSubmitting ? 'Saving…' : isEditing ? 'Update rating' : 'Submit rating'}
+              </button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   )
