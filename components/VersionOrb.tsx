@@ -3,11 +3,10 @@
 import { useRef, useState, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { RigidBody, type RapierRigidBody } from '@react-three/rapier'
-import { MeshTransmissionMaterial, Html } from '@react-three/drei'
+import { MeshTransmissionMaterial } from '@react-three/drei'
 import * as THREE from 'three'
 import type { SongVersion } from '@/lib/supabase'
 import type { DeviceTier } from '@/lib/device-detection'
-import { getContrastColor } from '@/lib/colorUtils'
 import { getQualitySettings } from '@/lib/device-detection'
 import { useSmartTexture } from '@/hooks/useSmartTexture'
 import { useAudioStore } from '@/lib/audio-store'
@@ -105,10 +104,6 @@ export function VersionOrb({
   const glowColor = albumPalette?.dominant || albumPalette?.accent1 || '#4F9EFF'
   
   const normalizedIntensity = normalizeEmissiveIntensity(glowColor)
-  
-  // Calculate dynamic tooltip colors for optimal contrast
-  const tooltipBgColor = albumPalette?.dominant || '#4F9EFF'
-  const tooltipTextColor = getContrastColor(tooltipBgColor)
   
   // Mobile gets brighter glow for better visibility
   const mobileIntensityBoost = isMobile ? 1.5 : 1.0
@@ -299,45 +294,6 @@ export function VersionOrb({
               dispose={null}
             />
           </mesh>
-        )}
-        
-        {/* HTML label overlay - color-matched to album palette */}
-        {(hovered || isThisPlaying) && (
-          <Html
-            position={[0, radius * 0.7, 0]}
-            center
-            distanceFactor={12}
-            zIndexRange={[0, 0]}
-            style={{ pointerEvents: 'none' }}
-          >
-            <div
-              style={{
-                padding: '12px 24px',
-                backdropFilter: 'blur(16px)',
-                borderRadius: '9999px',
-                border: isThisPlaying 
-                  ? `2px solid ${tooltipBgColor}`
-                  : `1px solid ${tooltipBgColor}40`,
-                backgroundColor: isThisPlaying
-                  ? `${tooltipBgColor}33`
-                  : `${tooltipBgColor}E6`,
-                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.3)',
-                transition: 'all 0.3s ease'
-              }}
-            >
-              <p
-                style={{
-                  fontSize: '20px',
-                  fontWeight: 'bold',
-                  whiteSpace: 'nowrap',
-                  color: isThisPlaying ? tooltipBgColor : tooltipTextColor,
-                  margin: 0
-                }}
-              >
-                {isThisPlaying ? '♪ ' : ''}{version.label}
-              </p>
-            </div>
-          </Html>
         )}
       </group>
     </RigidBody>
