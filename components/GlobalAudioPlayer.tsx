@@ -4,6 +4,7 @@ import { useRef, useState, type PointerEvent as ReactPointerEvent, type MouseEve
 import { useAudioStore } from '@/lib/audio-store'
 import { Play, Pause, Volume2 } from 'lucide-react'
 import Image from 'next/image'
+import { RatingModal } from '@/components/RatingModal'
 
 function formatTime(seconds: number): string {
   if (!isFinite(seconds)) return '0:00'
@@ -32,6 +33,7 @@ export function GlobalAudioPlayer() {
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0
   const progressBarRef = useRef<HTMLDivElement | null>(null)
   const [isScrubbing, setIsScrubbing] = useState(false)
+  const [isRatingOpen, setIsRatingOpen] = useState(false)
 
   const seekFromClientX = (clientX: number) => {
     if (!progressBarRef.current || !duration) return
@@ -89,9 +91,18 @@ export function GlobalAudioPlayer() {
                 )}
 
                 <div className="flex flex-col min-w-[120px]">
-                  <p className="text-sm font-medium text-bone truncate">
-                    {currentVersion.label}
-                  </p>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <p className="text-sm font-medium text-bone truncate">
+                      {currentVersion.label}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setIsRatingOpen(true)}
+                      className="text-[11px] px-2 py-0.5 rounded-full border border-bone/30 text-bone/80 hover:bg-bone/10 hover:text-bone transition-colors flex-shrink-0"
+                    >
+                      Rate
+                    </button>
+                  </div>
                   <p className="text-xs text-bone/60">
                     {formatTime(currentTime)} / {formatTime(duration)}
                   </p>
@@ -186,6 +197,7 @@ export function GlobalAudioPlayer() {
           </div>
         </div>
       )}
+      <RatingModal isOpen={isRatingOpen} onClose={() => setIsRatingOpen(false)} />
     </>
   )
 }
