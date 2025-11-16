@@ -44,6 +44,7 @@ interface VersionOrbProps {
   version: ExtendedVersion
   position: [number, number, number]
   radius: number
+  orbCount?: number
   deviceTier: DeviceTier
   albumPalette: {
     dominant: string
@@ -58,6 +59,7 @@ export function VersionOrb({
   version, 
   position,
   radius,
+  orbCount,
   deviceTier,
   albumPalette,
   albumCoverUrl,
@@ -107,6 +109,11 @@ export function VersionOrb({
   
   // Mobile gets brighter glow for better visibility
   const mobileIntensityBoost = isMobile ? 1.5 : 1.0
+
+  // Count-based physics tweak: small albums (≤5 orbs) get reduced damping for more lively motion
+  const effectiveOrbCount = orbCount ?? 10
+  const speedBoostFactor = effectiveOrbCount <= 5 ? 0.4 : 1.0
+  const adjustedLinearDamping = 0.05 * speedBoostFactor
 
   useFrame((state) => {
     if (!ref.current) return
@@ -182,7 +189,7 @@ export function VersionOrb({
       colliders="ball"
       restitution={0.8}
       friction={0.1}
-      linearDamping={0.05}
+      linearDamping={adjustedLinearDamping}
       angularDamping={0.5}
       gravityScale={0}
       mass={radius * 0.5}

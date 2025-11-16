@@ -88,6 +88,7 @@ function OrbScene({
                 version={version}
                 position={positions[index]}
                 radius={radius}
+                orbCount={versions.length}
                 deviceTier={deviceTier}
                 albumPalette={albumPalette}
                 albumCoverUrl={albumCoverUrl}
