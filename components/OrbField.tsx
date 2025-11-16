@@ -1,6 +1,7 @@
 'use client'
 
 import { Suspense, useState, useEffect, useCallback, useRef } from 'react'
+import type { PointerEvent as ReactPointerEvent } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { Environment, PerformanceMonitor } from '@react-three/drei'
 import { Physics } from '@react-three/rapier'
@@ -39,6 +40,7 @@ function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGla
   
   // Calculate dynamic layout based on album count
   const { positions, radius } = calculateOrbLayout(albums.length)
+  const orbRadius = radius * 0.8
   
   return (
     <Physics gravity={[0, 0, 0]}>
@@ -50,7 +52,7 @@ function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGla
               album={album}
               pushTrigger={pushTrigger}
               position={positions[index]}
-              radius={radius}
+              radius={orbRadius}
               deviceTier={deviceTier}
               onHover={onHover}
               onNavigate={onNavigate}
@@ -120,9 +122,12 @@ export function OrbField({ albums }: OrbFieldProps) {
   const [useGlassBubbles, setUseGlassBubbles] = useState(true)
   const [pushTrigger, setPushTrigger] = useState(0)
   const [resetTrigger, setResetTrigger] = useState(0)
+  const [isHolding, setIsHolding] = useState(false)
   
   // Track rigid bodies and their initial positions
   const rigidBodies = useRef(new Map<string, { body: RapierRigidBody, initialPos: [number, number, number] }>())
+  const autoClickIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const isPointerDownRef = useRef(false)
   
   const quality = getQualitySettings(deviceTier)
 
@@ -151,6 +156,12 @@ export function OrbField({ albums }: OrbFieldProps) {
     }
   }, [albums])
 
+  useEffect(() => {
+    if (hoveredAlbum && isPointerDownRef.current) {
+      setIsHolding(false)
+    }
+  }, [hoveredAlbum])
+  
   const handleDepthPush = useCallback(() => {
     console.log('🎯 Depth push triggered!')
     setPushTrigger(prev => prev + 1)
@@ -178,11 +189,53 @@ export function OrbField({ albums }: OrbFieldProps) {
     setResetTrigger(prev => prev + 1)
   }, [])
 
+  const handlePointerDown = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    if (event.button !== 0) return
+    isPointerDownRef.current = true
+    if (!hoveredAlbum) {
+      setIsHolding(true)
+    }
+  }, [hoveredAlbum])
+
+  const handlePointerUp = useCallback(() => {
+    isPointerDownRef.current = false
+    setIsHolding(false)
+  }, [])
+
+  const handlePointerLeave = useCallback(() => {
+    isPointerDownRef.current = false
+    setIsHolding(false)
+  }, [])
+
+  useEffect(() => {
+    if (isHolding) {
+      if (autoClickIntervalRef.current) {
+        return
+      }
+      autoClickIntervalRef.current = setInterval(() => {
+        handleDepthPush()
+      }, 300)
+    } else if (autoClickIntervalRef.current) {
+      clearInterval(autoClickIntervalRef.current)
+      autoClickIntervalRef.current = null
+    }
+
+    return () => {
+      if (autoClickIntervalRef.current) {
+        clearInterval(autoClickIntervalRef.current)
+        autoClickIntervalRef.current = null
+      }
+    }
+  }, [isHolding, handleDepthPush])
+  
   return (
     <>
       {/* 3D Canvas - Fullscreen */}
       <Canvas
         onPointerMissed={handleDepthPush}
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
+        onPointerLeave={handlePointerLeave}
         dpr={dpr}
         camera={{ 
           position: [0, 0, cameraDistance],
