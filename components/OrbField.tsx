@@ -214,7 +214,7 @@ export function OrbField({ albums }: OrbFieldProps) {
       }
       autoClickIntervalRef.current = setInterval(() => {
         handleDepthPush()
-      }, 300)
+      }, 240)
     } else if (autoClickIntervalRef.current) {
       clearInterval(autoClickIntervalRef.current)
       autoClickIntervalRef.current = null
@@ -315,7 +315,7 @@ export function OrbField({ albums }: OrbFieldProps) {
         onClick={handleReset}
         style={{
           position: 'fixed',
-          bottom: '80px',
+          bottom: '60px',
           left: '50%',
           transform: 'translateX(-50%)',
           zIndex: 9999,
