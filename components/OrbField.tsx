@@ -21,8 +21,9 @@ import { detectDeviceTier, getQualitySettings, type DeviceTier } from '@/lib/dev
 import { calculateOrbLayout, calculateCameraDistance } from '@/lib/orb-layout'
 import type { RapierRigidBody } from '@react-three/rapier'
 
-const ORB_EXPLOSION_BASE_IMPULSE = 25
+const ORB_EXPLOSION_BASE_IMPULSE = 35
 const ORB_EXPLOSION_MIN_DISTANCE = 0.5
+const ORB_EXPLOSION_NAV_DELAY_MS = 400
 
 interface OrbFieldProps {
   albums: Album[]
@@ -221,8 +222,10 @@ export function OrbField({ albums }: OrbFieldProps) {
       body.applyImpulse(impulse, true)
     })
 
-    // Begin navigation in parallel with the physics spectacle
-    router.push(`/album/${slug}`)
+    // Begin navigation after a short delay so the explosion is visible
+    window.setTimeout(() => {
+      router.push(`/album/${slug}`)
+    }, ORB_EXPLOSION_NAV_DELAY_MS)
   }, [albums, isDispersing, router])
   
   // Handle hover - find album and set both title and album object
