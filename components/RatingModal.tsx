@@ -8,9 +8,10 @@ import { useAudioStore } from '@/lib/audio-store'
 interface RatingModalProps {
   isOpen: boolean
   onClose: () => void
+  onRated?: () => void
 }
 
-export function RatingModal({ isOpen, onClose }: RatingModalProps) {
+export function RatingModal({ isOpen, onClose, onRated }: RatingModalProps) {
   const { currentVersion, currentPalette } = useAudioStore()
   const [rating, setRating] = useState(0)
   const [comment, setComment] = useState('')
@@ -171,6 +172,10 @@ export function RatingModal({ isOpen, onClose }: RatingModalProps) {
       setTimeout(() => {
         setSuccess(false)
       }, 1500)
+
+      if (onRated) {
+        onRated()
+      }
     } catch (err: any) {
       setError(err?.message || 'Something went wrong while saving your rating.')
     } finally {

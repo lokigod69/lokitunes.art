@@ -1,8 +1,8 @@
 'use client'
 
-import { useRef, useState, type PointerEvent as ReactPointerEvent, type MouseEvent as ReactMouseEvent } from 'react'
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type MouseEvent as ReactMouseEvent } from 'react'
 import { useAudioStore } from '@/lib/audio-store'
-import { Play, Pause, Volume2 } from 'lucide-react'
+import { Play, Pause, Star, Volume2 } from 'lucide-react'
 import Image from 'next/image'
 import { RatingModal } from '@/components/RatingModal'
 
@@ -11,6 +11,16 @@ function formatTime(seconds: number): string {
   const mins = Math.floor(seconds / 60)
   const secs = Math.floor(seconds % 60)
   return `${mins}:${secs.toString().padStart(2, '0')}`
+}
+
+interface RatingStats {
+  avg_rating: number
+  rating_count: number
+}
+
+interface UserRating {
+  rating: number
+  comment: string | null
 }
 
 export function GlobalAudioPlayer() {
@@ -34,6 +44,50 @@ export function GlobalAudioPlayer() {
   const progressBarRef = useRef<HTMLDivElement | null>(null)
   const [isScrubbing, setIsScrubbing] = useState(false)
   const [isRatingOpen, setIsRatingOpen] = useState(false)
+  const [ratingStats, setRatingStats] = useState<RatingStats | null>(null)
+  const [userRating, setUserRating] = useState<UserRating | null>(null)
+  const [isRatingLoading, setIsRatingLoading] = useState(false)
+  const [ratingRefreshToken, setRatingRefreshToken] = useState(0)
+  const versionId = currentVersion?.id
+
+  useEffect(() => {
+    if (!versionId) {
+      setRatingStats(null)
+      setUserRating(null)
+      setIsRatingLoading(false)
+      return
+    }
+
+    let isCancelled = false
+
+    const load = async () => {
+      setIsRatingLoading(true)
+      try {
+        const res = await fetch(`/api/ratings/${versionId}`)
+        if (!res.ok) throw new Error('Failed to load ratings')
+        const data = await res.json()
+        if (isCancelled) return
+        setRatingStats(data.stats || null)
+        setUserRating(data.userRating || null)
+      } catch (error) {
+        if (!isCancelled) {
+          console.error('Failed to load ratings for player:', error)
+          setRatingStats(null)
+          setUserRating(null)
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsRatingLoading(false)
+        }
+      }
+    }
+
+    load()
+
+    return () => {
+      isCancelled = true
+    }
+  }, [versionId, ratingRefreshToken])
 
   const seekFromClientX = (clientX: number) => {
     if (!progressBarRef.current || !duration) return
@@ -92,9 +146,23 @@ export function GlobalAudioPlayer() {
 
                 <div className="flex flex-col min-w-[120px]">
                   <div className="flex items-center gap-2 min-w-0">
-                    <p className="text-sm font-medium text-bone truncate">
+                    <p className="text-sm font-medium text-bone truncate flex-1">
                       {currentVersion.label}
                     </p>
+                    {!isRatingLoading && ratingStats && ratingStats.rating_count > 0 && (
+                      <div className="flex items-center gap-1 text-[11px] text-bone/70 flex-shrink-0">
+                        <Star className="w-3 h-3" fill={accentColor} color={accentColor} />
+                        <span>{ratingStats.avg_rating.toFixed(1)}/10</span>
+                        <span className="text-bone/40">({ratingStats.rating_count})</span>
+                      </div>
+                    )}
+                    {!isRatingLoading && userRating && (
+                      <div className="text-[10px] text-bone/60 flex-shrink-0">
+                        (You:{' '}
+                        <span style={{ color: accentColor }}>{userRating.rating}/10</span>
+                        )
+                      </div>
+                    )}
                     <button
                       type="button"
                       onClick={() => setIsRatingOpen(true)}
@@ -197,7 +265,11 @@ export function GlobalAudioPlayer() {
           </div>
         </div>
       )}
-      <RatingModal isOpen={isRatingOpen} onClose={() => setIsRatingOpen(false)} />
+      <RatingModal
+        isOpen={isRatingOpen}
+        onClose={() => setIsRatingOpen(false)}
+        onRated={() => setRatingRefreshToken((token) => token + 1)}
+      />
     </>
   )
 }
