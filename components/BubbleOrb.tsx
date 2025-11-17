@@ -41,8 +41,6 @@ interface BubbleOrbProps {
   onNavigate: (slug: string) => void
   onRegisterRigidBody?: (body: RapierRigidBody) => void
   resetTrigger?: number
-  isFrozen?: boolean
-  isDispersing?: boolean
 }
 
 
@@ -55,9 +53,7 @@ export function BubbleOrb({
   onHover, 
   onNavigate,
   onRegisterRigidBody,
-  resetTrigger,
-  isFrozen = false,
-  isDispersing = false
+  resetTrigger
 }: BubbleOrbProps) {
   console.log('🔵 BubbleOrb rendering:', album.title, '| roughness: 0.7 | emissive: 1.0/0.5 | pointLight: 0.2x')
   const ref = useRef<RapierRigidBody>(null)
@@ -156,15 +152,8 @@ export function BubbleOrb({
   useFrame((state) => {
     if (!ref.current) return
 
-    const body = ref.current
-
-    if (isFrozen) {
-      body.setLinvel({ x: 0, y: 0, z: 0 }, true)
-      body.setAngvel({ x: 0, y: 0, z: 0 }, true)
-      return
-    }
-
     const t = state.clock.elapsedTime
+    const body = ref.current
     const pos = body.translation()
 
     // Perlin noise drift for organic motion
@@ -260,7 +249,6 @@ export function BubbleOrb({
         {/* Outer glass shell - BARELY THERE (just a subtle shine) */}
         <mesh
           onClick={() => {
-            if (isDispersing) return
             onNavigate(album.slug)
           }}
           onPointerEnter={() => {

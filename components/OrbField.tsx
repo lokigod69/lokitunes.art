@@ -21,15 +21,11 @@ import { detectDeviceTier, getQualitySettings, type DeviceTier } from '@/lib/dev
 import { calculateOrbLayout, calculateCameraDistance } from '@/lib/orb-layout'
 import type { RapierRigidBody } from '@react-three/rapier'
 
-const ORB_EXPLOSION_BASE_IMPULSE = 35
-const ORB_EXPLOSION_MIN_DISTANCE = 0.5
-const ORB_EXPLOSION_NAV_DELAY_MS = 400
-
 interface OrbFieldProps {
   albums: Album[]
 }
 
-function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGlassBubbles, onRegisterRigidBody, onReset, hoveredAlbum, isDispersing, dispersingAlbumId }: {
+function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGlassBubbles, onRegisterRigidBody, onReset, hoveredAlbum }: {
   albums: Album[]
   pushTrigger: number
   onHover: (title: string | null) => void
@@ -39,8 +35,6 @@ function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGla
   onRegisterRigidBody: (id: string, body: RapierRigidBody, initialPos: [number, number, number]) => void
   onReset: number
   hoveredAlbum: Album | null
-  isDispersing: boolean
-  dispersingAlbumId: string | null
 }) {
   const OrbComponent = useGlassBubbles ? BubbleOrb : SonicOrb
   
@@ -64,8 +58,6 @@ function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGla
               onNavigate={onNavigate}
               onRegisterRigidBody={(body) => onRegisterRigidBody(album.id, body, positions[index])}
               resetTrigger={onReset}
-              isFrozen={dispersingAlbumId === album.id}
-              isDispersing={isDispersing}
             />
           ))}
         </group>
@@ -131,8 +123,6 @@ export function OrbField({ albums }: OrbFieldProps) {
   const [pushTrigger, setPushTrigger] = useState(0)
   const [resetTrigger, setResetTrigger] = useState(0)
   const [isHolding, setIsHolding] = useState(false)
-  const [isDispersing, setIsDispersing] = useState(false)
-  const [dispersingAlbumId, setDispersingAlbumId] = useState<string | null>(null)
   
   // Track rigid bodies and their initial positions
   const rigidBodies = useRef(new Map<string, { body: RapierRigidBody, initialPos: [number, number, number] }>())
@@ -152,81 +142,8 @@ export function OrbField({ albums }: OrbFieldProps) {
   const cameraDistance = calculateCameraDistance(albums.length)
 
   const handleNavigate = useCallback((slug: string) => {
-    if (isDispersing) {
-      return
-    }
-
-    const album = albums.find(a => a.slug === slug)
-
-    if (!album) {
-      router.push(`/album/${slug}`)
-      return
-    }
-
-    const clicked = rigidBodies.current.get(album.id)
-
-    if (!clicked) {
-      router.push(`/album/${slug}`)
-      return
-    }
-
-    const clickedBody = clicked.body
-    const origin = clickedBody.translation()
-
-    console.log('💥 Orb explosion triggered', {
-      album: album.title,
-      origin,
-      baseImpulse: ORB_EXPLOSION_BASE_IMPULSE,
-    })
-
-    setIsDispersing(true)
-    setDispersingAlbumId(album.id)
-
-    // Freeze clicked orb in place
-    clickedBody.setLinvel({ x: 0, y: 0, z: 0 }, true)
-    clickedBody.setAngvel({ x: 0, y: 0, z: 0 }, true)
-    clickedBody.wakeUp()
-
-    // Radial impulse for all other orbs
-    rigidBodies.current.forEach(({ body }, id) => {
-      if (id === album.id) return
-
-      const pos = body.translation()
-      let dx = pos.x - origin.x
-      let dy = pos.y - origin.y
-      let dz = pos.z - origin.z
-      let dist = Math.sqrt(dx * dx + dy * dy + dz * dz)
-
-      if (!Number.isFinite(dist) || dist < ORB_EXPLOSION_MIN_DISTANCE) {
-        dist = ORB_EXPLOSION_MIN_DISTANCE
-      }
-
-      const invDist = 1 / dist
-      dx *= invDist
-      dy *= invDist
-      dz *= invDist
-
-      const strength = ORB_EXPLOSION_BASE_IMPULSE * invDist
-      const impulse = {
-        x: dx * strength,
-        y: dy * strength,
-        z: dz * strength,
-      }
-
-      console.log('  ↳ Impulse for orb', id, {
-        distance: dist.toFixed(2),
-        strength: strength.toFixed(2),
-      })
-
-      body.wakeUp()
-      body.applyImpulse(impulse, true)
-    })
-
-    // Begin navigation after a short delay so the explosion is visible
-    window.setTimeout(() => {
-      router.push(`/album/${slug}`)
-    }, ORB_EXPLOSION_NAV_DELAY_MS)
-  }, [albums, isDispersing, router])
+    router.push(`/album/${slug}`)
+  }, [router])
   
   // Handle hover - find album and set both title and album object
   const handleHover = useCallback((title: string | null) => {
@@ -246,10 +163,9 @@ export function OrbField({ albums }: OrbFieldProps) {
   }, [hoveredAlbum])
   
   const handleDepthPush = useCallback(() => {
-    if (isDispersing) return
     console.log('🎯 Depth push triggered!')
     setPushTrigger(prev => prev + 1)
-  }, [isDispersing])
+  }, [])
 
   const handleRegisterRigidBody = useCallback((id: string, body: RapierRigidBody, initialPos: [number, number, number]) => {
     rigidBodies.current.set(id, { body, initialPos })
@@ -275,12 +191,11 @@ export function OrbField({ albums }: OrbFieldProps) {
 
   const handlePointerDown = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
     if (event.button !== 0) return
-    if (isDispersing) return
     isPointerDownRef.current = true
     if (!hoveredAlbum) {
       setIsHolding(true)
     }
-  }, [hoveredAlbum, isDispersing])
+  }, [hoveredAlbum])
 
   const handlePointerUp = useCallback(() => {
     isPointerDownRef.current = false
@@ -369,8 +284,6 @@ export function OrbField({ albums }: OrbFieldProps) {
           onRegisterRigidBody={handleRegisterRigidBody}
           onReset={resetTrigger}
           hoveredAlbum={hoveredAlbum}
-          isDispersing={isDispersing}
-          dispersingAlbumId={dispersingAlbumId}
         />
         
         {/* Post-processing effects */}
