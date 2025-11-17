@@ -153,7 +153,10 @@ export function GlobalAudioPlayer() {
                       <div className="flex items-center gap-1 text-[11px] text-bone/70 flex-shrink-0">
                         <Star className="w-3 h-3" fill={accentColor} color={accentColor} />
                         <span>{ratingStats.avg_rating.toFixed(1)}/10</span>
-                        <span className="text-bone/40">({ratingStats.rating_count})</span>
+                        <span className="text-bone/40">
+                          ({ratingStats.rating_count}{' '}
+                          {ratingStats.rating_count === 1 ? 'rating' : 'ratings'})
+                        </span>
                       </div>
                     )}
                     {!isRatingLoading && userRating && (
