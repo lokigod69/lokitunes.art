@@ -16,9 +16,11 @@ interface OrbProps {
   onNavigate: (slug: string) => void
   onRegisterRigidBody?: (body: RapierRigidBody) => void
   resetTrigger?: number
+  isFrozen?: boolean
+  isDispersing?: boolean
 }
 
-export function SonicOrb({ album, pushTrigger, position, radius, deviceTier, onHover, onNavigate, onRegisterRigidBody, resetTrigger }: OrbProps) {
+export function SonicOrb({ album, pushTrigger, position, radius, deviceTier, onHover, onNavigate, onRegisterRigidBody, resetTrigger, isFrozen = false, isDispersing = false }: OrbProps) {
   console.log('🟠 SonicOrb rendering:', album.title, '| NO glass layer | roughness: 0.6 | NO emissive')
   const ref = useRef<RapierRigidBody>(null)
   const glowRef = useRef<THREE.PointLight>(null)
@@ -116,8 +118,15 @@ export function SonicOrb({ album, pushTrigger, position, radius, deviceTier, onH
   useFrame((state) => {
     if (!ref.current) return
 
-    const t = state.clock.elapsedTime
     const body = ref.current
+
+    if (isFrozen) {
+      body.setLinvel({ x: 0, y: 0, z: 0 }, true)
+      body.setAngvel({ x: 0, y: 0, z: 0 }, true)
+      return
+    }
+
+    const t = state.clock.elapsedTime
     const pos = body.translation()
 
     // Perlin noise drift (increased for more motion)
@@ -210,7 +219,10 @@ export function SonicOrb({ album, pushTrigger, position, radius, deviceTier, onH
         {/* Orb mesh */}
         <mesh
           ref={meshRef}
-          onClick={() => onNavigate(album.slug)}
+          onClick={() => {
+            if (isDispersing) return
+            onNavigate(album.slug)
+          }}
           onPointerEnter={() => {
             onHover(album.title)
             document.body.style.cursor = 'pointer'
