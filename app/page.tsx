@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { Logo3D } from '@/components/Logo3D'
 import { OrbField, OrbFieldFallback } from '@/components/OrbField'
 import { ScanlineEffect } from '@/components/ScanlineEffect'
+import { RatingProgressBadge } from '@/components/RatingProgressBadge'
 import { getAlbumsWithVersionCounts } from '@/lib/queries'
 import type { Album } from '@/lib/supabase'
 
@@ -47,6 +48,9 @@ export default function Home() {
         <>
           {/* Logo */}
           <Logo3D />
+          <div className="fixed top-6 left-6 z-40 pointer-events-none">
+            <RatingProgressBadge />
+          </div>
           <main className="container mx-auto px-4">
             <OrbFieldFallback albums={albums} />
           </main>
@@ -56,6 +60,10 @@ export default function Home() {
           {/* Fullscreen 3D Canvas - Background layer (z-0) */}
           <div className="fixed inset-0 w-full h-full z-0">
             <OrbField albums={albums} />
+          </div>
+
+          <div className="fixed top-6 left-6 z-40 pointer-events-none">
+            <RatingProgressBadge />
           </div>
           
           {/* Header - Now 3D in Canvas (NeonHeader component) */}

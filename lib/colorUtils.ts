@@ -41,3 +41,9 @@ export function getContrastColor(bgColor: string): string {
 export function getOutlineColor(textColor: string): string {
   return textColor === '#000000' ? '#ffffff' : '#000000'
 }
+
+export function getRatingProgressColor(percentage: number): string {
+  const clamped = Math.max(0, Math.min(100, percentage))
+  const hue = Math.round((clamped / 100) * 120)
+  return `hsl(${hue}, 80%, 55%)`
+}
