@@ -18,6 +18,12 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Loki Tunes - Sonic Resonance",
   description: "A sonic landscape where albums exist as resonant nodes. Explore musical evolution through immersive orb fields.",
+  icons: {
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/favicon.png", sizes: "any", type: "image/png" },
+    ],
+  },
 };
 
 export default function RootLayout({
