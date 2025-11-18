@@ -6,6 +6,7 @@ import { OrbField, OrbFieldFallback } from '@/components/OrbField'
 import { ScanlineEffect } from '@/components/ScanlineEffect'
 import { RatingProgressBadge } from '@/components/RatingProgressBadge'
 import { OnboardingModal } from '@/components/OnboardingModal'
+import { TutorialButton } from '@/components/TutorialButton'
 import { useOnboarding } from '@/hooks/useOnboarding'
 import { getAlbumsWithVersionCounts } from '@/lib/queries'
 import type { Album } from '@/lib/supabase'
@@ -16,7 +17,7 @@ export default function Home() {
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
   const [hasWebGL, setHasWebGL] = useState(true)
 
-  const { shouldShow, hasLoaded, language, setLanguage, dismiss } = useOnboarding()
+  const { shouldShow, hasLoaded, language, setLanguage, dismiss, show } = useOnboarding()
 
   useEffect(() => {
     // Check for reduced motion preference
@@ -45,12 +46,15 @@ export default function Home() {
   return (
     <div className="relative w-full h-screen bg-void overflow-hidden">
       {hasLoaded && (
-        <OnboardingModal
-          isOpen={shouldShow}
-          language={language}
-          onLanguageChange={setLanguage}
-          onDismiss={dismiss}
-        />
+        <>
+          <OnboardingModal
+            isOpen={shouldShow}
+            language={language}
+            onLanguageChange={setLanguage}
+            onDismiss={dismiss}
+          />
+          <TutorialButton onClick={show} />
+        </>
       )}
 
       {loading ? (

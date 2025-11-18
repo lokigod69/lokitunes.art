@@ -13,11 +13,13 @@ interface UseOnboardingResult {
   setLanguage: (language: OnboardingLanguage) => void
   dismiss: () => void
   reset: () => void
+  show: () => void
 }
 
 export function useOnboarding(): UseOnboardingResult {
   const [hasSeen, setHasSeen] = useState<boolean | null>(null)
   const [language, setLanguageState] = useState<OnboardingLanguage>('en')
+  const [forceShow, setForceShow] = useState(false)
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -66,15 +68,21 @@ export function useOnboarding(): UseOnboardingResult {
   }
 
   const dismiss = () => {
+    setForceShow(false)
     persistSeen(true)
   }
 
   const reset = () => {
+    setForceShow(false)
     persistSeen(false)
   }
 
   const hasLoaded = hasSeen !== null
-  const shouldShow = hasSeen === false
+  const shouldShow = forceShow || hasSeen === false
+
+  const show = () => {
+    setForceShow(true)
+  }
 
   return {
     shouldShow,
@@ -83,5 +91,6 @@ export function useOnboarding(): UseOnboardingResult {
     setLanguage,
     dismiss,
     reset,
+    show,
   }
 }
