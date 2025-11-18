@@ -75,19 +75,27 @@ export function AlbumPage({ album }: AlbumPageProps) {
   }, [palette])
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div
+      className="min-h-screen bg-background pb-20"
+      style={{
+        backgroundImage: `radial-gradient(circle at top, ${hexWithOpacity(palette.dominant, 0.08)} 0%, transparent 40%),
+          radial-gradient(circle at bottom right, ${hexWithOpacity(palette.accent1, 0.06)} 0%, transparent 35%)`,
+      }}
+    >
       {/* Header with album art and title */}
       <div
         className="relative w-full"
         style={{
-          background: `linear-gradient(to bottom, ${hexWithOpacity(palette.dominant, 0.12)} 0%, transparent 100%)`,
+          background: `linear-gradient(to bottom, ${hexWithOpacity(palette.dominant, 0.2)} 0%, ${hexWithOpacity(palette.dominant, 0.14)} 35%, transparent 80%), linear-gradient(to bottom, ${hexWithOpacity(palette.accent1, 0.12)} 0%, transparent 100%)`,
+          boxShadow: `0 32px 80px ${hexWithOpacity(palette.accent1, 0.18)}`,
+          borderBottom: `1px solid ${hexWithOpacity(palette.accent1, 0.25)}`,
         }}
       >
         <div className="container mx-auto px-4 py-8">
           {/* Back button */}
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-bone/70 hover:text-bone transition-colors mb-8"
+            className="album-back-link inline-flex items-center gap-2 text-bone/70 transition-colors mb-8"
           >
             <ArrowLeft className="w-5 h-5" />
             <span>Back to orb field</span>

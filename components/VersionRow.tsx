@@ -36,7 +36,7 @@ export function VersionRow({
   }
   
   return (
-    <div className="group">
+    <div className={`group version-row${isPlaying ? ' version-row--playing' : ''}`}>
       <div className="flex flex-row flex-nowrap items-center gap-2 sm:gap-3 md:gap-4 px-3 sm:px-4 py-2 sm:py-3 rounded-lg hover:bg-white/5 transition-all duration-200">
         {/* Cover Art Thumbnail - smaller on mobile */}
         <div className="relative w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-md overflow-hidden flex-shrink-0 bg-white/5 border border-white/10">
@@ -76,7 +76,7 @@ export function VersionRow({
         
         {/* Version Info - responsive text */}
         <div className="flex-1 min-w-0">
-          <h3 className="text-xs sm:text-sm md:text-base font-medium text-bone truncate group-hover:text-voltage transition-colors">
+          <h3 className="version-row__label text-xs sm:text-sm md:text-base font-medium text-bone truncate transition-colors">
             {version.label}
           </h3>
           {version.play_count > 0 && (
