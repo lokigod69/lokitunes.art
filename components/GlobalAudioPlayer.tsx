@@ -151,8 +151,8 @@ export function GlobalAudioPlayer() {
         <div
           className="player fixed bottom-0 left-0 right-0 bg-void/95 backdrop-blur-lg border-t z-50"
           style={{
-            borderColor: `${accentColor}30`,
-            backgroundColor: `${bgColor}F2`,
+            borderTopColor: `${accentColor}30`,
+            background: `linear-gradient(to top, ${accentColor}18 0%, ${accentColor}08 50%, transparent 100%)`,
           }}
         >
           <div className="max-w-screen-2xl mx-auto px-4 py-3">
