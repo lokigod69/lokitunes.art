@@ -150,7 +150,10 @@ export function GlobalAudioPlayer() {
       {currentVersion && (
         <div
           className="player fixed bottom-0 left-0 right-0 bg-void/95 backdrop-blur-lg border-t z-50"
-          style={{ borderColor: `${accentColor}30` }}
+          style={{
+            borderColor: `${accentColor}30`,
+            backgroundColor: `${bgColor}F2`,
+          }}
         >
           <div className="max-w-screen-2xl mx-auto px-4 py-3">
             <div className="flex items-center gap-4">
@@ -192,14 +195,22 @@ export function GlobalAudioPlayer() {
                     <button
                       type="button"
                       onClick={() => setIsRatingOpen(true)}
-                      className="text-[11px] px-2 py-0.5 rounded-full border border-bone/30 text-bone/80 hover:bg-bone/10 hover:text-bone transition-colors flex-shrink-0 cursor-pointer"
+                      className="text-[11px] px-2 py-0.5 rounded-full border text-bone/80 hover:text-bone transition-colors flex-shrink-0 cursor-pointer"
+                      style={{
+                        borderColor: `${accentColor}60`,
+                        backgroundColor: 'transparent',
+                      }}
                     >
                       Rate
                     </button>
                     <button
                       type="button"
                       onClick={handleDownload}
-                      className="text-[11px] p-1 rounded-full border border-bone/30 text-bone/80 hover:bg-bone/10 hover:text-bone transition-colors flex-shrink-0 cursor-pointer flex items-center justify-center"
+                      className="text-[11px] p-1 rounded-full border text-bone/80 hover:text-bone transition-colors flex-shrink-0 cursor-pointer flex items-center justify-center"
+                      style={{
+                        borderColor: `${accentColor}60`,
+                        backgroundColor: 'transparent',
+                      }}
                       aria-label="Download audio"
                       title="Download"
                     >
@@ -279,7 +290,7 @@ export function GlobalAudioPlayer() {
 
               {/* Right: Volume */}
               <div className="flex items-center gap-2 flex-shrink-0">
-                <Volume2 className="w-4 h-4 text-bone/70" />
+                <Volume2 className="w-4 h-4 text-bone/70" style={{ color: accentColor }} />
                 <input
                   type="range"
                   min="0"
@@ -287,13 +298,14 @@ export function GlobalAudioPlayer() {
                   step="0.01"
                   value={volume}
                   onChange={(e) => setVolume(parseFloat(e.target.value))}
-                  className="w-24 accent-voltage cursor-pointer 
+                  className="w-24 cursor-pointer 
                              [&::-webkit-slider-thumb]:appearance-none 
                              [&::-webkit-slider-thumb]:w-3.5 
                              [&::-webkit-slider-thumb]:h-3.5 
                              [&::-webkit-slider-thumb]:rounded-full 
-                             [&::-webkit-slider-thumb]:bg-voltage
+                             [&::-webkit-slider-thumb]:bg-white
                              [&::-webkit-slider-thumb]:cursor-pointer"
+                  style={{ accentColor }}
                 />
               </div>
             </div>
