@@ -3,6 +3,10 @@
 
 import { useEffect, useState } from 'react'
 import type { OnboardingLanguage } from '@/lib/onboarding-content'
+import { WelcomeScreen } from '@/components/onboarding/WelcomeScreen'
+import { WhatYoureHearingScreen } from '@/components/onboarding/WhatYoureHearingScreen'
+import { HowToRateScreen } from '@/components/onboarding/HowToRateScreen'
+import { InteractiveTourScreen } from '@/components/onboarding/InteractiveTourScreen'
 
 interface OnboardingModalProps {
   isOpen: boolean
@@ -56,6 +60,21 @@ export function OnboardingModal({
 
   const isLastScreen = currentScreen >= TOTAL_SCREENS
 
+  const renderScreen = () => {
+    switch (currentScreen) {
+      case 1:
+        return <WelcomeScreen language={language} />
+      case 2:
+        return <WhatYoureHearingScreen language={language} />
+      case 3:
+        return <HowToRateScreen language={language} />
+      case 4:
+        return <InteractiveTourScreen language={language} />
+      default:
+        return null
+    }
+  }
+
   return (
     <div
       className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm"
@@ -104,14 +123,12 @@ export function OnboardingModal({
           </div>
         </div>
 
-        {/* Body placeholder - real screen components will be wired in Phase 3 */}
-        <div className="min-h-[180px] mb-6">
-          <p className="text-xs text-bone/50 mb-2">
+        {/* Body */}
+        <div className="min-h-[220px] mb-6 space-y-2">
+          <p className="text-xs text-bone/50">
             Screen {currentScreen} of {TOTAL_SCREENS}
           </p>
-          <p className="text-sm text-bone/80">
-            Onboarding content for this screen will be implemented in the next phase.
-          </p>
+          {renderScreen()}
         </div>
 
         {/* Footer navigation */}
