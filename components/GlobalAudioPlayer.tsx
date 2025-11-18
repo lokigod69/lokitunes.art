@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type MouseEvent as ReactMouseEvent } from 'react'
 import { useAudioStore } from '@/lib/audio-store'
-import { Play, Pause, Star, Volume2 } from 'lucide-react'
+import { Play, Pause, Star, Volume2, Download } from 'lucide-react'
 import Image from 'next/image'
 import { RatingModal } from '@/components/RatingModal'
 
@@ -120,6 +120,29 @@ export function GlobalAudioPlayer() {
     e.currentTarget.releasePointerCapture(e.pointerId)
     setIsScrubbing(false)
   }
+ 
+  const handleDownload = () => {
+    if (!currentVersion?.audio_url) return
+
+    try {
+      const extended = currentVersion as unknown as { songTitle?: string }
+      const songTitle = extended.songTitle
+      const rawName = `${songTitle ?? 'lokitunes'}-${currentVersion.label}`
+      const baseName = rawName
+        .trim()
+        .replace(/\s+/g, '_')
+        .replace(/[^a-zA-Z0-9_\-]+/g, '')
+
+      const link = document.createElement('a')
+      link.href = currentVersion.audio_url
+      link.download = `${baseName || 'track'}.mp3`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+    } catch (error) {
+      console.error('Failed to trigger download:', error)
+    }
+  }
   
   return (
     <>
@@ -172,6 +195,15 @@ export function GlobalAudioPlayer() {
                       className="text-[11px] px-2 py-0.5 rounded-full border border-bone/30 text-bone/80 hover:bg-bone/10 hover:text-bone transition-colors flex-shrink-0 cursor-pointer"
                     >
                       Rate
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleDownload}
+                      className="text-[11px] p-1 rounded-full border border-bone/30 text-bone/80 hover:bg-bone/10 hover:text-bone transition-colors flex-shrink-0 cursor-pointer flex items-center justify-center"
+                      aria-label="Download audio"
+                      title="Download"
+                    >
+                      <Download className="w-3 h-3" />
                     </button>
                   </div>
                   <p className="text-xs text-bone/60">
