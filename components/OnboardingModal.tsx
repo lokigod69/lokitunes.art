@@ -4,7 +4,6 @@
 import { useEffect, useState } from 'react'
 import type { OnboardingLanguage } from '@/lib/onboarding-content'
 import { WelcomeScreen } from '@/components/onboarding/WelcomeScreen'
-import { WhatYoureHearingScreen } from '@/components/onboarding/WhatYoureHearingScreen'
 import { HowToRateScreen } from '@/components/onboarding/HowToRateScreen'
 import { InteractiveTourScreen } from '@/components/onboarding/InteractiveTourScreen'
 
@@ -15,7 +14,7 @@ interface OnboardingModalProps {
   onDismiss: () => void
 }
 
-const TOTAL_SCREENS = 4
+const TOTAL_SCREENS = 3
 
 export function OnboardingModal({
   isOpen,
@@ -65,10 +64,8 @@ export function OnboardingModal({
       case 1:
         return <WelcomeScreen language={language} />
       case 2:
-        return <WhatYoureHearingScreen language={language} />
-      case 3:
         return <HowToRateScreen language={language} />
-      case 4:
+      case 3:
         return <InteractiveTourScreen language={language} />
       default:
         return null
@@ -124,10 +121,7 @@ export function OnboardingModal({
         </div>
 
         {/* Body */}
-        <div className="min-h-[220px] mb-6 space-y-2">
-          <p className="text-xs text-bone/50">
-            Screen {currentScreen} of {TOTAL_SCREENS}
-          </p>
+        <div className="min-h-[220px] mb-6">
           {renderScreen()}
         </div>
 
@@ -139,23 +133,28 @@ export function OnboardingModal({
               style={{ width: `${(currentScreen / TOTAL_SCREENS) * 100}%` }}
             />
           </div>
-          {!isLastScreen ? (
-            <button
-              type="button"
-              onClick={goNext}
-              className="px-4 py-1.5 rounded-full bg-voltage text-void text-sm font-medium hover:brightness-110 cursor-pointer"
-            >
-              Next →
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={handleStartExploring}
-              className="px-4 py-1.5 rounded-full bg-voltage text-void text-sm font-medium hover:brightness-110 cursor-pointer"
-            >
-              Start Exploring →
-            </button>
-          )}
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-bone/60">
+              {currentScreen}/{TOTAL_SCREENS}
+            </span>
+            {!isLastScreen ? (
+              <button
+                type="button"
+                onClick={goNext}
+                className="px-4 py-1.5 rounded-full bg-voltage text-void text-sm font-medium hover:brightness-110 cursor-pointer"
+              >
+                Next →
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleStartExploring}
+                className="px-4 py-1.5 rounded-full bg-voltage text-void text-sm font-medium hover:brightness-110 cursor-pointer"
+              >
+                Start Exploring →
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -2,7 +2,6 @@ export type OnboardingLanguage = 'en' | 'de'
 
 export type OnboardingScreenId =
   | 'welcome'
-  | 'whatYoureHearing'
   | 'howToRate'
   | 'interactiveTour'
 
@@ -31,16 +30,10 @@ export const onboardingContent: Record<OnboardingLanguage, OnboardingContent> = 
         title: 'Welcome to LoKi Tunes',
         body:
           'This is a space for audio exploration and rating.\n\n' +
-          "You're listening to raw versions of songs — unfinished, unpolished, but full of potential. Some are 90% there, others need major work.\n\n" +
+          "You're listening to raw versions of songs — unfinished, unpolished, but full of potential.\n\n" +
+          'Think of them as raw diamonds. Some are 90% there, others need major work.\n\n' +
+          "Some tracks might sound rough. That's intentional. We're testing the foundation, not the finish.\n\n" +
           'Your job? Help decide which ones are worth finishing.',
-      },
-      {
-        id: 'whatYoureHearing',
-        title: "What am I listening to?",
-        body:
-          "These aren't final releases — they're possible release versions.\n\n" +
-          'Think of them as raw diamonds. The core melody, vocals, and vibe are here, but they need refinement: better mixing, arrangement, polish.\n\n' +
-          "Some tracks might sound rough. That's intentional. We're testing the foundation, not the finish.",
       },
       {
         id: 'howToRate',
@@ -82,16 +75,10 @@ export const onboardingContent: Record<OnboardingLanguage, OnboardingContent> = 
         title: 'Willkommen bei LoKi Tunes',
         body:
           'Dies ist ein Bereich für Audio-Exploration und Bewertungen.\n\n' +
-          'Du hörst Rohversionen von Songs – unfertig, unpoliert, aber voller Potenzial. Einige sind fast fertig, andere brauchen noch viel Arbeit.\n\n' +
+          'Du hörst Rohversionen von Songs – unfertig, unpoliert, aber voller Potenzial.\n\n' +
+          'Denk an Rohdiamanten: Einige sind fast fertig, andere brauchen noch viel Arbeit.\n\n' +
+          'Manche Tracks klingen roh. Das ist Absicht – wir testen das Fundament, nicht den letzten Glanz.\n\n' +
           'Deine Aufgabe: Mitentscheiden, welche Songs fertig produziert werden sollen.',
-      },
-      {
-        id: 'whatYoureHearing',
-        title: 'Was höre ich hier?',
-        body:
-          'Das sind keine finalen Releases – es sind mögliche Release-Versionen.\n\n' +
-          'Denk an Rohdiamanten: Melodie, Vocals und Vibe sind da, aber das Finetuning fehlt noch – besserer Mix, Arrangement, Feinschliff.\n\n' +
-          'Manche Tracks klingen roh. Das ist Absicht. Wir testen das Fundament, nicht den letzten Glanz.',
       },
       {
         id: 'howToRate',
