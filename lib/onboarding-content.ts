@@ -66,28 +66,12 @@ export const onboardingContent: Record<OnboardingLanguage, OnboardingContent> = 
         id: 'interactiveTour',
         title: 'How it works',
         body:
-          'A quick visual tour of how to explore albums, listen to versions, and rate them.',
-        highlights: [
-          {
-            title: 'Orb field',
-            body: 'These orbs are albums. Click one to explore.',
-          },
-          {
-            title: 'Version orbs',
-            body:
-              'Inside an album, each orb is a different version of the same song — different styles, tempos, interpretations.',
-          },
-          {
-            title: 'Player and rating',
-            body:
-              'While a song plays, use the global player to rate it and leave comments.',
-          },
-          {
-            title: 'Rating progress',
-            body:
-              'Track how many versions you have rated. The more you rate, the more you shape what gets created.',
-          },
-        ],
+          'Orbs bring you to the music.\n\n' +
+          'Click an orb → explore an album.\n' +
+          'Click a version orb → play the song.\n' +
+          'Rate while it plays.\n\n' +
+          'See your rating progress on the homepage.\n\n' +
+          'Happy listening! 🎵',
       },
     ],
   },
@@ -135,28 +119,12 @@ export const onboardingContent: Record<OnboardingLanguage, OnboardingContent> = 
         id: 'interactiveTour',
         title: 'So funktioniert es',
         body:
-          'Eine kurze visuelle Tour, wie du Alben erkundest, Versionen anhörst und bewertest.',
-        highlights: [
-          {
-            title: 'Orb-Feld',
-            body: 'Diese Orbs sind Alben. Klick auf einen Orb, um das Album zu öffnen.',
-          },
-          {
-            title: 'Versions-Orbs',
-            body:
-              'Im Album ist jeder Orb eine andere Version desselben Songs – andere Styles, Tempi, Interpretationen.',
-          },
-          {
-            title: 'Player und Bewertung',
-            body:
-              'Während ein Song läuft, kannst du im globalen Player bewerten und Kommentare hinterlassen.',
-          },
-          {
-            title: 'Bewertungs-Fortschritt',
-            body:
-              'Verfolge, wie viele Versionen du schon bewertet hast. Je mehr du bewertest, desto stärker prägst du, was entsteht.',
-          },
-        ],
+          'Orbs bringen dich zur Musik.\n\n' +
+          'Klick auf einen Orb → erkunde ein Album.\n' +
+          'Klick auf einen Versions-Orb → der Song spielt.\n' +
+          'Bewerte, während er läuft.\n\n' +
+          'Deinen Bewertungs-Fortschritt siehst du auf der Startseite.\n\n' +
+          'Viel Spaß beim Hören! 🎵',
       },
     ],
   },
