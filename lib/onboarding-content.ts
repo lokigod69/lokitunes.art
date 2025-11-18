@@ -20,6 +20,8 @@ export interface OnboardingScreenContent {
 
 export interface OnboardingContent {
   screens: OnboardingScreenContent[]
+  nextButton: string
+  startButton: string
 }
 
 export const onboardingContent: Record<OnboardingLanguage, OnboardingContent> = {
@@ -65,6 +67,8 @@ export const onboardingContent: Record<OnboardingLanguage, OnboardingContent> = 
           'Happy listening! 🎵',
       },
     ],
+    nextButton: 'Next →',
+    startButton: 'Start Exploring →',
   },
   de: {
     screens: [
@@ -110,5 +114,7 @@ export const onboardingContent: Record<OnboardingLanguage, OnboardingContent> = 
           'Viel Spaß beim Hören! 🎵',
       },
     ],
+    nextButton: 'Weiter →',
+    startButton: "Los geht's →",
   },
 }

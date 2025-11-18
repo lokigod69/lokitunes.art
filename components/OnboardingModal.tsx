@@ -2,7 +2,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import type { OnboardingLanguage } from '@/lib/onboarding-content'
+import { onboardingContent, type OnboardingLanguage } from '@/lib/onboarding-content'
 import { WelcomeScreen } from '@/components/onboarding/WelcomeScreen'
 import { HowToRateScreen } from '@/components/onboarding/HowToRateScreen'
 import { InteractiveTourScreen } from '@/components/onboarding/InteractiveTourScreen'
@@ -160,6 +160,8 @@ export function OnboardingModal({
 
   const isActive = isOpen && !isClosing
 
+  const labels = onboardingContent[language]
+
   return (
     <div
       className={`fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm transition-opacity duration-200 ${
@@ -179,10 +181,7 @@ export function OnboardingModal({
         onClick={(event) => event.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="text-xs uppercase tracking-[0.18em] text-bone/60">
-            Welcome Tutorial
-          </div>
+        <div className="flex items-center justify-end mb-4">
           <div className="flex items-center gap-3">
             <div className="flex flex-wrap items-center gap-1 text-[11px] bg-black/40 border border-bone/20 rounded-full px-1 py-0.5">
               <button
@@ -241,7 +240,7 @@ export function OnboardingModal({
                 onClick={goNext}
                 className="px-4 py-1.5 rounded-full bg-voltage text-void text-sm font-medium hover:brightness-110 cursor-pointer"
               >
-                Next →
+                {labels.nextButton}
               </button>
             ) : (
               <button
@@ -249,7 +248,7 @@ export function OnboardingModal({
                 onClick={handleStartExploring}
                 className="px-4 py-1.5 rounded-full bg-voltage text-void text-sm font-medium hover:brightness-110 cursor-pointer"
               >
-                Start Exploring →
+                {labels.startButton}
               </button>
             )}
           </div>
