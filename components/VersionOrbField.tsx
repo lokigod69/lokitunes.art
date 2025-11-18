@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useState, useEffect } from 'react'
+import { Suspense, useState, useEffect, useRef } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { Environment, PerformanceMonitor } from '@react-three/drei'
 import { Physics, useRapier } from '@react-three/rapier'
@@ -68,7 +68,25 @@ function OrbScene({
 }) {
   // Calculate dynamic layout based on version count
   const { positions, radius } = calculateOrbLayout(versions.length)
-  
+
+  // Normalize grid opacity across albums
+  const gridRef = useRef<any>(null)
+
+  useEffect(() => {
+    if (!gridRef.current) return
+    const material: any = (gridRef.current as any).material
+
+    if (Array.isArray(material)) {
+      material.forEach((m: any) => {
+        m.transparent = true
+        m.opacity = 0.18
+      })
+    } else if (material) {
+      material.transparent = true
+      material.opacity = 0.18
+    }
+  }, [])
+
   // 🧹 NUCLEAR GHOST FIX: Force Physics world to remount when versions change
   // This clears ALL rigid bodies and prevents ghost orbs from deleted tracks
   const physicsKey = versions.map(v => v.id).sort().join('-')
@@ -117,11 +135,12 @@ function OrbScene({
       
       {/* MINIMAL GRID - Album page style (clean background) */}
       <gridHelper 
+        ref={gridRef}
         args={[
           100,                                      // Size
           10,                                       // Divisions (fewer = cleaner)
           (albumPalette?.accent1 || '#4F9EFF').slice(0, 7),      // Center lines (album accent)
-          (albumPalette?.dominant || '#090B0D').slice(0, 7)      // Grid lines (album dominant) - NO ALPHA!
+          (albumPalette?.accent1 || '#4F9EFF').slice(0, 7)      // Grid lines (album dominant) - NO ALPHA!
         ]}
         position={[0, -15, 0]} 
       />
