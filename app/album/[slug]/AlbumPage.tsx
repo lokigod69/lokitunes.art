@@ -122,8 +122,9 @@ export function AlbumPage({ album }: AlbumPageProps) {
               >
                 {album.title}
               </h1>
+              {/* NOTE: Backend supports multiple songs per album, but the UI treats each album as a single song concept and only surfaces total version count for clarity. */}
               <p className="text-bone/70 text-lg">
-                {album.songs.length} {album.songs.length === 1 ? 'song' : 'songs'} • {allVersions.length} {allVersions.length === 1 ? 'version' : 'versions'}
+                {allVersions.length} {allVersions.length === 1 ? 'version' : 'versions'}
               </p>
             </div>
           </div>

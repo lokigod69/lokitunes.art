@@ -119,6 +119,10 @@ function prettifyVersion(version: string): string {
     .join(' ')
 }
 
+// NOTE: Backend supports multiple songs per album via track numbers, but the current
+// frontend UX treats each album as a single song concept and only surfaces total
+// version counts. These numeric prefixes (01-, 02-, etc.) are for organization and
+// are not shown directly to users.
 function parseAudioFilename(filename: string): { trackNo: number; title: string; version: string } | null {
   const nameWithoutExt = path.basename(filename, path.extname(filename))
   
