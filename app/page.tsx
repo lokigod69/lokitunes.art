@@ -5,6 +5,8 @@ import { Logo3D } from '@/components/Logo3D'
 import { OrbField, OrbFieldFallback } from '@/components/OrbField'
 import { ScanlineEffect } from '@/components/ScanlineEffect'
 import { RatingProgressBadge } from '@/components/RatingProgressBadge'
+import { OnboardingModal } from '@/components/OnboardingModal'
+import { useOnboarding } from '@/hooks/useOnboarding'
 import { getAlbumsWithVersionCounts } from '@/lib/queries'
 import type { Album } from '@/lib/supabase'
 
@@ -13,6 +15,8 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
   const [hasWebGL, setHasWebGL] = useState(true)
+
+  const { shouldShow, hasLoaded, language, setLanguage, dismiss } = useOnboarding()
 
   useEffect(() => {
     // Check for reduced motion preference
@@ -40,6 +44,15 @@ export default function Home() {
 
   return (
     <div className="relative w-full h-screen bg-void overflow-hidden">
+      {hasLoaded && (
+        <OnboardingModal
+          isOpen={shouldShow}
+          language={language}
+          onLanguageChange={setLanguage}
+          onDismiss={dismiss}
+        />
+      )}
+
       {loading ? (
         <div className="fixed inset-0 flex items-center justify-center z-50">
           <div className="text-bone/50 text-lg">Loading sonic landscape...</div>
