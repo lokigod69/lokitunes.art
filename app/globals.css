@@ -149,6 +149,22 @@ html.monochrome-green [class*="neon"] {
 
 /* Note: .is-playing / .now-playing hooks can be added later per mode if desired */
 
+/* Onboarding screen enter animation */
+@keyframes onboarding-screen-in {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.onboarding-screen-enter {
+  animation: onboarding-screen-in 200ms ease-out;
+}
+
 /* Focus visible styles for accessibility */
 *:focus-visible {
   outline: 2px solid var(--album-accent2);

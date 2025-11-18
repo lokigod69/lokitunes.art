@@ -1,7 +1,7 @@
 // Onboarding modal shell for first-time user tutorial
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { OnboardingLanguage } from '@/lib/onboarding-content'
 import { WelcomeScreen } from '@/components/onboarding/WelcomeScreen'
 import { HowToRateScreen } from '@/components/onboarding/HowToRateScreen'
@@ -23,19 +23,36 @@ export function OnboardingModal({
   onDismiss,
 }: OnboardingModalProps) {
   const [currentScreen, setCurrentScreen] = useState(1)
+  const [isMounted, setIsMounted] = useState(isOpen)
+  const [isClosing, setIsClosing] = useState(false)
+  const modalRef = useRef<HTMLDivElement | null>(null)
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null)
+  const previousFocusRef = useRef<HTMLElement | null>(null)
 
+  // Handle mounting/unmounting with fade-out animation
   useEffect(() => {
-    if (!isOpen) return
+    if (isOpen) {
+      setIsMounted(true)
+      setIsClosing(false)
 
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        onDismiss()
+      if (typeof document !== 'undefined') {
+        previousFocusRef.current = document.activeElement as HTMLElement | null
+      }
+    } else if (isMounted) {
+      setIsClosing(true)
+      const timeout = window.setTimeout(() => {
+        setIsMounted(false)
+        setIsClosing(false)
+        if (previousFocusRef.current) {
+          previousFocusRef.current.focus()
+        }
+      }, 200)
+
+      return () => {
+        window.clearTimeout(timeout)
       }
     }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isOpen, onDismiss])
+  }, [isOpen, isMounted])
 
   useEffect(() => {
     if (isOpen) {
@@ -43,7 +60,18 @@ export function OnboardingModal({
     }
   }, [isOpen])
 
-  if (!isOpen) return null
+  // Focus the close button when modal becomes active
+  useEffect(() => {
+    if (!isMounted) return
+
+    const id = window.setTimeout(() => {
+      if (closeButtonRef.current) {
+        closeButtonRef.current.focus()
+      }
+    }, 0)
+
+    return () => window.clearTimeout(id)
+  }, [isMounted])
 
   const goNext = () => {
     setCurrentScreen((prev) => (prev < TOTAL_SCREENS ? prev + 1 : prev))
@@ -59,6 +87,62 @@ export function OnboardingModal({
 
   const isLastScreen = currentScreen >= TOTAL_SCREENS
 
+  // Keyboard navigation (ESC to close, arrows to move between screens, Tab focus trap)
+  useEffect(() => {
+    if (!isMounted) return
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onDismiss()
+        return
+      }
+
+      if (event.key === 'ArrowRight') {
+        if (!isLastScreen) {
+          setCurrentScreen((prev) => Math.min(TOTAL_SCREENS, prev + 1))
+        }
+        return
+      }
+
+      if (event.key === 'ArrowLeft') {
+        if (currentScreen > 1) {
+          setCurrentScreen((prev) => Math.max(1, prev - 1))
+        }
+        return
+      }
+
+      if (event.key === 'Tab') {
+        const modal = modalRef.current
+        if (!modal) return
+
+        const focusable = modal.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        )
+
+        if (focusable.length === 0) return
+
+        const first = focusable[0]
+        const last = focusable[focusable.length - 1]
+        const target = event.target as HTMLElement
+
+        if (event.shiftKey) {
+          if (!modal.contains(target) || target === first) {
+            event.preventDefault()
+            last.focus()
+          }
+        } else {
+          if (!modal.contains(target) || target === last) {
+            event.preventDefault()
+            first.focus()
+          }
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isMounted, onDismiss, currentScreen, isLastScreen])
+
   const renderScreen = () => {
     switch (currentScreen) {
       case 1:
@@ -72,15 +156,26 @@ export function OnboardingModal({
     }
   }
 
+  if (!isMounted) return null
+
+  const isActive = isOpen && !isClosing
+
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm"
+      className={`fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm transition-opacity duration-200 ${
+        isActive ? 'opacity-100' : 'opacity-0'
+      }`}
       onClick={handleBackdropClick}
       aria-modal="true"
       role="dialog"
     >
       <div
-        className="w-full max-w-xl rounded-2xl bg-void border border-bone/30 p-6 text-bone shadow-[0_0_40px_rgba(0,0,0,0.85)]"
+        ref={modalRef}
+        className={`w-full max-w-xl mx-4 sm:mx-0 rounded-2xl bg-void border border-bone/30 p-5 sm:p-6 text-bone shadow-[0_0_40px_rgba(0,0,0,0.85)] transform transition-all duration-200 ${
+          isActive
+            ? 'opacity-100 translate-y-0 scale-100'
+            : 'opacity-0 translate-y-2 sm:translate-y-4 scale-95'
+        }`}
         onClick={(event) => event.stopPropagation()}
       >
         {/* Header */}
@@ -89,7 +184,7 @@ export function OnboardingModal({
             Welcome Tutorial
           </div>
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1 text-[11px] bg-black/40 border border-bone/20 rounded-full px-1 py-0.5">
+            <div className="flex flex-wrap items-center gap-1 text-[11px] bg-black/40 border border-bone/20 rounded-full px-1 py-0.5">
               <button
                 type="button"
                 onClick={() => onLanguageChange('en')}
@@ -112,6 +207,7 @@ export function OnboardingModal({
             <button
               type="button"
               onClick={onDismiss}
+              ref={closeButtonRef}
               className="text-bone/60 hover:text-bone cursor-pointer text-sm"
               aria-label="Close tutorial"
             >
@@ -122,7 +218,9 @@ export function OnboardingModal({
 
         {/* Body */}
         <div className="min-h-[220px] mb-6">
-          {renderScreen()}
+          <div key={currentScreen} className="onboarding-screen-enter">
+            {renderScreen()}
+          </div>
         </div>
 
         {/* Footer navigation */}
