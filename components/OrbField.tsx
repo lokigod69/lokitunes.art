@@ -363,6 +363,13 @@ export function OrbField({ albums }: OrbFieldProps) {
 export function OrbFieldFallback({ albums }: OrbFieldProps) {
   const router = useRouter()
 
+  if (process.env.NODE_ENV === 'development') {
+    console.log('OrbFieldFallback albums:', {
+      count: albums.length,
+      titles: albums.map((a) => a.title),
+    })
+  }
+
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 p-8">
       {albums.map((album) => (

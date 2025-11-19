@@ -7,6 +7,7 @@ import { ScanlineEffect } from '@/components/ScanlineEffect'
 import { RatingProgressBadge } from '@/components/RatingProgressBadge'
 import { OnboardingModal } from '@/components/OnboardingModal'
 import { TutorialButton } from '@/components/TutorialButton'
+import { OrbitModeToggle } from '@/components/OrbitModeToggle'
 import { useOnboarding } from '@/hooks/useOnboarding'
 import { getAlbumsWithVersionCounts } from '@/lib/queries'
 import type { Album } from '@/lib/supabase'
@@ -16,6 +17,16 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
   const [hasWebGL, setHasWebGL] = useState(true)
+  const [use3D, setUse3D] = useState(() => {
+    if (typeof window === 'undefined') return false
+    try {
+      const stored = localStorage.getItem('lokitunes-3d-mode')
+      return stored === 'true'
+    } catch {
+      return false
+    }
+  })
+  const [isMobile, setIsMobile] = useState(false)
 
   const { shouldShow, hasLoaded, language, setLanguage, dismiss, show } = useOnboarding()
 
@@ -32,19 +43,51 @@ export default function Home() {
     const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl')
     setHasWebGL(!!gl)
 
+    const checkIsMobile = () => window.innerWidth < 768
+    setIsMobile(checkIsMobile())
+    const handleResize = () => setIsMobile(checkIsMobile())
+    window.addEventListener('resize', handleResize)
+
     // Fetch albums
     getAlbumsWithVersionCounts().then((data) => {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Home albums fetched:', data.length)
+      }
       setAlbums(data)
       setLoading(false)
     })
 
-    return () => mediaQuery.removeEventListener('change', handleChange)
+    return () => {
+      mediaQuery.removeEventListener('change', handleChange)
+      window.removeEventListener('resize', handleResize)
+    }
   }, [])
 
-  const shouldUseFallback = prefersReducedMotion || !hasWebGL
+  const baseFallback = prefersReducedMotion || !hasWebGL
+  const canRender3D = !baseFallback
+  const shouldUseFallback = baseFallback || (isMobile && !use3D)
+
+  const rootClassName = shouldUseFallback
+    ? 'relative w-full min-h-screen bg-void overflow-y-auto'
+    : 'relative w-full h-screen bg-void overflow-hidden'
 
   return (
-    <div className="relative w-full h-screen bg-void overflow-hidden">
+    <div className={rootClassName}>
+      {isMobile && canRender3D && (
+        <OrbitModeToggle
+          use3D={use3D}
+          onToggle={() => {
+            const next = !use3D
+            setUse3D(next)
+            try {
+              localStorage.setItem('lokitunes-3d-mode', String(next))
+            } catch {
+              // ignore storage errors
+            }
+          }}
+        />
+      )}
+
       {hasLoaded && (
         <>
           <OnboardingModal
@@ -68,7 +111,7 @@ export default function Home() {
           <div className="fixed top-6 left-6 z-40 pointer-events-none">
             <RatingProgressBadge />
           </div>
-          <main className="container mx-auto px-4 min-h-screen overflow-y-auto pb-32 md:pb-24">
+          <main className="container mx-auto px-4 pb-32 md:pb-24">
             <OrbFieldFallback albums={albums} />
           </main>
         </>
