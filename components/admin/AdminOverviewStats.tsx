@@ -70,11 +70,11 @@ export function AdminOverviewStats({ overview, loading }: AdminOverviewStatsProp
             return (
               <div
                 key={bucket.rating}
-                className="flex flex-1 flex-col items-center justify-end gap-1"
+                className="flex h-full flex-1 flex-col items-center justify-end gap-1"
               >
                 <div
                   className="w-full rounded-sm bg-voltage/80"
-                  style={{ height: `${height || 4}%` }}
+                  style={{ height: `${height}%` }}
                 />
                 <span className="text-[10px] text-bone/50">{bucket.rating}</span>
               </div>

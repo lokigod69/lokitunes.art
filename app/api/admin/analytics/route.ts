@@ -31,7 +31,7 @@ export async function GET(_request: NextRequest) {
       supabase
         .from('song_version_rating_stats')
         .select('version_id, avg_rating, rating_count')
-        .gte('rating_count', 3)
+        .gte('rating_count', 1)
         .order('avg_rating', { ascending: false })
         .order('rating_count', { ascending: false })
         .limit(10),
@@ -44,7 +44,7 @@ export async function GET(_request: NextRequest) {
       supabase
         .from('song_version_rating_stats')
         .select('version_id, avg_rating, rating_count')
-        .gte('rating_count', 3)
+        .gte('rating_count', 1)
         .order('avg_rating', { ascending: true })
         .order('rating_count', { ascending: false })
         .limit(10),
