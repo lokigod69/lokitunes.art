@@ -4,6 +4,7 @@ import "./globals.css";
 import { AudioEngine } from "@/components/AudioEngine";
 import { GlobalAudioPlayer } from "@/components/GlobalAudioPlayer";
 import MonochromeToggle from "@/components/MonochromeToggle";
+import { AdminAnalyticsRoot } from "@/components/AdminAnalyticsRoot";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -37,6 +38,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <MonochromeToggle />
+        <AdminAnalyticsRoot />
         {/* Hidden audio engine - always mounted so playback persists across routes */}
         <AudioEngine />
 
