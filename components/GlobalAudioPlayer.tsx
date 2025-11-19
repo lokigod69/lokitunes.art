@@ -143,7 +143,10 @@ export function GlobalAudioPlayer() {
       console.error('Failed to trigger download:', error)
     }
   }
-  
+
+  const hasRatingStats = !isRatingLoading && !!(ratingStats && ratingStats.rating_count > 0)
+  const hasUserRating = !isRatingLoading && !!userRating
+
   return (
     <>
       {/* Player UI only shows when there's a track */}
@@ -156,7 +159,150 @@ export function GlobalAudioPlayer() {
           }}
         >
           <div className="max-w-screen-2xl mx-auto px-4 py-3">
-            <div className="flex items-center gap-4">
+            {/* Mobile layout: actions + compact player */}
+            <div className="space-y-3 md:hidden">
+              {/* Actions + rating summary */}
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsRatingOpen(true)}
+                    className="text-[11px] px-2 py-0.5 rounded-full border text-bone/80 hover:text-bone transition-colors cursor-pointer"
+                    style={{
+                      borderColor: `${accentColor}60`,
+                      backgroundColor: 'transparent',
+                    }}
+                  >
+                    Rate
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDownload}
+                    className="text-[11px] px-2 py-0.5 rounded-full border text-bone/80 hover:text-bone transition-colors cursor-pointer flex items-center gap-1"
+                    style={{
+                      borderColor: `${accentColor}60`,
+                      backgroundColor: 'transparent',
+                    }}
+                    aria-label="Download audio"
+                    title="Download"
+                  >
+                    <Download className="w-3 h-3" />
+                    <span>Download</span>
+                  </button>
+                </div>
+
+                {(hasRatingStats || hasUserRating) && (
+                  <div className="flex flex-col items-end gap-0.5">
+                    {hasRatingStats && ratingStats && (
+                      <div className="flex items-center gap-1 text-[11px] text-bone/70">
+                        <Star className="w-3 h-3" fill={accentColor} color={accentColor} />
+                        <span>{ratingStats.avg_rating.toFixed(1)}/10</span>
+                        <span className="text-bone/40">
+                          ({ratingStats.rating_count}{' '}
+                          {ratingStats.rating_count === 1 ? 'rating' : 'ratings'})
+                        </span>
+                      </div>
+                    )}
+                    {hasUserRating && userRating && (
+                      <div className="text-[10px] text-bone/60">
+                        Your:{' '}
+                        <span style={{ color: accentColor }}>{userRating.rating}/10</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Player row */}
+              <div className="flex items-center gap-3">
+                {/* Left: Cover + label + time */}
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  {currentVersion.cover_url && (
+                    <div className="relative w-12 h-12 rounded overflow-hidden flex-shrink-0 bg-void">
+                      <Image
+                        src={currentVersion.cover_url}
+                        alt={currentVersion.label}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                  )}
+
+                  <div className="flex flex-col min-w-0">
+                    <p className="text-sm font-medium text-bone truncate">
+                      {currentVersion.label}
+                    </p>
+                    <p className="text-[11px] text-bone/60">
+                      {formatTime(currentTime)} / {formatTime(duration)}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Center: Play/Pause */}
+                <button
+                  onClick={() =>
+                    isPlaying
+                      ? pause()
+                      : play(currentVersion, currentVersion.song_id)
+                  }
+                  className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center hover:opacity-90 transition-transform hover:scale-105 cursor-pointer"
+                  style={{ backgroundColor: accentColor }}
+                  aria-label={isPlaying ? 'Pause' : 'Play'}
+                >
+                  {isPlaying ? (
+                    <Pause className="w-5 h-5 text-void" fill="currentColor" />
+                  ) : (
+                    <Play className="w-5 h-5 text-void ml-0.5" fill="currentColor" />
+                  )}
+                </button>
+
+                {/* Right: Volume */}
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <Volume2 className="w-4 h-4 text-bone/70" style={{ color: accentColor }} />
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value={volume}
+                    onChange={(e) => setVolume(parseFloat(e.target.value))}
+                    className="w-20 cursor-pointer 
+                               [&::-webkit-slider-thumb]:appearance-none 
+                               [&::-webkit-slider-thumb]:w-3.5 
+                               [&::-webkit-slider-thumb]:h-3.5 
+                               [&::-webkit-slider-thumb]:rounded-full 
+                               [&::-webkit-slider-thumb]:bg-white
+                               [&::-webkit-slider-thumb]:cursor-pointer"
+                    style={{ accentColor }}
+                  />
+                </div>
+              </div>
+
+              {/* Progress slider */}
+              <div>
+                <input
+                  type="range"
+                  min={0}
+                  max={duration || 0}
+                  value={currentTime}
+                  onChange={(e) => {
+                    const time = parseFloat(e.target.value)
+                    setCurrentTime(time)
+                  }}
+                  className="w-full cursor-pointer 
+                             [&::-webkit-slider-thumb]:appearance-none 
+                             [&::-webkit-slider-thumb]:w-3.5 
+                             [&::-webkit-slider-thumb]:h-3.5 
+                             [&::-webkit-slider-thumb]:rounded-full 
+                             [&::-webkit-slider-thumb]:bg-white
+                             [&::-webkit-slider-thumb]:cursor-pointer"
+                  style={{ accentColor }}
+                />
+              </div>
+            </div>
+
+            {/* Desktop layout: original single-row player */}
+            <div className="hidden md:flex items-center gap-4">
               {/* Left: Cover + Info */}
               <div className="flex items-center gap-3 min-w-0">
                 {currentVersion.cover_url && (
@@ -175,7 +321,7 @@ export function GlobalAudioPlayer() {
                     <p className="text-sm font-medium text-bone truncate flex-1">
                       {currentVersion.label}
                     </p>
-                    {!isRatingLoading && ratingStats && ratingStats.rating_count > 0 && (
+                    {hasRatingStats && ratingStats && (
                       <div className="flex items-center gap-1 text-[11px] text-bone/70 flex-shrink-0">
                         <Star className="w-3 h-3" fill={accentColor} color={accentColor} />
                         <span>{ratingStats.avg_rating.toFixed(1)}/10</span>
@@ -185,7 +331,7 @@ export function GlobalAudioPlayer() {
                         </span>
                       </div>
                     )}
-                    {!isRatingLoading && userRating && (
+                    {hasUserRating && userRating && (
                       <div className="text-[10px] text-bone/60 flex-shrink-0">
                         (You:{' '}
                         <span style={{ color: accentColor }}>{userRating.rating}/10</span>

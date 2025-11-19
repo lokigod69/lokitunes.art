@@ -43,6 +43,14 @@ export function AdminOverviewStats({ overview, loading }: AdminOverviewStatsProp
   const { totalRatings, uniqueRaters, avgRating, distribution } = overview
   const maxCount = distribution.reduce((max, bucket) => (bucket.count > max ? bucket.count : max), 0) || 1
 
+  if (process.env.NODE_ENV === 'development') {
+    console.log('AdminOverviewStats distribution debug', {
+      totalRatings,
+      distribution,
+      maxCount,
+    })
+  }
+
   return (
     <section className="space-y-6">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -66,15 +74,20 @@ export function AdminOverviewStats({ overview, loading }: AdminOverviewStatsProp
         </div>
         <div className="flex h-24 items-end gap-1 rounded-md border border-bone/15 bg-black/40 px-3 py-2">
           {distribution.map((bucket) => {
-            const height = (bucket.count / maxCount) * 100
+            const heightPercent =
+              bucket.count > 0 && maxCount > 0 ? (bucket.count / maxCount) * 100 : 0
+            const barHeight = heightPercent === 0 ? 4 : Math.min(heightPercent, 100)
             return (
               <div
                 key={bucket.rating}
                 className="flex h-full flex-1 flex-col items-center justify-end gap-1"
               >
                 <div
-                  className="w-full rounded-sm bg-voltage/80"
-                  style={{ height: `${height}%` }}
+                  className="w-full rounded-sm"
+                  style={{
+                    height: `${barHeight}%`,
+                    backgroundColor: 'var(--color-voltage)',
+                  }}
                 />
                 <span className="text-[10px] text-bone/50">{bucket.rating}</span>
               </div>
