@@ -138,6 +138,13 @@ export function OrbField({ albums }: OrbFieldProps) {
     setDpr(settings.dpr)
   }, [])
   
+  // On mobile tiers, always use simple SonicOrb without glass
+  useEffect(() => {
+    if (deviceTier === 'low' || deviceTier === 'medium') {
+      setUseGlassBubbles(false)
+    }
+  }, [deviceTier])
+  
   // Calculate camera distance based on album count
   const cameraDistance = calculateCameraDistance(albums.length)
 

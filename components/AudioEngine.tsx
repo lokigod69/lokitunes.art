@@ -58,6 +58,9 @@ export function AudioEngine() {
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.volume = volume
+      if (process.env.NODE_ENV === 'development') {
+        console.log('AudioEngine applied volume', volume)
+      }
     }
   }, [volume])
 
