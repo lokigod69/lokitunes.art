@@ -17,15 +17,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
   const [hasWebGL, setHasWebGL] = useState(true)
-  const [use3D, setUse3D] = useState(() => {
-    if (typeof window === 'undefined') return false
-    try {
-      const stored = localStorage.getItem('lokitunes-3d-mode')
-      return stored === 'true'
-    } catch {
-      return false
-    }
-  })
+  const [is3D, setIs3D] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
 
   const { shouldShow, hasLoaded, language, setLanguage, dismiss, show } = useOnboarding()
@@ -63,9 +55,18 @@ export default function Home() {
     }
   }, [])
 
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('lokitunes-orbit-mode')
+      if (stored === '3d') {
+        setIs3D(true)
+      }
+    } catch {}
+  }, [])
+
   const baseFallback = prefersReducedMotion || !hasWebGL
   const canRender3D = !baseFallback
-  const shouldUseFallback = baseFallback || (isMobile && !use3D)
+  const shouldUseFallback = baseFallback || (isMobile && !is3D)
 
   const rootClassName = shouldUseFallback
     ? 'relative w-full min-h-screen bg-void overflow-y-auto'
@@ -75,12 +76,12 @@ export default function Home() {
     <div className={rootClassName}>
       {isMobile && canRender3D && (
         <OrbitModeToggle
-          use3D={use3D}
+          is3D={is3D}
           onToggle={() => {
-            const next = !use3D
-            setUse3D(next)
+            const next = !is3D
+            setIs3D(next)
             try {
-              localStorage.setItem('lokitunes-3d-mode', String(next))
+              localStorage.setItem('lokitunes-orbit-mode', next ? '3d' : '2d')
             } catch {
               // ignore storage errors
             }

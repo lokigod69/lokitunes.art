@@ -5,20 +5,20 @@
 import { Circle, Grid3x3 } from 'lucide-react'
 
 interface OrbitModeToggleProps {
-  use3D: boolean
+  is3D: boolean
   onToggle: () => void
 }
 
-export function OrbitModeToggle({ use3D, onToggle }: OrbitModeToggleProps) {
+export function OrbitModeToggle({ is3D, onToggle }: OrbitModeToggleProps) {
   return (
     <button
       type="button"
       onClick={onToggle}
-      className="fixed top-4 right-28 z-50 p-2 rounded-lg bg-black/80 border border-bone/30 hover:border-bone/60 transition-all backdrop-blur flex items-center justify-center group md:hidden"
-      aria-label={use3D ? 'Switch to 2D grid' : 'Switch to 3D orbs'}
-      title={use3D ? 'Switch to 2D Grid' : 'Switch to 3D Orbs'}
+      className="fixed top-4 right-24 z-50 flex h-10 w-10 items-center justify-center rounded-lg bg-void/80 backdrop-blur-sm transition-colors hover:bg-void md:hidden"
+      aria-label={is3D ? 'Switch to 2D grid' : 'Switch to 3D orbs'}
+      title={is3D ? 'Switch to 2D Grid' : 'Switch to 3D Orbs'}
     >
-      {use3D ? (
+      {is3D ? (
         <Grid3x3 className="w-4 h-4 text-bone" />
       ) : (
         <Circle className="w-4 h-4 text-bone" />
