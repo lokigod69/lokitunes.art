@@ -68,7 +68,7 @@ export default function Home() {
           <div className="fixed top-6 left-6 z-40 pointer-events-none">
             <RatingProgressBadge />
           </div>
-          <main className="container mx-auto px-4 h-screen overflow-y-auto pb-24">
+          <main className="container mx-auto px-4 min-h-screen overflow-y-auto pb-32 md:pb-24">
             <OrbFieldFallback albums={albums} />
           </main>
         </>

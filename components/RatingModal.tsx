@@ -24,6 +24,18 @@ export function RatingModal({ isOpen, onClose, onRated }: RatingModalProps) {
   const [comments, setComments] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
+  const KUDOS_MESSAGES = [
+    'Kudos!',
+    'Well done!',
+    'Good job!',
+    "You're doing great!",
+    'Keep going!',
+    'You got this!',
+  ]
+
+  const [kudosMessage] = useState(
+    () => KUDOS_MESSAGES[Math.floor(Math.random() * KUDOS_MESSAGES.length)]
+  )
 
   const accentColor = currentPalette?.accent1 || '#4F9EFF'
 
@@ -194,7 +206,9 @@ export function RatingModal({ isOpen, onClose, onRated }: RatingModalProps) {
       >
         <div className="flex justify-between items-start mb-4">
           <div>
-            <h2 className="text-lg font-semibold">Rate this version</h2>
+            <h2 className="text-lg font-semibold">
+              {userRating ? kudosMessage : 'Rate this version'}
+            </h2>
             <p className="text-sm text-bone/70 mt-1 truncate">{currentVersion.label}</p>
           </div>
           <button

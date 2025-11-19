@@ -187,6 +187,15 @@ export function GlobalAudioPlayer() {
                       </div>
                     )}
 
+                    <div className="flex flex-col min-w-0 flex-1">
+                      <p className="text-sm font-medium text-bone truncate">
+                        {currentVersion.label}
+                      </p>
+                      <p className="text-[11px] text-bone/60">
+                        {formatTime(currentTime)} / {formatTime(duration)}
+                      </p>
+                    </div>
+
                     <button
                       onClick={() =>
                         isPlaying
