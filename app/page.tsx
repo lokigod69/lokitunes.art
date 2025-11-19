@@ -65,8 +65,18 @@ export default function Home() {
   }, [])
 
   const baseFallback = prefersReducedMotion || !hasWebGL
-  const canRender3D = !baseFallback
   const shouldUseFallback = baseFallback || (isMobile && !is3D)
+
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Home orbit state', {
+      isMobile,
+      is3D,
+      prefersReducedMotion,
+      hasWebGL,
+      baseFallback,
+      shouldUseFallback,
+    })
+  }
 
   const rootClassName = shouldUseFallback
     ? 'relative w-full min-h-screen bg-void overflow-y-auto'
@@ -74,7 +84,7 @@ export default function Home() {
 
   return (
     <div className={rootClassName}>
-      {isMobile && canRender3D && (
+      {isMobile && (
         <OrbitModeToggle
           is3D={is3D}
           onToggle={() => {

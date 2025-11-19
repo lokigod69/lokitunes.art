@@ -10,11 +10,15 @@ interface OrbitModeToggleProps {
 }
 
 export function OrbitModeToggle({ is3D, onToggle }: OrbitModeToggleProps) {
+  if (process.env.NODE_ENV === 'development') {
+    console.log('OrbitModeToggle render', { is3D })
+  }
+
   return (
     <button
       type="button"
       onClick={onToggle}
-      className="fixed top-4 right-24 z-50 flex h-10 w-10 items-center justify-center rounded-lg bg-void/80 backdrop-blur-sm transition-colors hover:bg-void md:hidden"
+      className="fixed top-4 right-24 z-[9999] flex h-10 w-10 items-center justify-center rounded-lg bg-void/80 backdrop-blur-sm transition-colors hover:bg-void md:hidden"
       aria-label={is3D ? 'Switch to 2D grid' : 'Switch to 3D orbs'}
       title={is3D ? 'Switch to 2D Grid' : 'Switch to 3D Orbs'}
     >
