@@ -63,8 +63,11 @@ export function BubbleOrb({
   
   const quality = getQualitySettings(deviceTier)
 
-  // Load texture with smart loader (tries multiple extensions)
-  const possibleUrls = getAlbumCoverUrl(album.slug)
+  // Load texture with smart loader (tries album.cover_url first, then bucket fallbacks)
+  const directCoverUrl = album.cover_url
+  const possibleUrls = directCoverUrl
+    ? [directCoverUrl, ...getAlbumCoverUrl(album.slug)]
+    : getAlbumCoverUrl(album.slug)
   console.log(`🔍 Attempting to load texture for ${album.title}:`, possibleUrls.slice(0, 3))
   const texture = useSmartTexture(possibleUrls, album.title)
 

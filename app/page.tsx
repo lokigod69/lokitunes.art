@@ -64,6 +64,12 @@ export default function Home() {
     } catch {}
   }, [])
 
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Home is3D state changed:', is3D)
+    }
+  }, [is3D])
+
   const baseFallback = prefersReducedMotion || !hasWebGL
   const shouldUseFallback = baseFallback || (isMobile && !is3D)
 
@@ -88,6 +94,9 @@ export default function Home() {
         <OrbitModeToggle
           is3D={is3D}
           onToggle={() => {
+            if (process.env.NODE_ENV === 'development') {
+              console.log('Orbit toggle clicked', { previous: is3D, next: !is3D })
+            }
             const next = !is3D
             setIs3D(next)
             try {
@@ -117,20 +126,38 @@ export default function Home() {
         </div>
       ) : shouldUseFallback ? (
         <>
+          {process.env.NODE_ENV === 'development' && (
+            <div className="fixed top-20 left-4 z-[9999] bg-red-500 text-white text-xs px-3 py-2 rounded shadow">
+              <div>isMobile: {String(isMobile)}</div>
+              <div>is3D: {String(is3D)}</div>
+              <div>albums: {albums.length}</div>
+              <div>fallback: {String(shouldUseFallback)}</div>
+            </div>
+          )}
+
           {/* Logo */}
           <Logo3D />
           <div className="fixed top-6 left-6 z-40 pointer-events-none">
             <RatingProgressBadge />
           </div>
           <main className="container mx-auto px-4 pb-32 md:pb-24">
-            <OrbFieldFallback albums={albums} />
+            <OrbFieldFallback key="2d-mode" albums={albums} />
           </main>
         </>
       ) : (
         <>
+          {process.env.NODE_ENV === 'development' && (
+            <div className="fixed top-20 left-4 z-[9999] bg-green-600 text-white text-xs px-3 py-2 rounded shadow">
+              <div>isMobile: {String(isMobile)}</div>
+              <div>is3D: {String(is3D)}</div>
+              <div>albums: {albums.length}</div>
+              <div>fallback: {String(shouldUseFallback)}</div>
+            </div>
+          )}
+
           {/* Fullscreen 3D Canvas - Background layer (z-0) */}
           <div className="fixed inset-0 w-full h-full z-0">
-            <OrbField albums={albums} />
+            <OrbField key="3d-mode" albums={albums} />
           </div>
 
           <div className="fixed top-6 left-6 z-40 pointer-events-none">

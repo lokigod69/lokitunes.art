@@ -123,6 +123,10 @@ export function OrbField({ albums }: OrbFieldProps) {
   const [pushTrigger, setPushTrigger] = useState(0)
   const [resetTrigger, setResetTrigger] = useState(0)
   const [isHolding, setIsHolding] = useState(false)
+
+  if (process.env.NODE_ENV === 'development') {
+    console.log('OrbField rendering with albums:', albums.length)
+  }
   
   // Track rigid bodies and their initial positions
   const rigidBodies = useRef(new Map<string, { body: RapierRigidBody, initialPos: [number, number, number] }>())
@@ -137,13 +141,6 @@ export function OrbField({ albums }: OrbFieldProps) {
     const settings = getQualitySettings(tier)
     setDpr(settings.dpr)
   }, [])
-  
-  // On mobile tiers, always use simple SonicOrb without glass
-  useEffect(() => {
-    if (deviceTier === 'low' || deviceTier === 'medium') {
-      setUseGlassBubbles(false)
-    }
-  }, [deviceTier])
   
   // Calculate camera distance based on album count
   const cameraDistance = calculateCameraDistance(albums.length)
@@ -364,10 +361,7 @@ export function OrbFieldFallback({ albums }: OrbFieldProps) {
   const router = useRouter()
 
   if (process.env.NODE_ENV === 'development') {
-    console.log('OrbFieldFallback albums:', {
-      count: albums.length,
-      titles: albums.map((a) => a.title),
-    })
+    console.log('OrbFieldFallback rendering with albums:', albums.length)
   }
 
   return (

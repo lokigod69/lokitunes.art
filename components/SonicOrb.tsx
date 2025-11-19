@@ -224,16 +224,22 @@ export function SonicOrb({ album, pushTrigger, position, radius, deviceTier, onH
           {texture ? (
             <meshStandardMaterial
               map={texture}
-              metalness={0.3}
-              roughness={0.6}
-              envMapIntensity={0.5}
+              metalness={0.2}
+              roughness={0.4}
+              envMapIntensity={0.8}
+              emissive={accentColor}
+              emissiveIntensity={0.8}
+              toneMapped={false}
               dispose={null}
             />
           ) : (
             <meshStandardMaterial
               color={accentColor}
-              metalness={0.5}
-              roughness={0.5}
+              metalness={0.2}
+              roughness={0.4}
+              emissive={accentColor}
+              emissiveIntensity={1.0}
+              toneMapped={false}
               dispose={null}
             />
           )}
