@@ -102,13 +102,15 @@ export default function Home() {
         />
       )}
 
-      {process.env.NODE_ENV === 'development' && (
-        <div className="fixed top-20 right-4 z-[9999] bg-black/80 text-bone text-xs px-3 py-2 rounded shadow border border-zinc-700 space-y-1 max-w-[220px]">
-          <div className="text-[var(--voltage)] font-bold">Debug Info</div>
-          <div>Mobile: {String(isMobile)}</div>
-          <div>3D Mode: {String(is3D)}</div>
-          <div>Fallback: {String(shouldUseFallback)}</div>
-          <div>Width: {typeof window !== 'undefined' ? window.innerWidth : 0}</div>
+      {true && (  // TEMPORARY: Always show debug panel
+        <div className="fixed top-20 right-4 z-50 p-3 bg-black/80 backdrop-blur border border-zinc-700 rounded text-xs space-y-1 max-w-[200px]">
+          <div className="text-[var(--voltage)] font-bold">Debug Info:</div>
+          <div>Mobile: {isMobile ? 'YES' : 'NO'}</div>
+          <div>3D Mode: {is3D ? 'YES' : 'NO'}</div>
+          <div>Fallback: {shouldUseFallback ? 'YES' : 'NO'}</div>
+          <div>ReducedMotion: {prefersReducedMotion ? 'YES' : 'NO'}</div>
+          <div>HasWebGL: {hasWebGL ? 'YES' : 'NO'}</div>
+          <div>Width: {typeof window !== 'undefined' ? window.innerWidth : 'SSR'}</div>
           <div>Albums: {albums.length}</div>
         </div>
       )}
@@ -162,7 +164,7 @@ export default function Home() {
 
           {/* Fullscreen 3D Canvas - Background layer (z-0) */}
           <div className="fixed inset-0 w-full h-full z-0">
-            <OrbField key="3d-mode" albums={albums} />
+            <OrbField key="3d-mode" albums={albums} isMobile={isMobile} />
           </div>
 
           <div className="fixed top-6 left-6 z-40 pointer-events-none">

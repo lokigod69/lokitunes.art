@@ -23,6 +23,7 @@ import type { RapierRigidBody } from '@react-three/rapier'
 
 interface OrbFieldProps {
   albums: Album[]
+  isMobile?: boolean
 }
 
 function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGlassBubbles, onRegisterRigidBody, onReset, hoveredAlbum }: {
@@ -113,7 +114,7 @@ function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGla
   )
 }
 
-export function OrbField({ albums }: OrbFieldProps) {
+export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
   const router = useRouter()
   const [hoveredTitle, setHoveredTitle] = useState<string | null>(null)
   const [hoveredAlbum, setHoveredAlbum] = useState<Album | null>(null)
@@ -127,6 +128,12 @@ export function OrbField({ albums }: OrbFieldProps) {
   if (process.env.NODE_ENV === 'development') {
     console.log('OrbField rendering with albums:', albums.length)
   }
+  
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[OrbField] useGlassBubbles changed:', useGlassBubbles)
+    }
+  }, [useGlassBubbles])
   
   // Track rigid bodies and their initial positions
   const rigidBodies = useRef(new Map<string, { body: RapierRigidBody, initialPos: [number, number, number] }>())
@@ -264,7 +271,10 @@ export function OrbField({ albums }: OrbFieldProps) {
         <PerformanceMonitor
           onDecline={() => {
             setDpr(prev => Math.max(1, prev * 0.9))
-            if (dpr < 1.2) setUseGlassBubbles(false)
+            // On mobile, respect the user's explicit 3D choice and keep glass bubbles.
+            if (!isMobile && dpr < 1.2) {
+              setUseGlassBubbles(false)
+            }
           }}
         />
         
