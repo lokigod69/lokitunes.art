@@ -75,10 +75,17 @@ export function AudioEngine() {
     }
   }, [currentTime])
 
+  if (!currentVersion?.audio_url) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[AudioEngine] No audio URL, skipping render')
+    }
+    return null
+  }
+
   return (
     <audio
       ref={audioRef}
-      src={currentVersion?.audio_url || ''}
+      src={currentVersion.audio_url}
       style={{ display: 'none' }}
     />
   )

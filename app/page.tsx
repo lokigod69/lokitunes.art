@@ -7,18 +7,24 @@ import { ScanlineEffect } from '@/components/ScanlineEffect'
 import { RatingProgressBadge } from '@/components/RatingProgressBadge'
 import { OnboardingModal } from '@/components/OnboardingModal'
 import { TutorialButton } from '@/components/TutorialButton'
-import { OrbitModeToggle } from '@/components/OrbitModeToggle'
+import { OrbitModeToggle, loadOrbitModePreference } from '@/components/OrbitModeToggle'
 import { useOnboarding } from '@/hooks/useOnboarding'
 import { getAlbumsWithVersionCounts } from '@/lib/queries'
 import type { Album } from '@/lib/supabase'
+import { useMobileDetection } from '@/hooks/useMobileDetection'
+import { safeLocalStorage } from '@/lib/safeLocalStorage'
 
 export default function Home() {
   const [albums, setAlbums] = useState<Album[]>([])
   const [loading, setLoading] = useState(true)
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
   const [hasWebGL, setHasWebGL] = useState(true)
-  const [is3D, setIs3D] = useState(false)
-  const [isMobile, setIsMobile] = useState(false)
+  const [is3D, setIs3D] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return loadOrbitModePreference()
+  })
+
+  const isMobile = useMobileDetection(768)
 
   const { shouldShow, hasLoaded, language, setLanguage, dismiss, show } = useOnboarding()
 
@@ -35,11 +41,6 @@ export default function Home() {
     const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl')
     setHasWebGL(!!gl)
 
-    const checkIsMobile = () => window.innerWidth < 768
-    setIsMobile(checkIsMobile())
-    const handleResize = () => setIsMobile(checkIsMobile())
-    window.addEventListener('resize', handleResize)
-
     // Fetch albums
     getAlbumsWithVersionCounts().then((data) => {
       if (process.env.NODE_ENV === 'development') {
@@ -51,17 +52,7 @@ export default function Home() {
 
     return () => {
       mediaQuery.removeEventListener('change', handleChange)
-      window.removeEventListener('resize', handleResize)
     }
-  }, [])
-
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem('lokitunes-orbit-mode')
-      if (stored === '3d') {
-        setIs3D(true)
-      }
-    } catch {}
   }, [])
 
   useEffect(() => {
@@ -84,6 +75,20 @@ export default function Home() {
     })
   }
 
+  const handleOrbitToggle = (nextIs3D: boolean) => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Orbit toggle clicked', { previous: is3D, next: nextIs3D })
+    }
+
+    setIs3D(nextIs3D)
+
+    try {
+      safeLocalStorage.setItem('lokitunes-orbit-mode', nextIs3D ? '3d' : '2d')
+    } catch {
+      // ignore storage errors
+    }
+  }
+
   const rootClassName = shouldUseFallback
     ? 'relative w-full min-h-screen bg-void overflow-y-auto'
     : 'relative w-full h-screen bg-void overflow-hidden'
@@ -93,19 +98,19 @@ export default function Home() {
       {isMobile && (
         <OrbitModeToggle
           is3D={is3D}
-          onToggle={() => {
-            if (process.env.NODE_ENV === 'development') {
-              console.log('Orbit toggle clicked', { previous: is3D, next: !is3D })
-            }
-            const next = !is3D
-            setIs3D(next)
-            try {
-              localStorage.setItem('lokitunes-orbit-mode', next ? '3d' : '2d')
-            } catch {
-              // ignore storage errors
-            }
-          }}
+          onToggle={handleOrbitToggle}
         />
+      )}
+
+      {process.env.NODE_ENV === 'development' && (
+        <div className="fixed top-20 right-4 z-[9999] bg-black/80 text-bone text-xs px-3 py-2 rounded shadow border border-zinc-700 space-y-1 max-w-[220px]">
+          <div className="text-[var(--voltage)] font-bold">Debug Info</div>
+          <div>Mobile: {String(isMobile)}</div>
+          <div>3D Mode: {String(is3D)}</div>
+          <div>Fallback: {String(shouldUseFallback)}</div>
+          <div>Width: {typeof window !== 'undefined' ? window.innerWidth : 0}</div>
+          <div>Albums: {albums.length}</div>
+        </div>
       )}
 
       {hasLoaded && (
