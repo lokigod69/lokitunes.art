@@ -1,10 +1,30 @@
 'use client'
 
+import { useEffect, useState } from 'react'
+
 /**
  * CRT Monitor Scanline Effect
  * Creates retro screen aesthetic with horizontal lines, flicker, and vignette
+ * Disabled on mobile for performance
  */
 export function ScanlineEffect() {
+  const [isMobile, setIsMobile] = useState(false)
+  
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(typeof window !== 'undefined' && window.innerWidth < 768)
+    }
+    
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+  
+  // Don't render on mobile
+  if (isMobile) {
+    return null
+  }
+  
   return (
     <>
       {/* Horizontal scanlines */}

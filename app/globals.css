@@ -51,6 +51,11 @@ body {
   color: var(--foreground);
   font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
   overflow-x: hidden;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Smooth scrolling */
@@ -193,4 +198,15 @@ html.monochrome-green [class*="neon"] {
 *:focus-visible {
   outline: 2px solid var(--album-accent2);
   outline-offset: 2px;
+}
+
+/* Allow text selection only for specific elements where needed */
+input,
+textarea,
+[contenteditable="true"],
+.allow-select {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
 }

@@ -77,39 +77,35 @@ export const onboardingContent: Record<OnboardingLanguage, OnboardingContent> = 
         title: 'Willkommen bei LoKi Tunes',
         body:
           'Dies ist ein Raum für Audio-Exploration und Bewertungen.\n\n' +
-          'Du hörst Rohversionen von Songs.\n\n' +
-          'Deine Aufgabe: Mitentscheiden, welche Songs fertig produziert werden sollen.',
+          'Du hörst Songs in der Rohversion.\n\n' +
+          'Du entscheidest welche Songs fertiggestellt werden.',
       },
       {
         id: 'howToRate',
-        title: 'Wie soll ich bewerten?',
+        title: 'WIE?',
         body:
-          'Bewerte nicht die technische Qualität, sondern das Potenzial.\n\nFrag dich:',
-        bullets: [
-          'Löst das in mir etwas aus?',
-          'Mag ich den Stil oder Vibe?',
-          'Würde ich eine fertig produzierte Version davon hören?',
-        ],
+          'Bewerte das Potenzial, nicht die Makel.',
         highlights: [
           {
             title: 'Niedrige Bewertung',
-            body: 'Heißt „Nicht mein Stil“ (nicht „klingt unfertig“).',
+            body: 'Nichts besonderes, Nicht mein Stil',
           },
           {
             title: 'Hohe Bewertung',
             body:
-              'Heißt „Das hat Potenzial, bitte fertig produzieren!“. Deine Bewertung beeinflusst, was entsteht.',
+              '„Das kann was, bitte fertig produzieren!".\n\nDeine Bewertung beeinflusst, was entsteht.',
           },
         ],
       },
       {
         id: 'interactiveTour',
-        title: 'So funktioniert es',
+        title: 'So gehts!',
         body:
           'Orbs bringen dich zur Musik.\n\n' +
-          'Klick auf einen Orb → erkunde ein Album.\n' +
-          'Klick auf einen Versions-Orb → der Song spielt.\n' +
-          'Bewerte, während er läuft.\n\n' +
+          'AlbumOrb klicken → erkunde ein Album.\n' +
+          'VersionsOrb klicken → der Song spielt.\n' +
+          'Bewerte, während er läuft.\n' +
+          '(Rate)\n\n' +
           'Deinen Bewertungs-Fortschritt siehst du auf der Startseite.\n\n' +
           'Viel Spaß beim Hören! 🎵',
       },

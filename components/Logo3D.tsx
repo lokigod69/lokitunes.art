@@ -1,11 +1,20 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 export function Logo3D() {
   const textRef = useRef<HTMLDivElement>(null)
+  const [fontSize, setFontSize] = useState('4rem')
   
   useEffect(() => {
+    const handleResize = () => {
+      const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
+      setFontSize(isMobile ? '2.5rem' : '4rem')
+    }
+    
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    
     const handleScroll = () => {
       if (textRef.current) {
         const scroll = window.scrollY
@@ -13,7 +22,11 @@ export function Logo3D() {
       }
     }
     window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
+    
+    return () => {
+      window.removeEventListener('resize', handleResize)
+      window.removeEventListener('scroll', handleScroll)
+    }
   }, [])
   
   return (
@@ -22,7 +35,7 @@ export function Logo3D() {
         ref={textRef}
         className="relative text-center py-8"
         style={{
-          fontSize: '4rem',
+          fontSize,
           fontWeight: 900,
           letterSpacing: '0.2em',
           color: '#00ffff',

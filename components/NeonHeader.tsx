@@ -1,17 +1,30 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Text } from '@react-three/drei'
 import * as THREE from 'three'
 
 export function NeonHeader({ position = [0, 11, 2] }: { position?: [number, number, number] }) {
+  const [fontSize, setFontSize] = useState(3.5)
   const groupRef = useRef<THREE.Group>(null)
   const [flicker, setFlicker] = useState(1)
   const [shadowFlicker1, setShadowFlicker1] = useState(1)
   const [shadowFlicker2, setShadowFlicker2] = useState(1)
   const [shadowFlicker3, setShadowFlicker3] = useState(1)
   const [shadowFlicker4, setShadowFlicker4] = useState(1)
+  
+  // Detect mobile and adjust font size
+  useEffect(() => {
+    const handleResize = () => {
+      const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
+      setFontSize(isMobile ? 2.2 : 3.5)
+    }
+    
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
   
   // Broken neon flickering effect
   useFrame(() => {
@@ -51,7 +64,7 @@ export function NeonHeader({ position = [0, 11, 2] }: { position?: [number, numb
       {/* Main text "LOKI TUNES" - Cyan - FRONT LAYER */}
       <Text
         position={[0, 0, 0]}
-        fontSize={3.5}
+        fontSize={fontSize}
         color="#00ffff"
         anchorX="center"
         anchorY="middle"
@@ -64,7 +77,7 @@ export function NeonHeader({ position = [0, 11, 2] }: { position?: [number, numb
       {/* Glow layer 1 - slightly behind */}
       <Text
         position={[0, 0, -0.1]}
-        fontSize={3.5}
+        fontSize={fontSize}
         color="#00ffff"
         anchorX="center"
         anchorY="middle"
@@ -76,7 +89,7 @@ export function NeonHeader({ position = [0, 11, 2] }: { position?: [number, numb
       {/* Glow layer 2 - further behind */}
       <Text
         position={[0, 0, -0.2]}
-        fontSize={3.5}
+        fontSize={fontSize}
         color="#00ffff"
         anchorX="center"
         anchorY="middle"
@@ -90,7 +103,7 @@ export function NeonHeader({ position = [0, 11, 2] }: { position?: [number, numb
       {/* Red shadow - bottom right offset - FLICKERS INDEPENDENTLY */}
       <Text
         position={[0.15, -0.15, -0.3]}
-        fontSize={3.5}
+        fontSize={fontSize}
         color="#ff0000"
         anchorX="center"
         anchorY="middle"
@@ -105,7 +118,7 @@ export function NeonHeader({ position = [0, 11, 2] }: { position?: [number, numb
       {/* Purple shadow - left offset - FLICKERS INDEPENDENTLY */}
       <Text
         position={[-0.1, 0, -0.4]}
-        fontSize={3.5}
+        fontSize={fontSize}
         color="#ff00ff"
         anchorX="center"
         anchorY="middle"
@@ -120,7 +133,7 @@ export function NeonHeader({ position = [0, 11, 2] }: { position?: [number, numb
       {/* Green shadow - top left offset - FLICKERS INDEPENDENTLY (most broken!) */}
       <Text
         position={[-0.08, 0.08, -0.5]}
-        fontSize={3.5}
+        fontSize={fontSize}
         color="#00ff00"
         anchorX="center"
         anchorY="middle"
@@ -135,7 +148,7 @@ export function NeonHeader({ position = [0, 11, 2] }: { position?: [number, numb
       {/* Cyan shadow - deep background - FLICKERS INDEPENDENTLY */}
       <Text
         position={[0.05, -0.05, -0.6]}
-        fontSize={3.5}
+        fontSize={fontSize}
         color="#00ffff"
         anchorX="center"
         anchorY="middle"
