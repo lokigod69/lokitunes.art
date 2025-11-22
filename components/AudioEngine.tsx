@@ -16,11 +16,21 @@ export function AudioEngine() {
 
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
-  // Load new track when currentVersion changes
+  // Set audio src when version changes - only if actually different
   useEffect(() => {
-    if (!audioRef.current || !currentVersion) return
-    audioRef.current.load()
-  }, [currentVersion?.id])
+    if (!audioRef.current || !currentVersion?.audio_url) return
+
+    const audio = audioRef.current
+    
+    // Only update src if it's actually different to avoid unnecessary reloads
+    if (audio.src !== currentVersion.audio_url) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[AudioEngine] Loading new audio:', currentVersion.label || currentVersion.id)
+      }
+      audio.src = currentVersion.audio_url
+      audio.load()
+    }
+  }, [currentVersion])
 
   // Control playback when isPlaying or track changes
   useEffect(() => {
@@ -34,14 +44,32 @@ export function AudioEngine() {
     }
   }, [isPlaying, currentVersion?.id])
 
-  // Sync audio element time back into store
+  // Sync audio element time back into store - CRITICAL for UI updates!
   useEffect(() => {
     const audio = audioRef.current
     if (!audio) return
 
-    const handleTimeUpdate = () => updateTime(audio.currentTime)
-    const handleLoadedMetadata = () => setDuration(audio.duration)
-    const handleEnded = () => next()
+    const handleTimeUpdate = () => {
+      if (process.env.NODE_ENV === 'development' && Math.random() < 0.1) {
+        // Log occasionally to avoid console spam
+        console.log('[AudioEngine] Time update:', audio.currentTime.toFixed(2))
+      }
+      updateTime(audio.currentTime)
+    }
+    
+    const handleLoadedMetadata = () => {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[AudioEngine] Metadata loaded, duration:', audio.duration.toFixed(2))
+      }
+      setDuration(audio.duration)
+    }
+    
+    const handleEnded = () => {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[AudioEngine] Track ended, moving to next')
+      }
+      next()
+    }
 
     audio.addEventListener('timeupdate', handleTimeUpdate)
     audio.addEventListener('loadedmetadata', handleLoadedMetadata)
@@ -75,10 +103,8 @@ export function AudioEngine() {
     }
   }, [currentTime])
 
+  // Don't render if no audio URL
   if (!currentVersion?.audio_url) {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[AudioEngine] No audio URL, skipping render')
-    }
     return null
   }
 
@@ -86,7 +112,8 @@ export function AudioEngine() {
     <audio
       ref={audioRef}
       src={currentVersion.audio_url}
-      style={{ display: 'none' }}
+      preload="metadata"
+      className="hidden"
     />
   )
 }
