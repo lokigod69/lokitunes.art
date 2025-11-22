@@ -3,115 +3,102 @@
 import { useEffect, useRef } from 'react'
 import { useAudioStore } from '@/lib/audio-store'
 
-export function AudioEngine() {
-  const {
-    currentVersion,
-    isPlaying,
-    currentTime,
-    volume,
-    setDuration,
-    updateTime,
-    next,
-  } = useAudioStore()
+export default function AudioEngine() {
+  const audioRef = useRef<HTMLAudioElement>(null)
+  
+  const currentVersion = useAudioStore((state) => state.currentVersion)
+  const isPlaying = useAudioStore((state) => state.isPlaying)
+  const volume = useAudioStore((state) => state.volume)
+  const setDuration = useAudioStore((state) => state.setDuration)
+  const updateTime = useAudioStore((state) => state.updateTime)
+  const next = useAudioStore((state) => state.next)
 
-  const audioRef = useRef<HTMLAudioElement | null>(null)
+  // IMPORTANT: Always render the audio element, just don't set src if no URL
+  // This ensures event listeners are always attached
 
-  // Set audio src when version changes - only if actually different
+  // Update src when version changes
   useEffect(() => {
-    if (!audioRef.current || !currentVersion?.audio_url) return
-
     const audio = audioRef.current
+    if (!audio) return
     
-    // Only update src if it's actually different to avoid unnecessary reloads
-    if (audio.src !== currentVersion.audio_url) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[AudioEngine] Loading new audio:', currentVersion.label || currentVersion.id)
-      }
-      audio.src = currentVersion.audio_url
+    const newSrc = currentVersion?.audio_url || ''
+    
+    if (newSrc && audio.src !== newSrc) {
+      console.log('[AudioEngine] Loading new audio:', currentVersion?.label)
+      audio.src = newSrc
       audio.load()
     }
   }, [currentVersion])
 
-  // Control playback when isPlaying or track changes
+  // Play/pause control
   useEffect(() => {
     const audio = audioRef.current
-    if (!audio) return
+    if (!audio || !audio.src) return
 
-    if (isPlaying && currentVersion) {
-      audio.play().catch(console.error)
+    if (isPlaying) {
+      audio.play().catch((err) => {
+        console.error('[AudioEngine] Play failed:', err)
+      })
     } else {
       audio.pause()
     }
-  }, [isPlaying, currentVersion?.id])
+  }, [isPlaying, currentVersion])
 
-  // Sync audio element time back into store - CRITICAL for UI updates!
+  // Volume control
   useEffect(() => {
     const audio = audioRef.current
     if (!audio) return
+    audio.volume = volume
+  }, [volume])
+
+  // Event listeners - MUST run after audio element exists
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio) {
+      console.warn('[AudioEngine] No audio element for event listeners')
+      return
+    }
+
+    console.log('[AudioEngine] Attaching event listeners')
 
     const handleTimeUpdate = () => {
-      if (process.env.NODE_ENV === 'development' && Math.random() < 0.1) {
-        // Log occasionally to avoid console spam
-        console.log('[AudioEngine] Time update:', audio.currentTime.toFixed(2))
-      }
       updateTime(audio.currentTime)
     }
-    
+
     const handleLoadedMetadata = () => {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[AudioEngine] Metadata loaded, duration:', audio.duration.toFixed(2))
-      }
+      console.log('[AudioEngine] Metadata loaded, duration:', audio.duration)
       setDuration(audio.duration)
     }
-    
+
     const handleEnded = () => {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[AudioEngine] Track ended, moving to next')
-      }
+      console.log('[AudioEngine] Track ended')
       next()
+    }
+
+    const handleError = (e: Event) => {
+      console.error('[AudioEngine] Audio error:', e)
     }
 
     audio.addEventListener('timeupdate', handleTimeUpdate)
     audio.addEventListener('loadedmetadata', handleLoadedMetadata)
     audio.addEventListener('ended', handleEnded)
+    audio.addEventListener('error', handleError)
 
     return () => {
+      console.log('[AudioEngine] Removing event listeners')
       audio.removeEventListener('timeupdate', handleTimeUpdate)
       audio.removeEventListener('loadedmetadata', handleLoadedMetadata)
       audio.removeEventListener('ended', handleEnded)
+      audio.removeEventListener('error', handleError)
     }
-  }, [next, setDuration, updateTime])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Empty deps - only run once on mount, functions are stable Zustand selectors
 
-  // Apply volume changes
-  useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.volume = volume
-      if (process.env.NODE_ENV === 'development') {
-        console.log('AudioEngine applied volume', volume)
-      }
-    }
-  }, [volume])
-
-  // React to external seeks (e.g. scrubber in GlobalAudioPlayer)
-  useEffect(() => {
-    const audio = audioRef.current
-    if (!audio) return
-
-    // Avoid micro-jitter by only updating when meaningfully different
-    if (Math.abs(audio.currentTime - currentTime) > 0.05) {
-      audio.currentTime = currentTime
-    }
-  }, [currentTime])
-
-  // Don't render if no audio URL
-  if (!currentVersion?.audio_url) {
-    return null
-  }
-
+  // ALWAYS render the audio element (even without src)
+  // This ensures the ref exists for event listeners
   return (
     <audio
       ref={audioRef}
-      src={currentVersion.audio_url}
       preload="metadata"
       className="hidden"
     />

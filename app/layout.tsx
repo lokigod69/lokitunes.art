@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { AudioEngine } from "@/components/AudioEngine";
+import AudioEngine from "@/components/AudioEngine";
 import { GlobalAudioPlayer } from "@/components/GlobalAudioPlayer";
 import MonochromeToggle from "@/components/MonochromeToggle";
 import { AdminAnalyticsRoot } from "@/components/AdminAnalyticsRoot";
