@@ -10,6 +10,7 @@ import { VersionOrb, type ExtendedVersion } from './VersionOrb'
 import { InvisibleBounds } from './InvisibleBounds'
 import { MouseAttraction } from './MouseAttraction'
 import { AlbumGridTextDisplay } from './AlbumGridTextDisplay'
+import { AlbumArtworkDisplay } from './AlbumArtworkDisplay'
 import { detectDeviceTier, getQualitySettings, type DeviceTier } from '@/lib/device-detection'
 import { calculateOrbLayout, calculateCameraDistance } from '@/lib/orb-layout'
 import type { Album } from '@/lib/supabase'
@@ -143,6 +144,15 @@ function OrbScene({
           (albumPalette?.accent1 || '#4F9EFF').slice(0, 7)      // Grid lines (album dominant) - NO ALPHA!
         ]}
         position={[0, -15, 0]} 
+      />
+      
+      {/* VINYL ARTWORK DISPLAY - Standing at back of grid, shows on hover or when playing */}
+      <AlbumArtworkDisplay
+        albumCoverUrl={albumCoverUrl}
+        albumPalette={albumPalette}
+        visible={!!(hoveredVersion || playingVersion)}
+        position={[0, -5, -45]}
+        albumTitle={hoveredVersion?.label || playingVersion?.label || 'Album'}
       />
     </Physics>
   )

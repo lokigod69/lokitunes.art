@@ -326,7 +326,7 @@ export function RatingModal({ isOpen, onClose, onRated }: RatingModalProps) {
 
               <div>
                 <label className="block text-xs text-bone/60 mb-1" htmlFor="rating-comment">
-                  Optional comment (max 200 chars)
+                  Feedback
                 </label>
                 <textarea
                   id="rating-comment"
