@@ -91,7 +91,7 @@ export function AlbumArtworkDisplay({
       rotation={[0, 0, 0]} 
       position={position}
       visible={false}
-      scale={1.5}
+      scale={3.0}
     >
       {/* Outer vinyl disc (black with slight sheen) */}
       <mesh>

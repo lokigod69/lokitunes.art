@@ -148,10 +148,10 @@ function OrbScene({
       
       {/* VINYL ARTWORK DISPLAY - Standing at back of grid, shows on hover or when playing */}
       <AlbumArtworkDisplay
-        albumCoverUrl={albumCoverUrl}
+        albumCoverUrl={hoveredVersion?.cover_url || playingVersion?.cover_url || albumCoverUrl}
         albumPalette={albumPalette}
         visible={!!(hoveredVersion || playingVersion)}
-        position={[0, -2, -50]}
+        position={[0, 8, -65]}
         albumTitle={hoveredVersion?.label || playingVersion?.label || 'Album'}
       />
     </Physics>
