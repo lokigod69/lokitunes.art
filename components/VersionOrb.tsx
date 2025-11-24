@@ -115,6 +115,26 @@ export function VersionOrb({
   const speedBoostFactor = effectiveOrbCount <= 5 ? 0.4 : 1.0
   const adjustedLinearDamping = 0.05 * speedBoostFactor
 
+  // ✅ FIX 3: Add random initial velocity for immediate motion on load
+  useEffect(() => {
+    if (!ref.current) return
+    
+    // Small delay to let physics world initialize
+    const timer = setTimeout(() => {
+      if (!ref.current) return
+      
+      const randomImpulse = {
+        x: (Math.random() - 0.5) * 0.8,
+        y: (Math.random() - 0.5) * 0.8,
+        z: (Math.random() - 0.5) * 0.3,
+      }
+      
+      ref.current.applyImpulse(randomImpulse, true)
+    }, 100) // 100ms delay for physics world stabilization
+    
+    return () => clearTimeout(timer)
+  }, [])
+
   useFrame((state) => {
     if (!ref.current) return
 
@@ -192,7 +212,7 @@ export function VersionOrb({
       linearDamping={adjustedLinearDamping}
       angularDamping={0.5}
       gravityScale={0}
-      mass={radius * 0.5}
+      mass={1.0}  // ✅ FIX 1: Consistent mass for all orbs (was radius * 0.5, which made small albums 75% heavier)
       ccd={true}
       position={position}
     >
