@@ -88,9 +88,10 @@ export function AlbumArtworkDisplay({
   return (
     <group 
       ref={groupRef} 
-      rotation={[Math.PI / 2, 0, 0]} 
+      rotation={[0, 0, 0]} 
       position={position}
       visible={false}
+      scale={1.5}
     >
       {/* Outer vinyl disc (black with slight sheen) */}
       <mesh>

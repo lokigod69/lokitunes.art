@@ -151,7 +151,7 @@ function OrbScene({
         albumCoverUrl={albumCoverUrl}
         albumPalette={albumPalette}
         visible={!!(hoveredVersion || playingVersion)}
-        position={[0, -5, -45]}
+        position={[0, -2, -50]}
         albumTitle={hoveredVersion?.label || playingVersion?.label || 'Album'}
       />
     </Physics>
