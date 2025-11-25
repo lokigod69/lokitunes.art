@@ -13,6 +13,7 @@ interface AlbumArtworkDisplayProps {
   position?: [number, number, number]
   albumTitle?: string
   onVinylClick?: () => void  // NEW: Called when vinyl is clicked to release docked orb
+  isPlaying?: boolean        // NEW: When playing, vinyl spins
 }
 
 export function AlbumArtworkDisplay({ 
@@ -21,7 +22,8 @@ export function AlbumArtworkDisplay({
   visible,
   position = [0, -5, -45],
   albumTitle = 'Album',
-  onVinylClick
+  onVinylClick,
+  isPlaying = false
 }: AlbumArtworkDisplayProps) {
   const groupRef = useRef<THREE.Group>(null)
   const artworkMeshRef = useRef<THREE.Mesh>(null)
@@ -44,8 +46,8 @@ export function AlbumArtworkDisplay({
     }
   }, [texture])
 
-  // Animate visibility and glitch effects
-  useFrame((state) => {
+  // Animate visibility, rotation, and glitch effects
+  useFrame((state, delta) => {
     if (!groupRef.current || !artworkMeshRef.current) return
 
     const t = state.clock.elapsedTime
@@ -56,6 +58,11 @@ export function AlbumArtworkDisplay({
 
     // Only render if opacity > 0
     groupRef.current.visible = currentOpacity.current > 0.01
+    
+    // 🎵 VINYL ROTATION - Spin when playing (clockwise, like a real record)
+    if (isPlaying && currentOpacity.current > 0.01) {
+      groupRef.current.rotation.z -= delta * 0.5  // Clockwise rotation (negative = clockwise when viewed from front)
+    }
 
     if (currentOpacity.current > 0.01) {
       // Glitch effect: pulsing opacity
@@ -101,7 +108,7 @@ export function AlbumArtworkDisplay({
       rotation={[0, 0, 0]} 
       position={position}
       visible={false}
-      scale={8.0}  // Larger vinyl - allows orbs to pass above/below
+      scale={10.0}  // Much larger vinyl - prominent in background
     >
       {/* Outer vinyl disc (black with slight sheen) - CLICKABLE */}
       <mesh 

@@ -125,14 +125,39 @@ export function VersionOrb({
   // ═══════════════════════════════════════════════════════════════════════════════
   // 🎯 SYNC ANIMATION STATE WITH AUDIO STATE
   // When another orb starts playing, this orb should undock
+  // Also handles edge cases to prevent stuck orbs
   // ═══════════════════════════════════════════════════════════════════════════════
   useEffect(() => {
-    // If this orb was docked but is no longer playing (another orb took over)
+    // If this orb was docked/docking but is no longer playing (another orb took over)
     if ((animationState === 'docked' || animationState === 'docking') && !isThisPlaying) {
       console.log('🔄 Another orb started playing, undocking:', version.label)
       setAnimationState('undocking')
     }
+    
+    // Safety: If orb is undocking but somehow isThisPlaying becomes true, reset to docking
+    if (animationState === 'undocking' && isThisPlaying) {
+      console.log('🔄 Orb clicked while undocking, re-docking:', version.label)
+      setAnimationState('docking')
+    }
   }, [isThisPlaying, animationState, version.label])
+  
+  // Safety reset: If orb gets stuck in a non-idle state while not playing, force reset after 3s
+  useEffect(() => {
+    // Only set timer if we're in an animation state but not actually playing
+    if (animationState !== 'idle' && !isThisPlaying) {
+      const safetyTimer = setTimeout(() => {
+        // Force reset to idle - the closure captured animationState !== 'idle'
+        console.log('⚠️ Safety reset: Orb stuck, forcing idle:', version.label)
+        setAnimationState('idle')
+        animationProgress.current = 0
+        currentScale.current = 1
+        if (groupRef.current) {
+          groupRef.current.scale.setScalar(1)
+        }
+      }, 3000)
+      return () => clearTimeout(safetyTimer)
+    }
+  }, [animationState, isThisPlaying, version.label])
   
   const quality = getQualitySettings(deviceTier)
 

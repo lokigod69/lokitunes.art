@@ -3,7 +3,7 @@
 import { Suspense, useState, useEffect, useRef } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { Environment, PerformanceMonitor } from '@react-three/drei'
-import { Physics, useRapier } from '@react-three/rapier'
+import { Physics, useRapier, RigidBody, BallCollider } from '@react-three/rapier'
 import { EffectComposer, Bloom, ChromaticAberration, ToneMapping } from '@react-three/postprocessing'
 import { KernelSize, ToneMappingMode } from 'postprocessing'
 import { VersionOrb, type ExtendedVersion } from './VersionOrb'
@@ -52,6 +52,22 @@ function PhysicsCleanup({ expectedCount }: { expectedCount: number }) {
 
 // Vinyl center position constant - where orbs dock to
 const VINYL_CENTER_POSITION: [number, number, number] = [0, 0, -35]
+
+// Invisible physics barrier that orbs bounce off when vinyl is visible
+function VinylPhysicsBarrier({ visible, position }: { visible: boolean, position: [number, number, number] }) {
+  if (!visible) return null
+  
+  return (
+    <RigidBody
+      type="fixed"
+      position={[position[0], position[1], position[2] + 3]} // Slightly in front of vinyl
+      colliders={false}
+    >
+      {/* Large invisible sphere that orbs bounce off */}
+      <BallCollider args={[12]} restitution={0.6} friction={0.1} />
+    </RigidBody>
+  )
+}
 
 function OrbScene({ 
   versions, 
@@ -132,6 +148,12 @@ function OrbScene({
         
         {/* Invisible physics boundaries */}
         <InvisibleBounds size={25} />
+        
+        {/* 🎵 VINYL PHYSICS BARRIER - Invisible collider that orbs bounce off */}
+        <VinylPhysicsBarrier 
+          visible={!!playingVersion} 
+          position={VINYL_CENTER_POSITION} 
+        />
       </Suspense>
       
       {/* CENTERED GRID TEXT - Shows hovered or playing version label on album grid */}
@@ -161,6 +183,7 @@ function OrbScene({
         position={VINYL_CENTER_POSITION}
         albumTitle={hoveredVersion?.label || playingVersion?.label || 'Album'}
         onVinylClick={playingVersion ? onStopPlaying : undefined}
+        isPlaying={!!playingVersion}
       />
     </Physics>
   )
