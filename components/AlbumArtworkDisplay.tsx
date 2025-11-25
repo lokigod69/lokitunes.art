@@ -83,9 +83,6 @@ export function AlbumArtworkDisplay({
       const scalePulse = 1 + Math.sin(t * 1.2) * 0.015
       groupRef.current.scale.setScalar(scalePulse)
 
-      // Very subtle rotation wobble
-      groupRef.current.rotation.z = Math.sin(t * 0.8) * 0.02
-
       // Animate grooves for vinyl authenticity
       if (groovesMeshRef.current) {
         const grooveMaterial = groovesMeshRef.current.material as THREE.MeshStandardMaterial
