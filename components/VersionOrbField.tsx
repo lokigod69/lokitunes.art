@@ -54,17 +54,18 @@ function PhysicsCleanup({ expectedCount }: { expectedCount: number }) {
 const VINYL_CENTER_POSITION: [number, number, number] = [0, 0, -35]
 
 // Invisible physics barrier that orbs bounce off when vinyl is visible
-function VinylPhysicsBarrier({ visible, position }: { visible: boolean, position: [number, number, number] }) {
+// Positioned at Z=0 where orbs actually are (not at vinyl position which is Z=-35)
+function VinylPhysicsBarrier({ visible }: { visible: boolean }) {
   if (!visible) return null
   
   return (
     <RigidBody
       type="fixed"
-      position={[position[0], position[1], position[2] + 3]} // Slightly in front of vinyl
+      position={[0, 0, 0]}  // At center where orbs are, NOT at vinyl position
       colliders={false}
     >
-      {/* Large invisible sphere that orbs bounce off */}
-      <BallCollider args={[12]} restitution={0.6} friction={0.1} />
+      {/* Large invisible sphere at center that pushes orbs outward */}
+      <BallCollider args={[8]} restitution={0.8} friction={0.0} />
     </RigidBody>
   )
 }
@@ -149,11 +150,8 @@ function OrbScene({
         {/* Invisible physics boundaries */}
         <InvisibleBounds size={25} />
         
-        {/* 🎵 VINYL PHYSICS BARRIER - Invisible collider that orbs bounce off */}
-        <VinylPhysicsBarrier 
-          visible={!!playingVersion} 
-          position={VINYL_CENTER_POSITION} 
-        />
+        {/* 🎵 VINYL PHYSICS BARRIER - Invisible collider at center that orbs bounce off */}
+        <VinylPhysicsBarrier visible={!!playingVersion} />
       </Suspense>
       
       {/* CENTERED GRID TEXT - Shows hovered or playing version label on album grid */}

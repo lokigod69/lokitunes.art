@@ -61,7 +61,7 @@ export function AlbumArtworkDisplay({
     
     // 🎵 VINYL ROTATION - Spin when playing (clockwise, like a real record)
     if (isPlaying && currentOpacity.current > 0.01) {
-      groupRef.current.rotation.z -= delta * 0.5  // Clockwise rotation (negative = clockwise when viewed from front)
+      groupRef.current.rotation.z -= delta * 1.5  // Clockwise rotation - 1.5 rad/sec (~4 sec per rotation)
     }
 
     if (currentOpacity.current > 0.01) {
