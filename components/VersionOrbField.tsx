@@ -54,18 +54,22 @@ function PhysicsCleanup({ expectedCount }: { expectedCount: number }) {
 const VINYL_CENTER_POSITION: [number, number, number] = [0, 0, -35]
 
 // Invisible physics barrier that orbs bounce off when vinyl is visible
-// Positioned at Z=0 where orbs actually are (not at vinyl position which is Z=-35)
+// Sized to match the docked orb (20% scale of original ~3.5 radius = ~0.7)
 function VinylPhysicsBarrier({ visible }: { visible: boolean }) {
   if (!visible) return null
+  
+  // Docked orb is 20% of original size (~3.5 * 0.2 = 0.7 radius)
+  // Barrier should match this so other orbs can just touch it
+  const DOCKED_ORB_RADIUS = 1.2  // Slightly larger than visual docked orb for good collision
   
   return (
     <RigidBody
       type="fixed"
-      position={[0, 0, 0]}  // At center where orbs are, NOT at vinyl position
+      position={[0, 0, 0]}  // At center where docked orb appears
       colliders={false}
     >
-      {/* Large invisible sphere at center that pushes orbs outward */}
-      <BallCollider args={[8]} restitution={0.8} friction={0.0} />
+      {/* Invisible sphere matching docked orb size */}
+      <BallCollider args={[DOCKED_ORB_RADIUS]} restitution={0.8} friction={0.0} />
     </RigidBody>
   )
 }

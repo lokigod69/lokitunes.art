@@ -60,8 +60,13 @@ export function AlbumArtworkDisplay({
     groupRef.current.visible = currentOpacity.current > 0.01
     
     // 🎵 VINYL ROTATION - Spin when playing (clockwise, like a real record)
-    if (isPlaying && currentOpacity.current > 0.01) {
-      groupRef.current.rotation.z -= delta * 1.5  // Clockwise rotation - 1.5 rad/sec (~4 sec per rotation)
+    // Vinyl spins continuously when isPlaying is true
+    if (isPlaying && groupRef.current.visible) {
+      groupRef.current.rotation.z -= delta * 0.8  // ~8 seconds per full rotation (33 RPM feel)
+      // Debug: Log rotation every ~60 frames
+      if (Math.floor(t * 60) % 180 === 0) {
+        console.log('🎵 Vinyl spinning:', groupRef.current.rotation.z.toFixed(2), 'isPlaying:', isPlaying)
+      }
     }
 
     if (currentOpacity.current > 0.01) {
