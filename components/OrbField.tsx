@@ -150,7 +150,9 @@ export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
   }, [])
   
   // Calculate camera distance based on album count
-  const cameraDistance = calculateCameraDistance(albums.length)
+  // For the homepage we pull the camera back slightly more so the grid
+  // and RESET button sit higher above the global player bar.
+  const cameraDistance = calculateCameraDistance(albums.length) * 1.12
 
   const handleNavigate = useCallback((slug: string) => {
     router.push(`/album/${slug}`)
