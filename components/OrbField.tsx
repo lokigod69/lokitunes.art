@@ -102,7 +102,7 @@ function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGla
           albumCoverUrl={hoveredAlbum.cover_url}
           albumPalette={hoveredAlbum.palette}
           visible={true}
-          position={[0, 8, -65]}
+          position={[0, 30, -80]}
           albumTitle={hoveredAlbum.title}
         />
       )}
