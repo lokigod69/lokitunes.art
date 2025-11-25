@@ -118,6 +118,7 @@ function OrbScene({
                 albumCoverUrl={albumCoverUrl}
                 onHover={onHover}
                 vinylCenterPosition={VINYL_CENTER_POSITION}
+                isVinylVisible={!!(hoveredVersion || playingVersion)}
               />
             )
           })}

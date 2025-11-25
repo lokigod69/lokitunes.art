@@ -76,16 +76,16 @@ function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGla
       {/* MULTI-LAYER NEON GRIDS - Cyberpunk aesthetic */}
       <gridHelper 
         args={[100, 50, '#00ffff', '#002244']}
-        position={[0, -15, -15]} 
+        position={[0, -15, 0]} 
       />
       <gridHelper 
         args={[100, 50, '#ff00ff', '#440044']}
-        position={[0, -14.5, -15]} 
+        position={[0, -14.5, 0]} 
         rotation={[0, Math.PI / 4, 0]}
       />
       <gridHelper 
         args={[100, 50, '#00ff88', '#004422']}
-        position={[0, -14, -15]} 
+        position={[0, -14, 0]} 
         rotation={[0, -Math.PI / 4, 0]}
       />
       

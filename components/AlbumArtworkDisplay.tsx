@@ -101,7 +101,7 @@ export function AlbumArtworkDisplay({
       rotation={[0, 0, 0]} 
       position={position}
       visible={false}
-      scale={6.0}
+      scale={8.0}  // Larger vinyl - allows orbs to pass above/below
     >
       {/* Outer vinyl disc (black with slight sheen) - CLICKABLE */}
       <mesh 

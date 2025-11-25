@@ -82,6 +82,7 @@ interface VersionOrbProps {
   // NEW: Docking system props
   vinylCenterPosition?: [number, number, number]
   onVinylRelease?: () => void  // Called when clicking vinyl to release docked orb
+  isVinylVisible?: boolean     // Whether vinyl is displayed (triggers repulsion)
 }
 
 export function VersionOrb({ 
@@ -94,7 +95,8 @@ export function VersionOrb({
   albumCoverUrl,
   onHover,
   vinylCenterPosition = [0, 0, -35],
-  onVinylRelease
+  onVinylRelease,
+  isVinylVisible = false
 }: VersionOrbProps) {
   const ref = useRef<RapierRigidBody>(null)
   const glowRef = useRef<THREE.PointLight>(null)
@@ -331,6 +333,39 @@ export function VersionOrb({
         const strength = 0.15 * (1 - distance / 8)
         const attraction = toCursor.normalize().multiplyScalar(strength)
         body.applyImpulse(attraction, true)
+      }
+      
+      // ═══════════════════════════════════════════════════════════════════════════════
+      // 🎵 VINYL REPULSION - Push orbs away from vinyl center when visible
+      // Allows orbs to pass above/below but not in front of the vinyl
+      // ═══════════════════════════════════════════════════════════════════════════════
+      if (isVinylVisible) {
+        const vinylPos = new THREE.Vector3(
+          vinylCenterPosition[0],
+          vinylCenterPosition[1],
+          vinylCenterPosition[2]
+        )
+        
+        // Calculate 2D distance (X and Y only) - orbs can pass in Z
+        const dx = pos.x - vinylPos.x
+        const dy = pos.y - vinylPos.y
+        const distance2D = Math.sqrt(dx * dx + dy * dy)
+        
+        // Repulsion zone radius (how far from vinyl center the repulsion acts)
+        const VINYL_REPULSION_RADIUS = 20  // Matches larger vinyl visual size (scale 8.0)
+        const VINYL_REPULSION_STRENGTH = 0.5
+        
+        if (distance2D < VINYL_REPULSION_RADIUS) {
+          // Calculate repulsion strength (stronger when closer)
+          const repulsionFactor = 1 - (distance2D / VINYL_REPULSION_RADIUS)
+          const repulsionStrength = VINYL_REPULSION_STRENGTH * repulsionFactor * repulsionFactor // Quadratic falloff
+          
+          // Direction to push (away from vinyl center, only X and Y)
+          const pushX = distance2D > 0.1 ? (dx / distance2D) * repulsionStrength : (Math.random() - 0.5) * repulsionStrength
+          const pushY = distance2D > 0.1 ? (dy / distance2D) * repulsionStrength : (Math.random() - 0.5) * repulsionStrength
+          
+          body.applyImpulse({ x: pushX, y: pushY, z: 0 }, true)
+        }
       }
       
       // Ensure scale is 1 when idle
