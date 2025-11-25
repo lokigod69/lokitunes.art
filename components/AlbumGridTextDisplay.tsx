@@ -28,8 +28,8 @@ export function AlbumGridTextDisplay({ hoveredVersion, playingVersion, albumPale
 
   // Centered position on album grid
   // Y = -12 raises text above grid a bit so it's easier to read when vertical
-  // Z = -15 keeps text in the middle/back of the visible grid
-  const position: [number, number, number] = [0, -12, -15]
+  // Z = -5 moves text forward to first horizontal grid line
+  const position: [number, number, number] = [0, -12, -5]
 
   // Use album palette passed from scene
   const palette = albumPalette || {

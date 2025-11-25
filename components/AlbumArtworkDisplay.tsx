@@ -30,6 +30,7 @@ export function AlbumArtworkDisplay({
   const groovesMeshRef = useRef<THREE.Mesh>(null)
   const targetOpacity = useRef(0)
   const currentOpacity = useRef(0)
+  const rotationAngle = useRef(0)  // Accumulated rotation for vinyl spin
 
   // Load album artwork texture
   const possibleUrls = albumCoverUrl ? [albumCoverUrl] : []
@@ -60,10 +61,12 @@ export function AlbumArtworkDisplay({
     groupRef.current.visible = currentOpacity.current > 0.01
     
     // 🎵 VINYL ROTATION - Spin when playing (clockwise, like a real record)
-    // Vinyl spins continuously when isPlaying is true
-    if (isPlaying && groupRef.current.visible) {
-      groupRef.current.rotation.z -= delta * 2.0  // Faster rotation for visibility (~3 seconds per rotation)
+    // Use ref to accumulate rotation so it persists across renders
+    if (isPlaying) {
+      rotationAngle.current -= delta * 1.2  // ~5 seconds per full rotation (33 RPM feel)
     }
+    // Always apply accumulated rotation to group
+    groupRef.current.rotation.z = rotationAngle.current
 
     if (currentOpacity.current > 0.01) {
       // Glitch effect: pulsing opacity

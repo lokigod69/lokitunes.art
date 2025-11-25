@@ -60,8 +60,8 @@ function VinylPhysicsBarrier({ visible }: { visible: boolean }) {
   
   // Docked orb is 20% of original size (~3.5 * 0.2 = 0.7 radius)
   // Barrier needs to prevent orbs from overlapping with docked area
-  // Middle ground between 1.2 (too small) and 8 (too big)
-  const DOCKED_ORB_RADIUS = 2.5  // Tuned for orbs to just touch edges
+  // Tuned: 2.5 was slightly too small, 8 was too big
+  const DOCKED_ORB_RADIUS = 3.2  // Perfect fit for orbs to touch vinyl edge
   
   return (
     <RigidBody
