@@ -50,6 +50,9 @@ function PhysicsCleanup({ expectedCount }: { expectedCount: number }) {
   return null
 }
 
+// Vinyl center position constant - where orbs dock to
+const VINYL_CENTER_POSITION: [number, number, number] = [0, 0, -35]
+
 function OrbScene({ 
   versions, 
   albumCoverUrl,
@@ -57,7 +60,8 @@ function OrbScene({
   hoveredVersion,
   playingVersion,
   onHover, 
-  deviceTier 
+  deviceTier,
+  onStopPlaying  // NEW: Callback to stop playing (releases docked orb)
 }: {
   versions: ExtendedVersion[]
   albumCoverUrl: string
@@ -66,6 +70,7 @@ function OrbScene({
   playingVersion: ExtendedVersion | null
   onHover: (version: ExtendedVersion | null) => void
   deviceTier: DeviceTier
+  onStopPlaying: () => void  // NEW
 }) {
   // Calculate dynamic layout based on version count
   const { positions, radius } = calculateOrbLayout(versions.length)
@@ -112,6 +117,7 @@ function OrbScene({
                 albumPalette={albumPalette}
                 albumCoverUrl={albumCoverUrl}
                 onHover={onHover}
+                vinylCenterPosition={VINYL_CENTER_POSITION}
               />
             )
           })}
@@ -151,8 +157,9 @@ function OrbScene({
         albumCoverUrl={hoveredVersion?.cover_url || playingVersion?.cover_url || albumCoverUrl}
         albumPalette={albumPalette}
         visible={!!(hoveredVersion || playingVersion)}
-        position={[0, 0, -35]}
+        position={VINYL_CENTER_POSITION}
         albumTitle={hoveredVersion?.label || playingVersion?.label || 'Album'}
+        onVinylClick={playingVersion ? onStopPlaying : undefined}
       />
     </Physics>
   )
@@ -177,7 +184,7 @@ export function VersionOrbField({
   const [hoveredVersion, setHoveredVersion] = useState<ExtendedVersion | null>(null)
 
   // Global audio store - currently playing version
-  const { currentVersion, isPlaying } = useAudioStore()
+  const { currentVersion, isPlaying, stop } = useAudioStore()
 
   // Map current playing SongVersion to ExtendedVersion from this album page
   const playingVersion: ExtendedVersion | null = (isPlaying && currentVersion)
@@ -247,6 +254,7 @@ export function VersionOrbField({
           playingVersion={playingVersion}
           onHover={setHoveredVersion}
           deviceTier={deviceTier}
+          onStopPlaying={stop}
         />
         
         {/* Post-processing effects */}

@@ -12,6 +12,7 @@ interface AlbumArtworkDisplayProps {
   visible: boolean
   position?: [number, number, number]
   albumTitle?: string
+  onVinylClick?: () => void  // NEW: Called when vinyl is clicked to release docked orb
 }
 
 export function AlbumArtworkDisplay({ 
@@ -19,7 +20,8 @@ export function AlbumArtworkDisplay({
   albumPalette,
   visible,
   position = [0, -5, -45],
-  albumTitle = 'Album'
+  albumTitle = 'Album',
+  onVinylClick
 }: AlbumArtworkDisplayProps) {
   const groupRef = useRef<THREE.Group>(null)
   const artworkMeshRef = useRef<THREE.Mesh>(null)
@@ -85,6 +87,14 @@ export function AlbumArtworkDisplay({
 
   const accentColor = albumPalette?.accent1 || '#4F9EFF'
 
+  // Handle vinyl click - release docked orb
+  const handleVinylClick = () => {
+    if (onVinylClick) {
+      console.log('🎵 Vinyl clicked - releasing docked orb')
+      onVinylClick()
+    }
+  }
+
   return (
     <group 
       ref={groupRef} 
@@ -93,8 +103,12 @@ export function AlbumArtworkDisplay({
       visible={false}
       scale={6.0}
     >
-      {/* Outer vinyl disc (black with slight sheen) */}
-      <mesh>
+      {/* Outer vinyl disc (black with slight sheen) - CLICKABLE */}
+      <mesh 
+        onClick={handleVinylClick}
+        onPointerEnter={() => { if (onVinylClick) document.body.style.cursor = 'pointer' }}
+        onPointerLeave={() => { document.body.style.cursor = 'default' }}
+      >
         <circleGeometry args={[8, 64]} />
         <meshStandardMaterial 
           color="#0a0a0a"
@@ -117,9 +131,15 @@ export function AlbumArtworkDisplay({
         />
       </mesh>
 
-      {/* Album artwork (center of vinyl) */}
+      {/* Album artwork (center of vinyl) - CLICKABLE */}
       {texture && (
-        <mesh ref={artworkMeshRef} position={[0, 0, 0.02]}>
+        <mesh 
+          ref={artworkMeshRef} 
+          position={[0, 0, 0.02]}
+          onClick={handleVinylClick}
+          onPointerEnter={() => { if (onVinylClick) document.body.style.cursor = 'pointer' }}
+          onPointerLeave={() => { document.body.style.cursor = 'default' }}
+        >
           <circleGeometry args={[7, 64]} />
           <meshBasicMaterial 
             map={texture}
@@ -131,9 +151,15 @@ export function AlbumArtworkDisplay({
         </mesh>
       )}
 
-      {/* Fallback colored disc if no texture */}
+      {/* Fallback colored disc if no texture - CLICKABLE */}
       {!texture && (
-        <mesh ref={artworkMeshRef} position={[0, 0, 0.02]}>
+        <mesh 
+          ref={artworkMeshRef} 
+          position={[0, 0, 0.02]}
+          onClick={handleVinylClick}
+          onPointerEnter={() => { if (onVinylClick) document.body.style.cursor = 'pointer' }}
+          onPointerLeave={() => { document.body.style.cursor = 'default' }}
+        >
           <circleGeometry args={[7, 64]} />
           <meshBasicMaterial 
             color={accentColor}

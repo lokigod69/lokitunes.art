@@ -40,6 +40,32 @@ function normalizeEmissiveIntensity(colorHex: string): number {
     : 2.0  // Light colors: lower emissive
 }
 
+// Animation states for orb docking
+type OrbAnimationState = 'idle' | 'docking' | 'docked' | 'undocking'
+
+// Easing function for smooth animations
+function easeInOutCubic(t: number): number {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
+}
+
+// Linear interpolation
+function lerp(a: number, b: number, t: number): number {
+  return a + (b - a) * t
+}
+
+// Position interpolation
+function lerpPosition(
+  from: [number, number, number],
+  to: [number, number, number],
+  t: number
+): [number, number, number] {
+  return [
+    lerp(from[0], to[0], t),
+    lerp(from[1], to[1], t),
+    lerp(from[2], to[2], t),
+  ]
+}
+
 interface VersionOrbProps {
   version: ExtendedVersion
   position: [number, number, number]
@@ -53,6 +79,9 @@ interface VersionOrbProps {
   } | null
   albumCoverUrl: string
   onHover: (version: ExtendedVersion | null) => void
+  // NEW: Docking system props
+  vinylCenterPosition?: [number, number, number]
+  onVinylRelease?: () => void  // Called when clicking vinyl to release docked orb
 }
 
 export function VersionOrb({ 
@@ -63,16 +92,45 @@ export function VersionOrb({
   deviceTier,
   albumPalette,
   albumCoverUrl,
-  onHover
+  onHover,
+  vinylCenterPosition = [0, 0, -35],
+  onVinylRelease
 }: VersionOrbProps) {
   const ref = useRef<RapierRigidBody>(null)
   const glowRef = useRef<THREE.PointLight>(null)
   const innerMeshRef = useRef<THREE.Mesh>(null)
+  const groupRef = useRef<THREE.Group>(null)
   const [hovered, setHovered] = useState(false)
   
   // Audio store integration
-  const { currentVersion, isPlaying, play } = useAudioStore()
+  const { currentVersion, isPlaying, play, stop } = useAudioStore()
   const isThisPlaying = currentVersion?.id === version.id && isPlaying
+  
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // 🎯 DOCKING ANIMATION STATE
+  // ═══════════════════════════════════════════════════════════════════════════════
+  const [animationState, setAnimationState] = useState<OrbAnimationState>('idle')
+  const animationProgress = useRef(0)
+  const originalPosition = useRef<[number, number, number]>(position)
+  const currentAnimatedPosition = useRef<[number, number, number]>(position)
+  const currentScale = useRef(1)
+  
+  // Animation constants
+  const DOCK_ANIMATION_SPEED = 1.5  // Higher = faster animation
+  const DOCKED_SCALE = 0.2          // How small the orb gets when docked (20% of original)
+  const DOCKED_POSITION_OFFSET: [number, number, number] = [0, 0, 1]  // Slight offset in front of vinyl
+  
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // 🎯 SYNC ANIMATION STATE WITH AUDIO STATE
+  // When another orb starts playing, this orb should undock
+  // ═══════════════════════════════════════════════════════════════════════════════
+  useEffect(() => {
+    // If this orb was docked but is no longer playing (another orb took over)
+    if ((animationState === 'docked' || animationState === 'docking') && !isThisPlaying) {
+      console.log('🔄 Another orb started playing, undocking:', version.label)
+      setAnimationState('undocking')
+    }
+  }, [isThisPlaying, animationState, version.label])
   
   const quality = getQualitySettings(deviceTier)
 
@@ -135,15 +193,118 @@ export function VersionOrb({
     return () => clearTimeout(timer)
   }, [])
 
-  useFrame((state) => {
+  // Calculate the target docked position (center of vinyl, slightly in front)
+  const dockedPosition: [number, number, number] = [
+    vinylCenterPosition[0] + DOCKED_POSITION_OFFSET[0],
+    vinylCenterPosition[1] + DOCKED_POSITION_OFFSET[1],
+    vinylCenterPosition[2] + DOCKED_POSITION_OFFSET[2],
+  ]
+
+  useFrame((state, delta) => {
     if (!ref.current) return
 
     const t = state.clock.elapsedTime
     const body = ref.current
     const pos = body.translation()
 
-    // ONLY apply physics if NOT playing (when playing, orb is frozen)
-    if (!isThisPlaying) {
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // 🎯 DOCKING ANIMATION LOGIC
+    // ═══════════════════════════════════════════════════════════════════════════════
+    
+    if (animationState === 'docking') {
+      // Animate toward vinyl center
+      animationProgress.current = Math.min(1, animationProgress.current + delta * DOCK_ANIMATION_SPEED)
+      const easedProgress = easeInOutCubic(animationProgress.current)
+      
+      // Interpolate position: originalPosition → dockedPosition
+      currentAnimatedPosition.current = lerpPosition(
+        originalPosition.current,
+        dockedPosition,
+        easedProgress
+      )
+      
+      // Interpolate scale: 1 → DOCKED_SCALE
+      currentScale.current = lerp(1, DOCKED_SCALE, easedProgress)
+      
+      // Move the rigid body to the animated position
+      body.setTranslation({
+        x: currentAnimatedPosition.current[0],
+        y: currentAnimatedPosition.current[1],
+        z: currentAnimatedPosition.current[2],
+      }, true)
+      
+      // Update visual scale
+      if (groupRef.current) {
+        groupRef.current.scale.setScalar(currentScale.current)
+      }
+      
+      // When animation complete, switch to docked state
+      if (animationProgress.current >= 1) {
+        setAnimationState('docked')
+        console.log('🎯 Orb docked:', version.label)
+      }
+    }
+    
+    else if (animationState === 'undocking') {
+      // Animate back to original position
+      animationProgress.current = Math.max(0, animationProgress.current - delta * DOCK_ANIMATION_SPEED)
+      const easedProgress = easeInOutCubic(animationProgress.current)
+      
+      // Interpolate position: dockedPosition → originalPosition
+      currentAnimatedPosition.current = lerpPosition(
+        originalPosition.current,
+        dockedPosition,
+        easedProgress
+      )
+      
+      // Interpolate scale: DOCKED_SCALE → 1
+      currentScale.current = lerp(1, DOCKED_SCALE, easedProgress)
+      
+      // Move the rigid body to the animated position
+      body.setTranslation({
+        x: currentAnimatedPosition.current[0],
+        y: currentAnimatedPosition.current[1],
+        z: currentAnimatedPosition.current[2],
+      }, true)
+      
+      // Update visual scale
+      if (groupRef.current) {
+        groupRef.current.scale.setScalar(currentScale.current)
+      }
+      
+      // When animation complete, return to idle state
+      if (animationProgress.current <= 0) {
+        setAnimationState('idle')
+        currentScale.current = 1
+        if (groupRef.current) {
+          groupRef.current.scale.setScalar(1)
+        }
+        console.log('🎯 Orb undocked:', version.label)
+        
+        // Give the orb a small impulse to start moving again
+        body.applyImpulse({
+          x: (Math.random() - 0.5) * 0.5,
+          y: (Math.random() - 0.5) * 0.5,
+          z: 0,
+        }, true)
+      }
+    }
+    
+    else if (animationState === 'docked') {
+      // Keep orb at docked position and scale
+      body.setTranslation({
+        x: dockedPosition[0],
+        y: dockedPosition[1],
+        z: dockedPosition[2],
+      }, true)
+      
+      if (groupRef.current) {
+        groupRef.current.scale.setScalar(DOCKED_SCALE)
+      }
+    }
+    
+    else if (animationState === 'idle') {
+      // Normal physics behavior - ONLY when idle
       // Perlin noise drift for organic motion
       const noiseX = Math.sin(t * 0.3 + seed) * 0.05
       const noiseY = Math.cos(t * 0.2 + seed * 0.7) * 0.05
@@ -171,12 +332,18 @@ export function VersionOrb({
         const attraction = toCursor.normalize().multiplyScalar(strength)
         body.applyImpulse(attraction, true)
       }
+      
+      // Ensure scale is 1 when idle
+      if (groupRef.current && currentScale.current !== 1) {
+        currentScale.current = 1
+        groupRef.current.scale.setScalar(1)
+      }
     }
 
-    // PULSING GLOW - Enhanced when playing
+    // PULSING GLOW - Enhanced when playing/docked
     if (glowRef.current) {
-      if (isThisPlaying) {
-        // PLAYING ORB: Faster, brighter pulse
+      if (animationState === 'docked' || animationState === 'docking') {
+        // DOCKED ORB: Faster, brighter pulse
         const pulse = Math.sin(t * 2) * 0.5 + 1.5
         glowRef.current.intensity = normalizedIntensity * pulse * 1.5
       } else {
@@ -194,18 +361,49 @@ export function VersionOrb({
 
   const handleClick = () => {
     console.log('🎮 Version orb clicked:', version.label)
+    console.log('   Animation state:', animationState)
     console.log('   Version ID:', version.id)
     console.log('   Song ID:', version.songId)
     console.log('   Audio URL:', version.audio_url)
     
-    // Play this version with album palette for themed player
-    play(version, version.songId, albumPalette)
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // 🎯 DOCKING CLICK LOGIC
+    // ═══════════════════════════════════════════════════════════════════════════════
+    
+    if (animationState === 'idle') {
+      // Start docking animation
+      // Capture current position from physics body
+      if (ref.current) {
+        const pos = ref.current.translation()
+        originalPosition.current = [pos.x, pos.y, pos.z]
+      }
+      animationProgress.current = 0
+      setAnimationState('docking')
+      
+      // Play this version with album palette for themed player
+      play(version, version.songId, albumPalette)
+      console.log('🚀 Starting dock animation for:', version.label)
+    } 
+    else if (animationState === 'docked') {
+      // Start undocking animation
+      setAnimationState('undocking')
+      
+      // Stop the song
+      stop()
+      console.log('🔙 Starting undock animation for:', version.label)
+    }
+    // Ignore clicks during animation
   }
+  
+  // Determine RigidBody type based on animation state
+  // - 'dynamic': Normal physics (idle)
+  // - 'kinematicPosition': Manual position control (docking/docked/undocking)
+  const rigidBodyType = animationState === 'idle' ? 'dynamic' : 'kinematicPosition'
 
   return (
     <RigidBody
       ref={ref}
-      type={isThisPlaying ? 'fixed' : 'dynamic'}  // FREEZE when playing!
+      type={rigidBodyType}
       colliders="ball"
       restitution={0.8}
       friction={0.1}
@@ -216,7 +414,7 @@ export function VersionOrb({
       ccd={true}
       position={position}
     >
-      <group>
+      <group ref={groupRef}>
         {/* Inner glow - PULSING (enhanced when playing) */}
         <pointLight
           ref={glowRef}

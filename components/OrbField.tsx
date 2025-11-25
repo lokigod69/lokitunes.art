@@ -16,7 +16,6 @@ import { PulsingWireframe } from './PulsingWireframe'
 import { InfoDisplayCube } from './InfoDisplayCube'
 import { GridTextDisplay } from './GridTextDisplay'
 import { NeonHeader } from './NeonHeader'
-import { AlbumArtworkDisplay } from './AlbumArtworkDisplay'
 import type { Album } from '@/lib/supabase'
 import { detectDeviceTier, getQualitySettings, type DeviceTier } from '@/lib/device-detection'
 import { calculateOrbLayout, calculateCameraDistance } from '@/lib/orb-layout'
@@ -76,17 +75,17 @@ function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGla
       
       {/* MULTI-LAYER NEON GRIDS - Cyberpunk aesthetic */}
       <gridHelper 
-        args={[100, 50, '#00ffff', '#004444']}
-        position={[0, -15, 0]} 
+        args={[100, 50, '#00ffff', '#002244']}
+        position={[0, -15, -15]} 
       />
       <gridHelper 
         args={[100, 50, '#ff00ff', '#440044']}
-        position={[0, -14.5, 0]} 
+        position={[0, -14.5, -15]} 
         rotation={[0, Math.PI / 4, 0]}
       />
       <gridHelper 
         args={[100, 50, '#00ff88', '#004422']}
-        position={[0, -14, 0]} 
+        position={[0, -14, -15]} 
         rotation={[0, -Math.PI / 4, 0]}
       />
       
@@ -95,17 +94,6 @@ function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGla
         album={hoveredAlbum}
         visible={!!hoveredAlbum}
       />
-      
-      {/* VINYL ARTWORK DISPLAY - Standing at back of grid, shows when hovering album */}
-      {hoveredAlbum && (
-        <AlbumArtworkDisplay
-          albumCoverUrl={hoveredAlbum.cover_url}
-          albumPalette={hoveredAlbum.palette}
-          visible={true}
-          position={[0, 0, -35]}
-          albumTitle={hoveredAlbum.title}
-        />
-      )}
       
       {/* DECORATIVE PULSING WIREFRAMES - Color-sync with hovered album */}
       <PulsingWireframe position={[-10, 5, -10]} size={[3, 3, 3]} color="#ff00ff" hoveredAlbum={hoveredAlbum} />
