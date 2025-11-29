@@ -36,6 +36,8 @@ export function GlobalAudioPlayer() {
     pause, 
     setCurrentTime,
     setVolume,
+    autoplayMode,
+    setAutoplayMode,
   } = useAudioStore()
   const pathname = usePathname()
   const isHomePage = pathname === '/'
@@ -158,6 +160,35 @@ export function GlobalAudioPlayer() {
   const hasRatingStats = !isRatingLoading && !!(ratingStats && ratingStats.rating_count > 0)
   const hasUserRating = !isRatingLoading && !!userRating
 
+  const renderAutoplayToggle = () => {
+    if (!currentVersion) return null
+    const modes: { mode: 'off' | 'album' | 'all'; label: string }[] = [
+      { mode: 'off', label: 'Off' },
+      { mode: 'album', label: 'Album' },
+      { mode: 'all', label: 'All' },
+    ]
+    return (
+      <div className="flex items-center gap-1 text-[10px] text-bone/60">
+        <span className="uppercase tracking-wide">Autoplay</span>
+        {modes.map(({ mode, label }) => (
+          <button
+            key={mode}
+            type="button"
+            onClick={() => setAutoplayMode(mode)}
+            className={
+              'px-1.5 py-0.5 rounded-full border cursor-pointer transition-colors ' +
+              (autoplayMode === mode
+                ? 'border-[var(--voltage)] text-[var(--voltage)] bg-[var(--voltage)]/10'
+                : 'border-bone/30 text-bone/50 hover:text-bone hover:border-bone/60')
+            }
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+    )
+  }
+
   return (
     <>
       {/* Player UI only shows when there's a track */}
@@ -263,6 +294,11 @@ export function GlobalAudioPlayer() {
                       style={{ accentColor }}
                     />
                   </div>
+
+                  {/* Autoplay toggle */}
+                  <div className="flex justify-end">
+                    {renderAutoplayToggle()}
+                  </div>
                 </>
               ) : (
                 <>
@@ -316,6 +352,8 @@ export function GlobalAudioPlayer() {
                         )}
                       </div>
                     )}
+                    {/* Autoplay toggle (mobile full layout) */}
+                    {renderAutoplayToggle()}
                   </div>
 
                   {/* Player row */}
@@ -577,6 +615,11 @@ export function GlobalAudioPlayer() {
                   />
                 </div>
               )}
+
+              {/* Autoplay toggle (desktop) */}
+              <div className="flex-shrink-0">
+                {renderAutoplayToggle()}
+              </div>
             </div>
           </div>
         </div>

@@ -132,6 +132,7 @@ function OrbScene({
               <VersionOrb
                 key={version.id}
                 version={version}
+                allVersions={versions}
                 position={positions[index]}
                 radius={radius}
                 orbCount={versions.length}

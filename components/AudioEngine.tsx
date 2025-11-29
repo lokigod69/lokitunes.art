@@ -11,7 +11,7 @@ export default function AudioEngine() {
   const volume = useAudioStore((state) => state.volume)
   const setDuration = useAudioStore((state) => state.setDuration)
   const updateTime = useAudioStore((state) => state.updateTime)
-  const next = useAudioStore((state) => state.next)
+  const handleTrackEnd = useAudioStore((state) => state.handleTrackEnd)
 
   // IMPORTANT: Always render the audio element, just don't set src if no URL
   // This ensures event listeners are always attached
@@ -72,7 +72,7 @@ export default function AudioEngine() {
 
     const handleEnded = () => {
       console.log('[AudioEngine] Track ended')
-      next()
+      handleTrackEnd()
     }
 
     const handleError = (e: Event) => {

@@ -68,6 +68,7 @@ function lerpPosition(
 
 interface VersionOrbProps {
   version: ExtendedVersion
+  allVersions: ExtendedVersion[]
   position: [number, number, number]
   radius: number
   orbCount?: number
@@ -79,14 +80,15 @@ interface VersionOrbProps {
   } | null
   albumCoverUrl: string
   onHover: (version: ExtendedVersion | null) => void
-  // NEW: Docking system props
+  // Docking system props
   vinylCenterPosition?: [number, number, number]
-  onVinylRelease?: () => void  // Called when clicking vinyl to release docked orb
-  isVinylVisible?: boolean     // Whether vinyl is displayed (triggers repulsion)
+  onVinylRelease?: () => void
+  isVinylVisible?: boolean
 }
 
 export function VersionOrb({ 
-  version, 
+  version,
+  allVersions,
   position,
   radius,
   orbCount,
@@ -105,7 +107,7 @@ export function VersionOrb({
   const [hovered, setHovered] = useState(false)
   
   // Audio store integration
-  const { currentVersion, isPlaying, play, stop } = useAudioStore()
+  const { currentVersion, isPlaying, play, stop, autoplayMode, startAlbumQueue } = useAudioStore()
   const isThisPlaying = currentVersion?.id === version.id && isPlaying
   
   // ═══════════════════════════════════════════════════════════════════════════════
@@ -440,8 +442,13 @@ export function VersionOrb({
       animationProgress.current = 0
       setAnimationState('docking')
       
-      // Play this version with album palette for themed player
-      play(version, version.songId, albumPalette)
+      // Play this version. If autoplay is enabled, start an album queue so
+      // subsequent tracks advance automatically within this album.
+      if (autoplayMode === 'album' || autoplayMode === 'all') {
+        startAlbumQueue(allVersions as any, version.id, albumPalette as any)
+      } else {
+        play(version, version.songId, albumPalette)
+      }
       console.log('🚀 Starting dock animation for:', version.label)
     } 
     else if (animationState === 'docked') {
