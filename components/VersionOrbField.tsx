@@ -212,7 +212,7 @@ export function VersionOrbField({
   const [hoveredVersion, setHoveredVersion] = useState<ExtendedVersion | null>(null)
 
   // Global audio store - currently playing version
-  const { currentVersion, isPlaying, stop, next, previous, queue, currentIndex } = useAudioStore()
+  const { currentVersion, isPlaying, stop } = useAudioStore()
 
   // Map current playing SongVersion to ExtendedVersion from this album page
   const playingVersion: ExtendedVersion | null = (isPlaying && currentVersion)
@@ -306,33 +306,6 @@ export function VersionOrbField({
       {versions.length === 0 && (
         <div className="absolute inset-0 flex items-center justify-center z-10">
           <p className="text-bone/50 text-lg">No versions available</p>
-        </div>
-      )}
-      
-      {/* TRACK NAVIGATION CONTROLS - Prev/Next buttons when playing */}
-      {playingVersion && queue.length > 1 && (
-        <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-20 flex items-center gap-4">
-          <button
-            onClick={previous}
-            className="p-3 rounded-full bg-black/40 backdrop-blur-sm border border-white/20 hover:bg-white/10 transition-colors"
-            title="Previous track"
-          >
-            <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/>
-            </svg>
-          </button>
-          <span className="text-white/60 text-sm font-mono">
-            {currentIndex + 1} / {queue.length}
-          </span>
-          <button
-            onClick={next}
-            className="p-3 rounded-full bg-black/40 backdrop-blur-sm border border-white/20 hover:bg-white/10 transition-colors"
-            title="Next track"
-          >
-            <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/>
-            </svg>
-          </button>
         </div>
       )}
     </>

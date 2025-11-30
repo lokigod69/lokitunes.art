@@ -331,7 +331,7 @@ export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
         onClick={handleReset}
         style={{
           position: 'fixed',
-          bottom: '40px',
+          bottom: '100px',
           left: '50%',
           transform: 'translateX(-50%)',
           zIndex: 9999,

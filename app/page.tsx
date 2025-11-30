@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Logo3D } from '@/components/Logo3D'
 import { OrbField, OrbFieldFallback } from '@/components/OrbField'
-import { ScanlineEffect } from '@/components/ScanlineEffect'
+import { HeaderScanline } from '@/components/HeaderScanline'
 import { RatingProgressBadge } from '@/components/RatingProgressBadge'
 import { OnboardingModal } from '@/components/OnboardingModal'
 import { TutorialButton } from '@/components/TutorialButton'
@@ -176,8 +176,8 @@ export default function Home() {
             <Logo3D />
           </div> */}
           
-          {/* Scanline CRT Effect */}
-          <ScanlineEffect />
+          {/* Header Scanline Effect - localized to header area only */}
+          <HeaderScanline />
         </>
       )}
     </div>

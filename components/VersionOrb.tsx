@@ -107,7 +107,7 @@ export function VersionOrb({
   const [hovered, setHovered] = useState(false)
   
   // Audio store integration
-  const { currentVersion, isPlaying, play, stop, autoplayMode, startAlbumQueue, setCurrentTime } = useAudioStore()
+  const { currentVersion, isPlaying, play, stop, autoplayMode, startAlbumQueue, startGlobalQueue, setCurrentTime } = useAudioStore()
   const isThisPlaying = currentVersion?.id === version.id && isPlaying
   
   // ═══════════════════════════════════════════════════════════════════════════════
@@ -454,10 +454,13 @@ export function VersionOrb({
       animationProgress.current = 0
       setAnimationState('docking')
       
-      // Play this version. If autoplay is enabled, start an album queue so
-      // subsequent tracks advance automatically within this album.
-      // Always forceRestart=true so clicking an orb starts from beginning (not resume)
-      if (autoplayMode === 'album' || autoplayMode === 'all') {
+      // Play this version based on autoplay mode:
+      // - 'all': Build global queue from all albums (async)
+      // - 'album': Build queue from current album only
+      // - 'off': Play single track
+      if (autoplayMode === 'all') {
+        startGlobalQueue(version, albumPalette as any)
+      } else if (autoplayMode === 'album') {
         startAlbumQueue(allVersions as any, version.id, albumPalette as any)
       } else {
         play(version, version.songId, albumPalette, true)

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type MouseEvent as ReactMouseEvent } from 'react'
 import { usePathname } from 'next/navigation'
 import { useAudioStore } from '@/lib/audio-store'
-import { Play, Pause, Star, Volume2, Download } from 'lucide-react'
+import { Play, Pause, Star, Volume2, Download, SkipBack, SkipForward } from 'lucide-react'
 import Image from 'next/image'
 import { RatingModal } from '@/components/RatingModal'
 
@@ -38,6 +38,9 @@ export function GlobalAudioPlayer() {
     setVolume,
     autoplayMode,
     setAutoplayMode,
+    next,
+    previous,
+    queue,
   } = useAudioStore()
   const pathname = usePathname()
   const isHomePage = pathname === '/'
@@ -227,22 +230,45 @@ export function GlobalAudioPlayer() {
                       </p>
                     </div>
 
-                    <button
-                      onClick={() =>
-                        isPlaying
-                          ? pause()
-                          : play(currentVersion, currentVersion.song_id)
-                      }
-                      className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center hover:opacity-90 transition-transform hover:scale-105 cursor-pointer"
-                      style={{ backgroundColor: accentColor }}
-                      aria-label={isPlaying ? 'Pause' : 'Play'}
-                    >
-                      {isPlaying ? (
-                        <Pause className="w-5 h-5 text-void" fill="currentColor" />
-                      ) : (
-                        <Play className="w-5 h-5 text-void ml-0.5" fill="currentColor" />
+                    {/* Prev / Play/Pause / Next */}
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      {queue.length > 1 && (
+                        <button
+                          onClick={previous}
+                          className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-105 cursor-pointer border"
+                          style={{ borderColor: accentColor, color: accentColor }}
+                          aria-label="Previous track"
+                        >
+                          <SkipBack className="w-4 h-4" />
+                        </button>
                       )}
-                    </button>
+                      <button
+                        onClick={() =>
+                          isPlaying
+                            ? pause()
+                            : play(currentVersion, currentVersion.song_id)
+                        }
+                        className="w-10 h-10 rounded-full flex items-center justify-center hover:opacity-90 transition-transform hover:scale-105 cursor-pointer"
+                        style={{ backgroundColor: accentColor }}
+                        aria-label={isPlaying ? 'Pause' : 'Play'}
+                      >
+                        {isPlaying ? (
+                          <Pause className="w-5 h-5 text-void" fill="currentColor" />
+                        ) : (
+                          <Play className="w-5 h-5 text-void ml-0.5" fill="currentColor" />
+                        )}
+                      </button>
+                      {queue.length > 1 && (
+                        <button
+                          onClick={next}
+                          className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-105 cursor-pointer border"
+                          style={{ borderColor: accentColor, color: accentColor }}
+                          aria-label="Next track"
+                        >
+                          <SkipForward className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
 
                     {!isIOS && (
                       <div className="flex items-center gap-2 flex-shrink-0">
@@ -381,23 +407,45 @@ export function GlobalAudioPlayer() {
                       </div>
                     </div>
 
-                    {/* Center: Play/Pause */}
-                    <button
-                      onClick={() =>
-                        isPlaying
-                          ? pause()
-                          : play(currentVersion, currentVersion.song_id)
-                      }
-                      className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center hover:opacity-90 transition-transform hover:scale-105 cursor-pointer"
-                      style={{ backgroundColor: accentColor }}
-                      aria-label={isPlaying ? 'Pause' : 'Play'}
-                    >
-                      {isPlaying ? (
-                        <Pause className="w-5 h-5 text-void" fill="currentColor" />
-                      ) : (
-                        <Play className="w-5 h-5 text-void ml-0.5" fill="currentColor" />
+                    {/* Center: Prev / Play/Pause / Next */}
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {queue.length > 1 && (
+                        <button
+                          onClick={previous}
+                          className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-105 cursor-pointer border"
+                          style={{ borderColor: accentColor, color: accentColor }}
+                          aria-label="Previous track"
+                        >
+                          <SkipBack className="w-4 h-4" />
+                        </button>
                       )}
-                    </button>
+                      <button
+                        onClick={() =>
+                          isPlaying
+                            ? pause()
+                            : play(currentVersion, currentVersion.song_id)
+                        }
+                        className="w-10 h-10 rounded-full flex items-center justify-center hover:opacity-90 transition-transform hover:scale-105 cursor-pointer"
+                        style={{ backgroundColor: accentColor }}
+                        aria-label={isPlaying ? 'Pause' : 'Play'}
+                      >
+                        {isPlaying ? (
+                          <Pause className="w-5 h-5 text-void" fill="currentColor" />
+                        ) : (
+                          <Play className="w-5 h-5 text-void ml-0.5" fill="currentColor" />
+                        )}
+                      </button>
+                      {queue.length > 1 && (
+                        <button
+                          onClick={next}
+                          className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-105 cursor-pointer border"
+                          style={{ borderColor: accentColor, color: accentColor }}
+                          aria-label="Next track"
+                        >
+                          <SkipForward className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
 
                     {/* Right: Volume */}
                     {!isIOS && (
@@ -522,23 +570,45 @@ export function GlobalAudioPlayer() {
                 </div>
               </div>
 
-              {/* Center: Play/Pause only */}
-              <button
-                onClick={() =>
-                  isPlaying
-                    ? pause()
-                    : play(currentVersion, currentVersion.song_id)
-                }
-                className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center hover:opacity-90 transition-transform hover:scale-105 cursor-pointer"
-                style={{ backgroundColor: accentColor }}
-                aria-label={isPlaying ? 'Pause' : 'Play'}
-              >
-                {isPlaying ? (
-                  <Pause className="w-5 h-5 text-void" fill="currentColor" />
-                ) : (
-                  <Play className="w-5 h-5 text-void ml-0.5" fill="currentColor" />
+              {/* Center: Prev / Play/Pause / Next */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {queue.length > 1 && (
+                  <button
+                    onClick={previous}
+                    className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-105 cursor-pointer border"
+                    style={{ borderColor: accentColor, color: accentColor }}
+                    aria-label="Previous track"
+                  >
+                    <SkipBack className="w-4 h-4" />
+                  </button>
                 )}
-              </button>
+                <button
+                  onClick={() =>
+                    isPlaying
+                      ? pause()
+                      : play(currentVersion, currentVersion.song_id)
+                  }
+                  className="w-10 h-10 rounded-full flex items-center justify-center hover:opacity-90 transition-transform hover:scale-105 cursor-pointer"
+                  style={{ backgroundColor: accentColor }}
+                  aria-label={isPlaying ? 'Pause' : 'Play'}
+                >
+                  {isPlaying ? (
+                    <Pause className="w-5 h-5 text-void" fill="currentColor" />
+                  ) : (
+                    <Play className="w-5 h-5 text-void ml-0.5" fill="currentColor" />
+                  )}
+                </button>
+                {queue.length > 1 && (
+                  <button
+                    onClick={next}
+                    className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-105 cursor-pointer border"
+                    style={{ borderColor: accentColor, color: accentColor }}
+                    aria-label="Next track"
+                  >
+                    <SkipForward className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
 
               {/* Progress bar with knob */}
               <div className="flex-1">
