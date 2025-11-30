@@ -528,10 +528,10 @@ export function GlobalAudioPlayer() {
               )}
             </div>
 
-            {/* Desktop layout: original single-row player */}
+            {/* Desktop layout: 3-section fixed player */}
             <div className="hidden md:flex items-center gap-4">
-              {/* Left: Cover + Info */}
-              <div className="flex items-center gap-3 min-w-0">
+              {/* LEFT: Cover + Info (variable width, capped) */}
+              <div className="flex items-center gap-3 min-w-0 max-w-[280px] flex-shrink overflow-hidden">
                 {currentVersion.cover_url && (
                   <div className="relative w-12 h-12 rounded overflow-hidden flex-shrink-0 bg-void">
                     <Image
@@ -543,36 +543,34 @@ export function GlobalAudioPlayer() {
                   </div>
                 )}
 
-                <div className="flex flex-col min-w-[120px]">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <p 
-                      className="text-sm font-medium text-bone truncate flex-1 cursor-pointer hover:underline"
-                      onClick={handleTitleClick}
-                      title="Go to album"
-                    >
-                      {currentVersion.label}
-                    </p>
+                <div className="flex flex-col min-w-0 gap-0.5">
+                  {/* Row 1: Title only */}
+                  <p 
+                    className="text-sm font-medium text-bone truncate cursor-pointer hover:underline"
+                    onClick={handleTitleClick}
+                    title="Go to album"
+                  >
+                    {currentVersion.label}
+                  </p>
+                  
+                  {/* Row 2: Ratings + Rate + Download */}
+                  <div className="flex items-center gap-2 flex-wrap">
                     {hasRatingStats && ratingStats && (
-                      <div className="flex items-center gap-1 text-[11px] text-bone/70 flex-shrink-0">
+                      <div className="flex items-center gap-1 text-[10px] text-bone/70">
                         <Star className="w-3 h-3" fill={accentColor} color={accentColor} />
                         <span>{ratingStats.avg_rating.toFixed(1)}/10</span>
-                        <span className="text-bone/40">
-                          ({ratingStats.rating_count}{' '}
-                          {ratingStats.rating_count === 1 ? 'rating' : 'ratings'})
-                        </span>
+                        <span className="text-bone/40">({ratingStats.rating_count})</span>
                       </div>
                     )}
                     {hasUserRating && userRating && (
-                      <div className="text-[10px] text-bone/60 flex-shrink-0">
-                        (You:{' '}
-                        <span style={{ color: accentColor }}>{userRating.rating}/10</span>
-                        )
+                      <div className="text-[10px] text-bone/60">
+                        You: <span style={{ color: accentColor }}>{userRating.rating}/10</span>
                       </div>
                     )}
                     <button
                       type="button"
                       onClick={() => setIsRatingOpen(true)}
-                      className="text-[11px] px-2 py-0.5 rounded-full border text-bone/80 hover:text-bone transition-colors flex-shrink-0 cursor-pointer"
+                      className="text-[10px] px-1.5 py-0.5 rounded-full border text-bone/80 hover:text-bone transition-colors cursor-pointer"
                       style={{
                         borderColor: `${accentColor}60`,
                         backgroundColor: 'transparent',
@@ -583,7 +581,7 @@ export function GlobalAudioPlayer() {
                     <button
                       type="button"
                       onClick={handleDownload}
-                      className="text-[11px] p-1 rounded-full border text-bone/80 hover:text-bone transition-colors flex-shrink-0 cursor-pointer flex items-center justify-center"
+                      className="text-[10px] p-0.5 rounded-full border text-bone/80 hover:text-bone transition-colors cursor-pointer flex items-center justify-center"
                       style={{
                         borderColor: `${accentColor}60`,
                         backgroundColor: 'transparent',
@@ -594,130 +592,136 @@ export function GlobalAudioPlayer() {
                       <Download className="w-3 h-3" />
                     </button>
                   </div>
-                  <p className="text-xs text-bone/60">
-                    {formatTime(currentTime)} / {formatTime(duration)}
-                  </p>
                 </div>
               </div>
 
-              {/* Center: Prev / Play/Pause / Next */}
-              <div className="flex items-center gap-2 flex-shrink-0">
-                {queue.length > 1 && (
-                  <button
-                    onClick={previous}
-                    className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-105 cursor-pointer border"
-                    style={{ borderColor: accentColor, color: accentColor }}
-                    aria-label="Previous track"
-                  >
-                    <SkipBack className="w-4 h-4" />
-                  </button>
-                )}
-                <button
-                  onClick={() =>
-                    isPlaying
-                      ? pause()
-                      : play(currentVersion, currentVersion.song_id)
-                  }
-                  className="w-10 h-10 rounded-full flex items-center justify-center hover:opacity-90 transition-transform hover:scale-105 cursor-pointer"
-                  style={{ backgroundColor: accentColor }}
-                  aria-label={isPlaying ? 'Pause' : 'Play'}
-                >
-                  {isPlaying ? (
-                    <Pause className="w-5 h-5 text-void" fill="currentColor" />
-                  ) : (
-                    <Play className="w-5 h-5 text-void ml-0.5" fill="currentColor" />
-                  )}
-                </button>
-                {queue.length > 1 && (
-                  <button
-                    onClick={next}
-                    className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-105 cursor-pointer border"
-                    style={{ borderColor: accentColor, color: accentColor }}
-                    aria-label="Next track"
-                  >
-                    <SkipForward className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-
-              {/* Progress bar with knob */}
-              <div className="flex-1">
-                <div
-                  ref={progressBarRef}
-                  className="relative h-1.5 bg-bone/10 rounded-full cursor-pointer"
-                  onClick={handleBarClick}
-                >
-                  {/* Filled progress */}
-                  <div
-                    className="absolute inset-y-0 left-0 rounded-full"
-                    style={{
-                      width: `${progress}%`,
-                      backgroundColor: accentColor,
-                    }}
-                  />
-
-                  {/* Draggable knob */}
-                  <div
-                    className="absolute w-3 h-3 rounded-full cursor-grab active:cursor-grabbing"
-                    style={{
-                      left: `${progress}%`,
-                      top: '50%',
-                      transform: 'translate(-50%, -50%)',
-                      backgroundColor: accentColor,
-                      boxShadow: `0 0 8px ${accentColor}`,
-                    }}
-                    onPointerDown={handleKnobPointerDown}
-                    onPointerMove={handleKnobPointerMove}
-                    onPointerUp={handleKnobPointerUp}
-                    onPointerCancel={handleKnobPointerUp}
-                  />
-
-                  {/* Hidden range for accessibility */}
-                  <input
-                    type="range"
-                    min="0"
-                    max={duration || 0}
-                    value={currentTime}
-                    onChange={(e) => {
-                      const time = parseFloat(e.target.value)
-                      setCurrentTime(time)
-                    }}
-                    className="absolute inset-0 w-full opacity-0 cursor-pointer"
-                  />
-                </div>
-              </div>
-
-              {/* Right: Volume */}
-              {!isIOS && (
+              {/* CENTER: Player controls + Progress bar (FIXED width) */}
+              <div className="flex items-center gap-3 flex-1 min-w-[400px]">
+                {/* Transport controls */}
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  <Volume2 className="w-4 h-4 text-bone/70" style={{ color: accentColor }} />
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.01"
-                    value={volume}
-                    onChange={(e) => {
-                      const value = parseFloat(e.target.value)
-                      if (process.env.NODE_ENV === 'development') {
-                        console.log('GlobalAudioPlayer volume change (desktop)', value)
-                      }
-                      setVolume(value)
-                    }}
-                    className="w-24 cursor-pointer 
-                               [&::-webkit-slider-thumb]:appearance-none 
-                               [&::-webkit-slider-thumb]:w-3.5 
-                               [&::-webkit-slider-thumb]:h-3.5 
-                               [&::-webkit-slider-thumb]:rounded-full 
-                               [&::-webkit-slider-thumb]:bg-white
-                               [&::-webkit-slider-thumb]:cursor-pointer"
-                    style={{ accentColor }}
-                  />
+                  {queue.length > 1 && (
+                    <button
+                      onClick={previous}
+                      className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-105 cursor-pointer border"
+                      style={{ borderColor: accentColor, color: accentColor }}
+                      aria-label="Previous track"
+                    >
+                      <SkipBack className="w-4 h-4" />
+                    </button>
+                  )}
+                  <button
+                    onClick={() =>
+                      isPlaying
+                        ? pause()
+                        : play(currentVersion, currentVersion.song_id)
+                    }
+                    className="w-10 h-10 rounded-full flex items-center justify-center hover:opacity-90 transition-transform hover:scale-105 cursor-pointer"
+                    style={{ backgroundColor: accentColor }}
+                    aria-label={isPlaying ? 'Pause' : 'Play'}
+                  >
+                    {isPlaying ? (
+                      <Pause className="w-5 h-5 text-void" fill="currentColor" />
+                    ) : (
+                      <Play className="w-5 h-5 text-void ml-0.5" fill="currentColor" />
+                    )}
+                  </button>
+                  {queue.length > 1 && (
+                    <button
+                      onClick={next}
+                      className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-105 cursor-pointer border"
+                      style={{ borderColor: accentColor, color: accentColor }}
+                      aria-label="Next track"
+                    >
+                      <SkipForward className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
-              )}
 
-              {/* Autoplay toggle (desktop) */}
-              <div className="flex-shrink-0">
+                {/* Progress bar (fills remaining center space) */}
+                <div className="flex-1">
+                  <div
+                    ref={progressBarRef}
+                    className="relative h-1.5 bg-bone/10 rounded-full cursor-pointer"
+                    onClick={handleBarClick}
+                  >
+                    {/* Filled progress */}
+                    <div
+                      className="absolute inset-y-0 left-0 rounded-full"
+                      style={{
+                        width: `${progress}%`,
+                        backgroundColor: accentColor,
+                      }}
+                    />
+
+                    {/* Draggable knob */}
+                    <div
+                      className="absolute w-3 h-3 rounded-full cursor-grab active:cursor-grabbing"
+                      style={{
+                        left: `${progress}%`,
+                        top: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        backgroundColor: accentColor,
+                        boxShadow: `0 0 8px ${accentColor}`,
+                      }}
+                      onPointerDown={handleKnobPointerDown}
+                      onPointerMove={handleKnobPointerMove}
+                      onPointerUp={handleKnobPointerUp}
+                      onPointerCancel={handleKnobPointerUp}
+                    />
+
+                    {/* Hidden range for accessibility */}
+                    <input
+                      type="range"
+                      min="0"
+                      max={duration || 0}
+                      value={currentTime}
+                      onChange={(e) => {
+                        const time = parseFloat(e.target.value)
+                        setCurrentTime(time)
+                      }}
+                      className="absolute inset-0 w-full opacity-0 cursor-pointer"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* RIGHT: Time + Volume + Autoplay (fixed width) */}
+              <div className="flex items-center gap-3 flex-shrink-0">
+                {/* Time display */}
+                <span className="text-xs text-bone/60 tabular-nums w-[85px] text-center">
+                  {formatTime(currentTime)} / {formatTime(duration)}
+                </span>
+
+                {/* Volume */}
+                {!isIOS && (
+                  <div className="flex items-center gap-2">
+                    <Volume2 className="w-4 h-4" style={{ color: accentColor }} />
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.01"
+                      value={volume}
+                      onChange={(e) => {
+                        const value = parseFloat(e.target.value)
+                        if (process.env.NODE_ENV === 'development') {
+                          console.log('GlobalAudioPlayer volume change (desktop)', value)
+                        }
+                        setVolume(value)
+                      }}
+                      className="w-20 cursor-pointer 
+                                 [&::-webkit-slider-thumb]:appearance-none 
+                                 [&::-webkit-slider-thumb]:w-3.5 
+                                 [&::-webkit-slider-thumb]:h-3.5 
+                                 [&::-webkit-slider-thumb]:rounded-full 
+                                 [&::-webkit-slider-thumb]:bg-white
+                                 [&::-webkit-slider-thumb]:cursor-pointer"
+                      style={{ accentColor }}
+                    />
+                  </div>
+                )}
+
+                {/* Autoplay toggle */}
                 {renderAutoplayToggle()}
               </div>
             </div>
