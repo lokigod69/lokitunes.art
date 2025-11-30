@@ -1,14 +1,12 @@
 /**
  * API endpoint to fetch all song versions for global shuffle functionality.
  * Returns a flattened list of all versions across all albums.
+ *
+ * Uses the shared Supabase client from lib/supabase so build-time env
+ * handling stays consistent with the rest of the app.
  */
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+import { supabase } from '@/lib/supabase'
 
 export async function GET() {
   try {
