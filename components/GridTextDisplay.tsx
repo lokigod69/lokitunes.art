@@ -92,7 +92,7 @@ export function GridTextDisplay({ album, visible }: GridTextDisplayProps) {
     <group 
       ref={groupRef}
       position={position}
-      rotation={[-Math.PI / 3, 0, 0]}  // Tilted toward camera (~60° on X-axis) for readability
+      rotation={[-Math.PI / 6, 0, 0]}  // Slight tilt toward camera (~30° on X-axis) for readability
     >
       {/* Main text layer - album dominant color */}
       <Text

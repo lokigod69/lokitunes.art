@@ -2,10 +2,8 @@
 
 import { useFrame } from '@react-three/fiber'
 import { useRef } from 'react'
-import { Text } from '@react-three/drei'
 import * as THREE from 'three'
 import type { Album } from '@/lib/supabase'
-import { getContrastColor } from '@/lib/colorUtils'
 
 interface InfoDisplayCubeProps {
   position: [number, number, number]
@@ -30,7 +28,6 @@ export function InfoDisplayCube({
   
   // Use album color if hovering, otherwise base color
   const displayColor = hoveredAlbum?.palette?.dominant || baseColor
-  const textColor = getContrastColor(displayColor)
   
   useFrame((state) => {
     if (!materialRef.current) return
@@ -62,29 +59,6 @@ export function InfoDisplayCube({
           opacity={0.7}
         />
       </mesh>
-      
-      {/* 3D Text inside cube - colored text with white glow! */}
-      {hoveredAlbum && (
-        <Text
-          position={[0, 0, 0]}     // Center of cube
-          fontSize={0.4}            // Smaller, more refined size
-          color={displayColor}      // Text IS the album color! ✨
-          anchorX="center"
-          anchorY="middle"
-          maxWidth={3.5}            // Force wrapping for long names
-          textAlign="center"
-          letterSpacing={0.05}
-          overflowWrap="break-word" // Allow text wrapping
-          whiteSpace="normal"       // Enable line breaks
-          outlineWidth={0.03}       // Subtle white outline
-          outlineColor="#ffffff"    // White outline for readability
-          outlineOpacity={0.4}      // Subtle glow - color dominates!
-          // Text is 3D geometry - depth testing enabled by default!
-          // Cube edges will naturally pass in front as they rotate
-        >
-          {hoveredAlbum.title}
-        </Text>
-      )}
     </group>
   )
 }
