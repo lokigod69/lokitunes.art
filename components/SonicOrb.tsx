@@ -11,6 +11,7 @@ interface OrbProps {
   pushTrigger?: number
   position: [number, number, number]
   radius: number
+  visualScale?: number  // Visual-only scale (0.6-1.0) based on version count
   deviceTier?: 'low' | 'medium' | 'high'
   onHover: (title: string | null) => void
   onNavigate: (slug: string) => void
@@ -18,7 +19,7 @@ interface OrbProps {
   resetTrigger?: number
 }
 
-export function SonicOrb({ album, pushTrigger, position, radius, deviceTier, onHover, onNavigate, onRegisterRigidBody, resetTrigger }: OrbProps) {
+export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1, deviceTier, onHover, onNavigate, onRegisterRigidBody, resetTrigger }: OrbProps) {
   console.log('🟠 SonicOrb rendering:', album.title, '| NO glass layer | roughness: 0.6 | NO emissive')
   const ref = useRef<RapierRigidBody>(null)
   const glowRef = useRef<THREE.PointLight>(null)
@@ -198,7 +199,7 @@ export function SonicOrb({ album, pushTrigger, position, radius, deviceTier, onH
       ccd={true}                // Add continuous collision detection
       position={position}
     >
-      <group>
+      <group scale={visualScale}>
         {/* Inner glow */}
         <pointLight
           ref={glowRef}

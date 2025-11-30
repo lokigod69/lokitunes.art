@@ -18,7 +18,7 @@ import { GridTextDisplay } from './GridTextDisplay'
 import { NeonHeader } from './NeonHeader'
 import type { Album } from '@/lib/supabase'
 import { detectDeviceTier, getQualitySettings, type DeviceTier } from '@/lib/device-detection'
-import { calculateOrbLayout, calculateCameraDistance } from '@/lib/orb-layout'
+import { calculateOrbLayout, calculateCameraDistance, calculateOrbScale } from '@/lib/orb-layout'
 import type { RapierRigidBody } from '@react-three/rapier'
 
 interface OrbFieldProps {
@@ -54,6 +54,7 @@ function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGla
               pushTrigger={pushTrigger}
               position={positions[index]}
               radius={orbRadius}
+              visualScale={calculateOrbScale(album.total_versions || 1)}
               deviceTier={deviceTier}
               onHover={onHover}
               onNavigate={onNavigate}

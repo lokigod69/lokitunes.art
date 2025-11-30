@@ -36,6 +36,7 @@ interface BubbleOrbProps {
   pushTrigger?: number
   position: [number, number, number]
   radius: number
+  visualScale?: number  // Visual-only scale (0.6-1.0) based on version count
   deviceTier: DeviceTier
   onHover: (title: string | null) => void
   onNavigate: (slug: string) => void
@@ -49,6 +50,7 @@ export function BubbleOrb({
   pushTrigger,
   position,
   radius,
+  visualScale = 1,
   deviceTier,
   onHover, 
   onNavigate,
@@ -240,7 +242,7 @@ export function BubbleOrb({
       ccd={true}                // Continuous collision detection
       position={position}
     >
-      <group>
+      <group scale={visualScale}>
         {/* Inner glow - PULSING */}
         <pointLight
           ref={glowRef}
