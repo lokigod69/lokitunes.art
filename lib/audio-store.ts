@@ -32,7 +32,7 @@ interface AudioState {
   autoplayMode: AutoplayMode
   
   // Actions
-  play: (version: SongVersion, songId: string, palette?: Album['palette']) => void
+  play: (version: SongVersion, songId: string, palette?: Album['palette'], forceRestart?: boolean) => void
   pause: () => void
   stop: () => void
   setQueue: (versions: SongVersion[], startIndex?: number) => void
@@ -61,15 +61,15 @@ export const useAudioStore = create<AudioState>((set, get) => ({
     : 0.7,
   autoplayMode: getInitialAutoplayMode(),
 
-  play: (version, songId, palette) => {
+  play: (version, songId, palette, forceRestart = false) => {
     const current = get()
 
     // If no palette is provided, preserve the existing one
     const resolvedPalette =
       palette !== undefined ? palette : current.currentPalette
     
-    // If switching to a different version, reset time
-    if (current.currentVersion?.id !== version.id) {
+    // If switching to a different version OR forceRestart is true, reset time
+    if (current.currentVersion?.id !== version.id || forceRestart) {
       set({
         currentVersion: version,
         currentSongId: songId,

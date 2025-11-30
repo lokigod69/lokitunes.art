@@ -107,7 +107,7 @@ export function VersionOrb({
   const [hovered, setHovered] = useState(false)
   
   // Audio store integration
-  const { currentVersion, isPlaying, play, stop, autoplayMode, startAlbumQueue } = useAudioStore()
+  const { currentVersion, isPlaying, play, stop, autoplayMode, startAlbumQueue, setCurrentTime } = useAudioStore()
   const isThisPlaying = currentVersion?.id === version.id && isPlaying
   
   // ═══════════════════════════════════════════════════════════════════════════════
@@ -130,6 +130,18 @@ export function VersionOrb({
   // Also handles edge cases to prevent stuck orbs
   // ═══════════════════════════════════════════════════════════════════════════════
   useEffect(() => {
+    // AUTO-DOCK: If this orb is idle but is the currently playing track (navigated back to page)
+    if (animationState === 'idle' && isThisPlaying) {
+      console.log('🎯 Auto-docking: This track is playing, docking orb:', version.label)
+      // Capture current position before docking
+      if (ref.current) {
+        const pos = ref.current.translation()
+        originalPosition.current = [pos.x, pos.y, pos.z]
+      }
+      animationProgress.current = 0
+      setAnimationState('docking')
+    }
+    
     // If this orb was docked/docking but is no longer playing (another orb took over)
     if ((animationState === 'docked' || animationState === 'docking') && !isThisPlaying) {
       console.log('🔄 Another orb started playing, undocking:', version.label)
@@ -444,20 +456,18 @@ export function VersionOrb({
       
       // Play this version. If autoplay is enabled, start an album queue so
       // subsequent tracks advance automatically within this album.
+      // Always forceRestart=true so clicking an orb starts from beginning (not resume)
       if (autoplayMode === 'album' || autoplayMode === 'all') {
         startAlbumQueue(allVersions as any, version.id, albumPalette as any)
       } else {
-        play(version, version.songId, albumPalette)
+        play(version, version.songId, albumPalette, true)
       }
       console.log('🚀 Starting dock animation for:', version.label)
     } 
     else if (animationState === 'docked') {
-      // Start undocking animation
-      setAnimationState('undocking')
-      
-      // Stop the song
-      stop()
-      console.log('🔙 Starting undock animation for:', version.label)
+      // Clicking a docked (playing) orb restarts the track from beginning
+      setCurrentTime(0)
+      console.log('🔄 Restarting track from beginning:', version.label)
     }
     // Ignore clicks during animation
   }

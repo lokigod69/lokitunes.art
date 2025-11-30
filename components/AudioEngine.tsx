@@ -12,6 +12,7 @@ export default function AudioEngine() {
   const setDuration = useAudioStore((state) => state.setDuration)
   const updateTime = useAudioStore((state) => state.updateTime)
   const handleTrackEnd = useAudioStore((state) => state.handleTrackEnd)
+  const storeTime = useAudioStore((state) => state.currentTime)
 
   // IMPORTANT: Always render the audio element, just don't set src if no URL
   // This ensures event listeners are always attached
@@ -50,6 +51,23 @@ export default function AudioEngine() {
     if (!audio) return
     audio.volume = volume
   }, [volume])
+
+  // Keep the audio element's currentTime in sync with the store.
+  // This makes scrubbing in the GlobalAudioPlayer actually seek in the
+  // underlying <audio> element instead of snapping back.
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio || !audio.src) return
+
+    if (!Number.isFinite(storeTime)) return
+
+    const diff = Math.abs(audio.currentTime - storeTime)
+    // Only seek when there's a meaningful difference to avoid fighting
+    // against the normal timeupdate events.
+    if (diff > 0.1) {
+      audio.currentTime = storeTime
+    }
+  }, [storeTime])
 
   // Event listeners - MUST run after audio element exists
   useEffect(() => {
