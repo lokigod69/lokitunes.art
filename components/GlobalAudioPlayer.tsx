@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type MouseEvent as ReactMouseEvent } from 'react'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useAudioStore } from '@/lib/audio-store'
 import { Play, Pause, Star, Volume2, Download, SkipBack, SkipForward } from 'lucide-react'
 import Image from 'next/image'
@@ -43,8 +43,26 @@ export function GlobalAudioPlayer() {
     queue,
   } = useAudioStore()
   const pathname = usePathname()
+  const router = useRouter()
   const isHomePage = pathname === '/'
   const [isIOS, setIsIOS] = useState(false)
+
+  // Navigate to album page when clicking on song title
+  const handleTitleClick = () => {
+    if (!currentVersion) return
+    // Get album slug from extended version data (available from global queue)
+    const extended = currentVersion as unknown as { albumSlug?: string }
+    let albumSlug = extended.albumSlug
+    
+    // Fallback: extract from current pathname if on album page
+    if (!albumSlug && pathname.startsWith('/album/')) {
+      albumSlug = pathname.replace('/album/', '')
+    }
+    
+    if (albumSlug && pathname !== `/album/${albumSlug}`) {
+      router.push(`/album/${albumSlug}`)
+    }
+  }
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -222,7 +240,11 @@ export function GlobalAudioPlayer() {
                     )}
 
                     <div className="flex flex-col min-w-0 flex-1">
-                      <p className="text-sm font-medium text-bone truncate">
+                      <p 
+                        className="text-sm font-medium text-bone truncate cursor-pointer hover:underline"
+                        onClick={handleTitleClick}
+                        title="Go to album"
+                      >
                         {currentVersion.label}
                       </p>
                       <p className="text-[11px] text-bone/60">
@@ -398,7 +420,11 @@ export function GlobalAudioPlayer() {
                       )}
 
                       <div className="flex flex-col min-w-0">
-                        <p className="text-sm font-medium text-bone truncate">
+                        <p 
+                          className="text-sm font-medium text-bone truncate cursor-pointer hover:underline"
+                          onClick={handleTitleClick}
+                          title="Go to album"
+                        >
                           {currentVersion.label}
                         </p>
                         <p className="text-[11px] text-bone/60">
@@ -519,7 +545,11 @@ export function GlobalAudioPlayer() {
 
                 <div className="flex flex-col min-w-[120px]">
                   <div className="flex items-center gap-2 min-w-0">
-                    <p className="text-sm font-medium text-bone truncate flex-1">
+                    <p 
+                      className="text-sm font-medium text-bone truncate flex-1 cursor-pointer hover:underline"
+                      onClick={handleTitleClick}
+                      title="Go to album"
+                    >
                       {currentVersion.label}
                     </p>
                     {hasRatingStats && ratingStats && (
