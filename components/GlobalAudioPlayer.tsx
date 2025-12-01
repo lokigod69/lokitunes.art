@@ -379,7 +379,7 @@ export function GlobalAudioPlayer() {
                       <button
                         type="button"
                         onClick={handleDownload}
-                        className="text-[11px] px-2 py-0.5 rounded-full border text-bone/80 hover:text-bone transition-colors cursor-pointer flex items-center gap-1"
+                        className="p-1.5 rounded-full border text-bone/80 hover:text-bone transition-colors cursor-pointer flex items-center justify-center"
                         style={{
                           borderColor: `${accentColor}60`,
                           backgroundColor: 'transparent',
@@ -387,8 +387,7 @@ export function GlobalAudioPlayer() {
                         aria-label="Download audio"
                         title="Download"
                       >
-                        <Download className="w-3 h-3" />
-                        <span>Download</span>
+                        <Download className="w-4 h-4" />
                       </button>
                     </div>
 

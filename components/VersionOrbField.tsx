@@ -59,8 +59,7 @@ function VinylPhysicsBarrier({ visible }: { visible: boolean }) {
   if (!visible) return null
   
   // Barrier radius - larger = orbs stay further from vinyl visual
-  // Increased to keep orbs on the outer edge of the vinyl appearance
-  const BARRIER_RADIUS = 5.5  // Increased from 3.5 for better clearance
+  const BARRIER_RADIUS = 4.5  // Sweet spot between 3.5 (too close) and 5.5 (too far)
   
   return (
     <RigidBody
