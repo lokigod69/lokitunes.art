@@ -26,7 +26,7 @@ interface OrbFieldProps {
   isMobile?: boolean
 }
 
-function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGlassBubbles, onRegisterRigidBody, onReset, hoveredAlbum }: {
+function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGlassBubbles, onRegisterRigidBody, onReset, hoveredAlbum, frozen }: {
   albums: Album[]
   pushTrigger: number
   onHover: (title: string | null) => void
@@ -36,6 +36,7 @@ function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGla
   onRegisterRigidBody: (id: string, body: RapierRigidBody, initialPos: [number, number, number]) => void
   onReset: number
   hoveredAlbum: Album | null
+  frozen: boolean
 }) {
   const OrbComponent = useGlassBubbles ? BubbleOrb : SonicOrb
   
@@ -44,7 +45,7 @@ function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGla
   const orbRadius = radius * 0.8
   
   return (
-    <Physics gravity={[0, 0, 0]}>
+    <Physics gravity={[0, 0, 0]} paused={frozen}>
       <Suspense fallback={null}>
         <group>
           {albums.map((album, index) => (
@@ -125,6 +126,7 @@ export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
   const [pushTrigger, setPushTrigger] = useState(0)
   const [resetTrigger, setResetTrigger] = useState(0)
   const [isHolding, setIsHolding] = useState(false)
+  const [frozen, setFrozen] = useState(false)  // Freeze physics when orb clicked
 
   if (process.env.NODE_ENV === 'development') {
     console.log('OrbField rendering with albums:', albums.length)
@@ -156,6 +158,8 @@ export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
   const cameraDistance = calculateCameraDistance(albums.length) * 1.12
 
   const handleNavigate = useCallback((slug: string) => {
+    // Freeze all physics to provide visual feedback that click registered
+    setFrozen(true)
     router.push(`/album/${slug}`)
   }, [router])
   
@@ -301,6 +305,7 @@ export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
           onRegisterRigidBody={handleRegisterRigidBody}
           onReset={resetTrigger}
           hoveredAlbum={hoveredAlbum}
+          frozen={frozen}
         />
         
         {/* Post-processing effects */}
