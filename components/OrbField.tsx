@@ -158,10 +158,34 @@ export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
   const cameraDistance = calculateCameraDistance(albums.length) * 1.12
 
   const handleNavigate = useCallback((slug: string) => {
-    // Freeze all physics to provide visual feedback that click registered
-    setFrozen(true)
+    // Find the clicked album to identify its rigid body
+    const clickedAlbum = albums.find(a => a.slug === slug)
+    const clickedId = clickedAlbum?.id
+    
+    // Scatter all OTHER orbs violently, freeze the clicked one
+    rigidBodies.current.forEach(({ body }, id) => {
+      if (id === clickedId) {
+        // FREEZE the clicked orb - stop all movement
+        body.setLinvel({ x: 0, y: 0, z: 0 }, true)
+        body.setAngvel({ x: 0, y: 0, z: 0 }, true)
+      } else {
+        // SCATTER other orbs - violent random impulse in all directions
+        const scatterForce = 15 + Math.random() * 10  // Random force 15-25
+        const impulse = {
+          x: (Math.random() - 0.5) * scatterForce * 2,
+          y: (Math.random() - 0.5) * scatterForce * 2,
+          z: (Math.random() - 0.5) * scatterForce * 2,
+        }
+        body.wakeUp()
+        body.applyImpulse(impulse, true)
+      }
+    })
+    
+    // Freeze physics after a tiny delay so scatter impulses take effect
+    setTimeout(() => setFrozen(true), 50)
+    
     router.push(`/album/${slug}`)
-  }, [router])
+  }, [router, albums])
   
   // Handle hover - find album and set both title and album object
   const handleHover = useCallback((title: string | null) => {
