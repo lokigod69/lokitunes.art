@@ -315,13 +315,15 @@ export function RatingModal({ isOpen, onClose, onRated }: RatingModalProps) {
                     size={20}
                     color={accentColor}
                   />
-                  {/* Show hover preview or locked-in rating */}
-                  <span
-                    className="text-2xl font-bold tabular-nums min-w-[70px]"
-                    style={{ color: hoverRating > 0 || rating > 0 ? accentColor : 'rgba(255,255,255,0.3)' }}
-                  >
-                    {hoverRating > 0 ? `${hoverRating}/10` : rating > 0 ? `${rating}/10` : '–/10'}
-                  </span>
+                  {/* Show hover preview or locked-in rating - nothing when empty */}
+                  {(hoverRating > 0 || rating > 0) && (
+                    <span
+                      className="text-2xl font-bold tabular-nums"
+                      style={{ color: accentColor }}
+                    >
+                      {hoverRating > 0 ? `${hoverRating}/10` : `${rating}/10`}
+                    </span>
+                  )}
                 </div>
               </div>
 

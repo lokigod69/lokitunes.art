@@ -9,25 +9,25 @@ import type { Album } from '@/lib/supabase'
 // SAFE TEXT SPOTS - Constrained to visible grid area only!
 // Z range: -10 to -3 (visible depth, away from camera)
 // X range: -18 to 18 (visible width)
-// Y: -13.9 (just above grid at -14)
+// Y: -11 (raised above grid at -14 to account for 30° tilt toward camera)
 const GRID_TEXT_SPOTS: [number, number, number][] = [
   // Left side positions
-  [-15, -13.9, -8],    // Far left, mid-depth
-  [-12, -13.9, -5],    // Mid-left, closer
-  [-18, -13.9, -10],   // Far left, far depth
-  [-10, -13.9, -3],    // Left, near edge
+  [-15, -11, -8],    // Far left, mid-depth
+  [-12, -11, -5],    // Mid-left, closer
+  [-18, -11, -10],   // Far left, far depth
+  [-10, -11, -3],    // Left, near edge
   
   // Center positions
-  [-5, -13.9, -7],     // Center-left, mid-depth
-  [0, -13.9, -8],      // Dead center, far
-  [5, -13.9, -6],      // Center-right, mid-depth
-  [0, -13.9, -4],      // Dead center, near
+  [-5, -11, -7],     // Center-left, mid-depth
+  [0, -11, -8],      // Dead center, far
+  [5, -11, -6],      // Center-right, mid-depth
+  [0, -11, -4],      // Dead center, near
   
   // Right side positions
-  [12, -13.9, -5],     // Mid-right, closer
-  [15, -13.9, -8],     // Far right, mid-depth
-  [18, -13.9, -10],    // Far right, far depth
-  [10, -13.9, -3],     // Right, near edge
+  [12, -11, -5],     // Mid-right, closer
+  [15, -11, -8],     // Far right, mid-depth
+  [18, -11, -10],    // Far right, far depth
+  [10, -11, -3],     // Right, near edge
 ]
 
 interface GridTextDisplayProps {
@@ -102,8 +102,6 @@ export function GridTextDisplay({ album, visible }: GridTextDisplayProps) {
         anchorY="middle"
         outlineWidth={0.05}
         outlineColor="#000000"
-        renderOrder={10}
-        material-depthTest={false}
       >
         {album.title}
       </Text>
@@ -116,8 +114,6 @@ export function GridTextDisplay({ album, visible }: GridTextDisplayProps) {
         anchorX="center"
         anchorY="middle"
         fillOpacity={0.5 * mainFlicker}
-        renderOrder={9}
-        material-depthTest={false}
       >
         {album.title}
       </Text>
@@ -130,8 +126,6 @@ export function GridTextDisplay({ album, visible }: GridTextDisplayProps) {
         anchorX="center"
         anchorY="middle"
         fillOpacity={0.2 * mainFlicker}
-        renderOrder={8}
-        material-depthTest={false}
       >
         {album.title}
       </Text>
@@ -147,8 +141,6 @@ export function GridTextDisplay({ album, visible }: GridTextDisplayProps) {
         outlineWidth={0.02}
         outlineColor={shadow1Color}
         outlineOpacity={0.8 * shadow1Flicker}
-        renderOrder={7}
-        material-depthTest={false}
       >
         {album.title}
       </Text>
@@ -164,8 +156,6 @@ export function GridTextDisplay({ album, visible }: GridTextDisplayProps) {
         outlineWidth={0.02}
         outlineColor={shadow2Color}
         outlineOpacity={0.7 * shadow2Flicker}
-        renderOrder={6}
-        material-depthTest={false}
       >
         {album.title}
       </Text>
@@ -181,8 +171,6 @@ export function GridTextDisplay({ album, visible }: GridTextDisplayProps) {
         outlineWidth={0.02}
         outlineColor={shadow3Color}
         outlineOpacity={0.6 * shadow3Flicker}
-        renderOrder={5}
-        material-depthTest={false}
       >
         {album.title}
       </Text>

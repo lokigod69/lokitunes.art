@@ -5,6 +5,7 @@ import { useAudioStore } from '@/lib/audio-store'
 
 export default function AudioEngine() {
   const audioRef = useRef<HTMLAudioElement>(null)
+  const lastLoadedUrl = useRef<string>('')  // Track last loaded URL to prevent double-load
   
   const currentVersion = useAudioStore((state) => state.currentVersion)
   const isPlaying = useAudioStore((state) => state.isPlaying)
@@ -18,16 +19,21 @@ export default function AudioEngine() {
   // This ensures event listeners are always attached
 
   // Update src when version changes
+  // FIX: Use ref to track last loaded URL instead of comparing audio.src (which returns absolute URL)
   useEffect(() => {
     const audio = audioRef.current
     if (!audio) return
     
     const newSrc = currentVersion?.audio_url || ''
     
-    if (newSrc && audio.src !== newSrc) {
+    // Only load if URL actually changed (prevents restart on re-renders)
+    if (newSrc && newSrc !== lastLoadedUrl.current) {
       console.log('[AudioEngine] Loading new audio:', currentVersion?.label)
+      lastLoadedUrl.current = newSrc
       audio.src = newSrc
       audio.load()
+    } else if (!newSrc) {
+      lastLoadedUrl.current = ''
     }
   }, [currentVersion])
 
@@ -37,9 +43,12 @@ export default function AudioEngine() {
     if (!audio || !audio.src) return
 
     if (isPlaying) {
-      audio.play().catch((err) => {
-        console.error('[AudioEngine] Play failed:', err)
-      })
+      // Only call play() if actually paused (prevents restart issues)
+      if (audio.paused) {
+        audio.play().catch((err) => {
+          console.error('[AudioEngine] Play failed:', err)
+        })
+      }
     } else {
       audio.pause()
     }
