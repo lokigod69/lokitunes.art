@@ -6,6 +6,7 @@ import { Star } from "lucide-react"
 interface RatingStarsProps {
   value: number // 1–10
   onChange?: (stars: number) => void
+  onHoverChange?: (stars: number) => void // Reports hover state (0 = not hovering)
   readOnly?: boolean
   size?: number
   color?: string
@@ -14,11 +15,17 @@ interface RatingStarsProps {
 export function RatingStars({
   value,
   onChange,
+  onHoverChange,
   readOnly = false,
   size = 20,
   color = "#FFA500",
 }: RatingStarsProps) {
   const [hover, setHover] = useState(0)
+  
+  const handleHover = (star: number) => {
+    setHover(star)
+    onHoverChange?.(star)
+  }
 
   const activeValue = hover || value
 
@@ -40,10 +47,10 @@ export function RatingStars({
               if (!readOnly) onChange?.(star)
             }}
             onMouseEnter={() => {
-              if (!readOnly) setHover(star)
+              if (!readOnly) handleHover(star)
             }}
             onMouseLeave={() => {
-              if (!readOnly) setHover(0)
+              if (!readOnly) handleHover(0)
             }}
             className={readOnly ? 'cursor-default' : 'cursor-pointer transition-all'}
             aria-label={`${star} star${star === 1 ? "" : "s"}`}

@@ -24,6 +24,7 @@ export function RatingModal({ isOpen, onClose, onRated }: RatingModalProps) {
   const [comments, setComments] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
+  const [hoverRating, setHoverRating] = useState(0)
   const KUDOS_MESSAGES = [
     'Kudos!',
     'Well done!',
@@ -309,18 +310,18 @@ export function RatingModal({ isOpen, onClose, onRated }: RatingModalProps) {
                   <RatingStars
                     value={rating}
                     onChange={setRating}
+                    onHoverChange={setHoverRating}
                     readOnly={isSubmitting}
                     size={20}
                     color={accentColor}
                   />
-                  {rating > 0 && (
-                    <span
-                      className="text-2xl font-bold tabular-nums"
-                      style={{ color: accentColor }}
-                    >
-                      {rating}/10
-                    </span>
-                  )}
+                  {/* Show hover preview or locked-in rating */}
+                  <span
+                    className="text-2xl font-bold tabular-nums min-w-[70px]"
+                    style={{ color: hoverRating > 0 || rating > 0 ? accentColor : 'rgba(255,255,255,0.3)' }}
+                  >
+                    {hoverRating > 0 ? `${hoverRating}/10` : rating > 0 ? `${rating}/10` : '–/10'}
+                  </span>
                 </div>
               </div>
 

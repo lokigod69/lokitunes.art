@@ -102,6 +102,8 @@ export function GridTextDisplay({ album, visible }: GridTextDisplayProps) {
         anchorY="middle"
         outlineWidth={0.05}
         outlineColor="#000000"
+        renderOrder={10}
+        material-depthTest={false}
       >
         {album.title}
       </Text>
@@ -114,6 +116,8 @@ export function GridTextDisplay({ album, visible }: GridTextDisplayProps) {
         anchorX="center"
         anchorY="middle"
         fillOpacity={0.5 * mainFlicker}
+        renderOrder={9}
+        material-depthTest={false}
       >
         {album.title}
       </Text>
@@ -126,6 +130,8 @@ export function GridTextDisplay({ album, visible }: GridTextDisplayProps) {
         anchorX="center"
         anchorY="middle"
         fillOpacity={0.2 * mainFlicker}
+        renderOrder={8}
+        material-depthTest={false}
       >
         {album.title}
       </Text>
@@ -141,6 +147,8 @@ export function GridTextDisplay({ album, visible }: GridTextDisplayProps) {
         outlineWidth={0.02}
         outlineColor={shadow1Color}
         outlineOpacity={0.8 * shadow1Flicker}
+        renderOrder={7}
+        material-depthTest={false}
       >
         {album.title}
       </Text>
@@ -156,6 +164,8 @@ export function GridTextDisplay({ album, visible }: GridTextDisplayProps) {
         outlineWidth={0.02}
         outlineColor={shadow2Color}
         outlineOpacity={0.7 * shadow2Flicker}
+        renderOrder={6}
+        material-depthTest={false}
       >
         {album.title}
       </Text>
@@ -171,6 +181,8 @@ export function GridTextDisplay({ album, visible }: GridTextDisplayProps) {
         outlineWidth={0.02}
         outlineColor={shadow3Color}
         outlineOpacity={0.6 * shadow3Flicker}
+        renderOrder={5}
+        material-depthTest={false}
       >
         {album.title}
       </Text>

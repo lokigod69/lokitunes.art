@@ -391,8 +391,8 @@ export function VersionOrb({
         const distance2D = Math.sqrt(dx * dx + dy * dy)
         
         // Repulsion zone radius (how far from vinyl center the repulsion acts)
-        const VINYL_REPULSION_RADIUS = 20  // Matches larger vinyl visual size (scale 8.0)
-        const VINYL_REPULSION_STRENGTH = 0.5
+        const VINYL_REPULSION_RADIUS = 24  // Slightly larger than vinyl visual to keep orbs on outer rim
+        const VINYL_REPULSION_STRENGTH = 0.6
         
         if (distance2D < VINYL_REPULSION_RADIUS) {
           // Calculate repulsion strength (stronger when closer)
