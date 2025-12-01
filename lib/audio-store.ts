@@ -29,6 +29,8 @@ interface AudioState {
   currentTime: number
   duration: number
   volume: number
+  isMuted: boolean
+  preMuteVolume: number
   autoplayMode: AutoplayMode
   
   // Actions
@@ -43,6 +45,7 @@ interface AudioState {
   setCurrentTime: (time: number) => void
   setDuration: (duration: number) => void
   setVolume: (volume: number) => void
+  toggleMute: () => void
   updateTime: (time: number) => void
   setAutoplayMode: (mode: AutoplayMode) => void
   handleTrackEnd: () => void
@@ -59,6 +62,12 @@ export const useAudioStore = create<AudioState>((set, get) => ({
   duration: 0,
   volume: typeof window !== 'undefined' 
     ? parseFloat(localStorage.getItem('lokitunes-volume') || '0.7')
+    : 0.7,
+  isMuted: typeof window !== 'undefined'
+    ? localStorage.getItem('lokitunes-muted') === 'true'
+    : false,
+  preMuteVolume: typeof window !== 'undefined'
+    ? parseFloat(localStorage.getItem('lokitunes-pre-mute-volume') || '0.7')
     : 0.7,
   autoplayMode: getInitialAutoplayMode(),
 
@@ -251,9 +260,38 @@ export const useAudioStore = create<AudioState>((set, get) => ({
   setDuration: (duration) => set({ duration }),
 
   setVolume: (volume) => {
-    set({ volume })
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('lokitunes-volume', volume.toString())
+    // If setting volume above 0 while muted, unmute
+    if (volume > 0 && get().isMuted) {
+      set({ volume, isMuted: false })
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('lokitunes-volume', volume.toString())
+        localStorage.setItem('lokitunes-muted', 'false')
+      }
+    } else {
+      set({ volume })
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('lokitunes-volume', volume.toString())
+      }
+    }
+  },
+
+  toggleMute: () => {
+    const { isMuted, volume, preMuteVolume } = get()
+    if (isMuted) {
+      // Unmute: restore previous volume
+      set({ isMuted: false, volume: preMuteVolume })
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('lokitunes-muted', 'false')
+        localStorage.setItem('lokitunes-volume', preMuteVolume.toString())
+      }
+    } else {
+      // Mute: save current volume and set to 0
+      set({ isMuted: true, preMuteVolume: volume, volume: 0 })
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('lokitunes-muted', 'true')
+        localStorage.setItem('lokitunes-pre-mute-volume', volume.toString())
+        localStorage.setItem('lokitunes-volume', '0')
+      }
     }
   },
 

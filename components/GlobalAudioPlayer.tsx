@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type MouseEvent as ReactMouseEvent } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useAudioStore } from '@/lib/audio-store'
-import { Play, Pause, Star, Volume2, Download, SkipBack, SkipForward } from 'lucide-react'
+import { Play, Pause, Star, Volume2, Volume1, VolumeX, Download, SkipBack, SkipForward } from 'lucide-react'
 import Image from 'next/image'
 import { RatingModal } from '@/components/RatingModal'
 
@@ -32,10 +32,12 @@ export function GlobalAudioPlayer() {
     currentTime,
     duration,
     volume,
+    isMuted,
     play, 
     pause, 
     setCurrentTime,
     setVolume,
+    toggleMute,
     autoplayMode,
     setAutoplayMode,
     next,
@@ -294,7 +296,20 @@ export function GlobalAudioPlayer() {
 
                     {!isIOS && (
                       <div className="flex items-center gap-2 flex-shrink-0">
-                        <Volume2 className="w-4 h-4 text-bone/70" style={{ color: accentColor }} />
+                        <button
+                          type="button"
+                          onClick={toggleMute}
+                          className="cursor-pointer hover:opacity-80 transition-opacity"
+                          aria-label={isMuted || volume === 0 ? 'Unmute' : 'Mute'}
+                        >
+                          {isMuted || volume === 0 ? (
+                            <VolumeX className="w-4 h-4" style={{ color: accentColor }} />
+                          ) : volume < 0.5 ? (
+                            <Volume1 className="w-4 h-4" style={{ color: accentColor }} />
+                          ) : (
+                            <Volume2 className="w-4 h-4" style={{ color: accentColor }} />
+                          )}
+                        </button>
                         <input
                           type="range"
                           min="0"
@@ -303,9 +318,6 @@ export function GlobalAudioPlayer() {
                           value={volume}
                           onChange={(e) => {
                             const value = parseFloat(e.target.value)
-                            if (process.env.NODE_ENV === 'development') {
-                              console.log('GlobalAudioPlayer volume change (mobile mini)', value)
-                            }
                             setVolume(value)
                           }}
                           className="w-20 cursor-pointer 
@@ -476,7 +488,20 @@ export function GlobalAudioPlayer() {
                     {/* Right: Volume */}
                     {!isIOS && (
                       <div className="flex items-center gap-2 flex-shrink-0">
-                        <Volume2 className="w-4 h-4 text-bone/70" style={{ color: accentColor }} />
+                        <button
+                          type="button"
+                          onClick={toggleMute}
+                          className="cursor-pointer hover:opacity-80 transition-opacity"
+                          aria-label={isMuted || volume === 0 ? 'Unmute' : 'Mute'}
+                        >
+                          {isMuted || volume === 0 ? (
+                            <VolumeX className="w-4 h-4" style={{ color: accentColor }} />
+                          ) : volume < 0.5 ? (
+                            <Volume1 className="w-4 h-4" style={{ color: accentColor }} />
+                          ) : (
+                            <Volume2 className="w-4 h-4" style={{ color: accentColor }} />
+                          )}
+                        </button>
                         <input
                           type="range"
                           min="0"
@@ -485,9 +510,6 @@ export function GlobalAudioPlayer() {
                           value={volume}
                           onChange={(e) => {
                             const value = parseFloat(e.target.value)
-                            if (process.env.NODE_ENV === 'development') {
-                              console.log('GlobalAudioPlayer volume change (mobile full)', value)
-                            }
                             setVolume(value)
                           }}
                           className="w-20 cursor-pointer 
@@ -530,8 +552,8 @@ export function GlobalAudioPlayer() {
 
             {/* Desktop layout: 3-section fixed player */}
             <div className="hidden md:flex items-center gap-4">
-              {/* LEFT: Cover + Info (variable width, capped) */}
-              <div className="flex items-center gap-3 min-w-0 max-w-[280px] flex-shrink overflow-hidden">
+              {/* LEFT: Cover + Info (FIXED width for layout stability) */}
+              <div className="flex items-center gap-3 w-[260px] flex-shrink-0 overflow-hidden">
                 {currentVersion.cover_url && (
                   <div className="relative w-12 h-12 rounded overflow-hidden flex-shrink-0 bg-void">
                     <Image
@@ -554,7 +576,7 @@ export function GlobalAudioPlayer() {
                   </p>
                   
                   {/* Row 2: Ratings + Rate + Download */}
-                  <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex items-center gap-2 overflow-hidden">
                     {hasRatingStats && ratingStats && (
                       <div className="flex items-center gap-1 text-[10px] text-bone/70">
                         <Star className="w-3 h-3" fill={accentColor} color={accentColor} />
@@ -695,7 +717,20 @@ export function GlobalAudioPlayer() {
                 {/* Volume */}
                 {!isIOS && (
                   <div className="flex items-center gap-2">
-                    <Volume2 className="w-4 h-4" style={{ color: accentColor }} />
+                    <button
+                      type="button"
+                      onClick={toggleMute}
+                      className="cursor-pointer hover:opacity-80 transition-opacity"
+                      aria-label={isMuted || volume === 0 ? 'Unmute' : 'Mute'}
+                    >
+                      {isMuted || volume === 0 ? (
+                        <VolumeX className="w-4 h-4" style={{ color: accentColor }} />
+                      ) : volume < 0.5 ? (
+                        <Volume1 className="w-4 h-4" style={{ color: accentColor }} />
+                      ) : (
+                        <Volume2 className="w-4 h-4" style={{ color: accentColor }} />
+                      )}
+                    </button>
                     <input
                       type="range"
                       min="0"
@@ -704,9 +739,6 @@ export function GlobalAudioPlayer() {
                       value={volume}
                       onChange={(e) => {
                         const value = parseFloat(e.target.value)
-                        if (process.env.NODE_ENV === 'development') {
-                          console.log('GlobalAudioPlayer volume change (desktop)', value)
-                        }
                         setVolume(value)
                       }}
                       className="w-20 cursor-pointer 
