@@ -26,7 +26,7 @@ interface OrbFieldProps {
   isMobile?: boolean
 }
 
-function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGlassBubbles, onRegisterRigidBody, onReset, hoveredAlbum, frozen }: {
+function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGlassBubbles, onRegisterRigidBody, onReset, hoveredAlbum }: {
   albums: Album[]
   pushTrigger: number
   onHover: (title: string | null) => void
@@ -36,7 +36,6 @@ function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGla
   onRegisterRigidBody: (id: string, body: RapierRigidBody, initialPos: [number, number, number]) => void
   onReset: number
   hoveredAlbum: Album | null
-  frozen: boolean
 }) {
   const OrbComponent = useGlassBubbles ? BubbleOrb : SonicOrb
   
@@ -45,7 +44,7 @@ function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGla
   const orbRadius = radius * 0.8
   
   return (
-    <Physics gravity={[0, 0, 0]} paused={frozen}>
+    <Physics gravity={[0, 0, 0]}>
       <Suspense fallback={null}>
         <group>
           {albums.map((album, index) => (
@@ -126,7 +125,6 @@ export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
   const [pushTrigger, setPushTrigger] = useState(0)
   const [resetTrigger, setResetTrigger] = useState(0)
   const [isHolding, setIsHolding] = useState(false)
-  const [frozen, setFrozen] = useState(false)  // Freeze physics when orb clicked
 
   if (process.env.NODE_ENV === 'development') {
     console.log('OrbField rendering with albums:', albums.length)
@@ -170,20 +168,17 @@ export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
         body.setAngvel({ x: 0, y: 0, z: 0 }, true)
       } else {
         // SCATTER other orbs - violent random impulse in all directions
-        const scatterForce = 15 + Math.random() * 10  // Random force 15-25
-        const impulse = {
+        const scatterForce = 25 + Math.random() * 15  // Stronger force 25-40
+        body.wakeUp()
+        body.applyImpulse({
           x: (Math.random() - 0.5) * scatterForce * 2,
           y: (Math.random() - 0.5) * scatterForce * 2,
           z: (Math.random() - 0.5) * scatterForce * 2,
-        }
-        body.wakeUp()
-        body.applyImpulse(impulse, true)
+        }, true)
       }
     })
     
-    // Freeze physics after a tiny delay so scatter impulses take effect
-    setTimeout(() => setFrozen(true), 50)
-    
+    // Don't freeze physics - let orbs scatter freely while page loads
     router.push(`/album/${slug}`)
   }, [router, albums])
   
@@ -329,7 +324,6 @@ export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
           onRegisterRigidBody={handleRegisterRigidBody}
           onReset={resetTrigger}
           hoveredAlbum={hoveredAlbum}
-          frozen={frozen}
         />
         
         {/* Post-processing effects */}
