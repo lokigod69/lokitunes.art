@@ -160,25 +160,30 @@ export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
     const clickedAlbum = albums.find(a => a.slug === slug)
     const clickedId = clickedAlbum?.id
     
+    console.log('🎯 handleNavigate called:', slug, 'clickedId:', clickedId)
+    console.log('🎯 rigidBodies count:', rigidBodies.current.size)
+    
     // Scatter all OTHER orbs violently, freeze the clicked one
     rigidBodies.current.forEach(({ body }, id) => {
       if (id === clickedId) {
         // FREEZE the clicked orb - stop all movement
+        console.log('❄️ Freezing clicked orb:', id)
         body.setLinvel({ x: 0, y: 0, z: 0 }, true)
         body.setAngvel({ x: 0, y: 0, z: 0 }, true)
       } else {
-        // SCATTER other orbs - violent random impulse in all directions
-        const scatterForce = 25 + Math.random() * 15  // Stronger force 25-40
+        // SCATTER other orbs - use setLinvel for immediate velocity change
+        const speed = 50 + Math.random() * 30  // Very fast 50-80
+        const velocity = {
+          x: (Math.random() - 0.5) * speed * 2,
+          y: (Math.random() - 0.5) * speed * 2,
+          z: (Math.random() - 0.5) * speed * 2,
+        }
+        console.log('💥 Scattering orb:', id, velocity)
         body.wakeUp()
-        body.applyImpulse({
-          x: (Math.random() - 0.5) * scatterForce * 2,
-          y: (Math.random() - 0.5) * scatterForce * 2,
-          z: (Math.random() - 0.5) * scatterForce * 2,
-        }, true)
+        body.setLinvel(velocity, true)
       }
     })
     
-    // Don't freeze physics - let orbs scatter freely while page loads
     router.push(`/album/${slug}`)
   }, [router, albums])
   
