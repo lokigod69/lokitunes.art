@@ -8,8 +8,8 @@ import type { Album } from '@/lib/supabase'
 import type { ExtendedVersion } from './VersionOrb'
 
 // Front center position - for playing version (prominent, always visible)
-// Z=-5 keeps text on the grid plane where orbs are, but centered
-const FRONT_CENTER_POSITION: [number, number, number] = [0, -12, -5]
+// Z=-8 places text one grid box deeper than before (closer to the vinyl but still in front)
+const FRONT_CENTER_POSITION: [number, number, number] = [0, -12, -8]
 
 // Outer-edge text spots - for hovered versions (avoids center where orbs cluster)
 const ALBUM_TEXT_SPOTS: [number, number, number][] = [
