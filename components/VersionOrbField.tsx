@@ -73,21 +73,6 @@ function VinylPhysicsBarrier({ visible }: { visible: boolean }) {
   )
 }
 
-// Golden ratio constants for aesthetically pleasing grid layout
-const PHI = 1.618033988749895  // Golden ratio
-const GOLDEN_ANGLE = Math.PI / PHI  // ~111.25° (used for rotation)
-const GRID_TILT = Math.PI / (PHI * 3)  // ~20.6° tilt toward camera
-
-// Consistent grid configuration
-const GRID_CONFIG = {
-  size: 100,           // Fixed size for all albums
-  divisions: 10,       // Fixed divisions for consistency
-  yPosition: -15,      // Base vertical position
-  zOffset: -10,        // Push grid back slightly
-  yRotation: Math.PI / 8,  // 22.5° rotation on Y for corner aesthetic
-  xTilt: GRID_TILT,    // Tilt toward camera using golden ratio
-}
-
 function OrbScene({ 
   versions, 
   albumCoverUrl,
@@ -180,30 +165,17 @@ function OrbScene({
         albumPalette={albumPalette}
       />
       
-      {/* CONSISTENT GRID - Golden ratio proportions, tilted from corner */}
-      {/* Grid is positioned and rotated consistently regardless of camera distance */}
-      <group
-        position={[
-          0,
-          GRID_CONFIG.yPosition,
-          GRID_CONFIG.zOffset
+      {/* MINIMAL GRID - Album page style (clean, flat background) */}
+      <gridHelper 
+        ref={gridRef}
+        args={[
+          100,                                      // Size
+          10,                                       // Divisions
+          (albumPalette?.accent1 || '#4F9EFF').slice(0, 7),
+          (albumPalette?.accent1 || '#4F9EFF').slice(0, 7)
         ]}
-        rotation={[
-          GRID_CONFIG.xTilt,     // Tilt toward camera (golden ratio based)
-          GRID_CONFIG.yRotation, // Rotate on Y for corner aesthetic
-          0
-        ]}
-      >
-        <gridHelper 
-          ref={gridRef}
-          args={[
-            GRID_CONFIG.size,
-            GRID_CONFIG.divisions,
-            (albumPalette?.accent1 || '#4F9EFF').slice(0, 7),
-            (albumPalette?.accent1 || '#4F9EFF').slice(0, 7)
-          ]}
-        />
-      </group>
+        position={[0, -15, 0]} 
+      />
       
       {/* VINYL ARTWORK DISPLAY - Standing at back of grid, shows on hover or when playing */}
       <AlbumArtworkDisplay
