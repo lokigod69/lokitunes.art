@@ -7,8 +7,10 @@ import * as THREE from 'three'
 import type { Album } from '@/lib/supabase'
 import type { ExtendedVersion } from './VersionOrb'
 
-// Outer-edge text spots - avoids center where orbs cluster
-// X: far left/right edges, Z: far back or near front
+// Front center position - for playing version (prominent, always visible)
+const FRONT_CENTER_POSITION: [number, number, number] = [0, -12, 5]
+
+// Outer-edge text spots - for hovered versions (avoids center where orbs cluster)
 const ALBUM_TEXT_SPOTS: [number, number, number][] = [
   // Left edge (far from center orbs)
   [-18, -12, -8],
@@ -37,8 +39,8 @@ interface AlbumGridTextDisplayProps {
 /**
  * AlbumGridTextDisplay
  * - Used on ALBUM PAGES only (VersionOrbField scene)
- * - Shows the HOVERED version label, or falls back to currently PLAYING version
- * - Appears at random outer-edge positions to avoid orb obstruction
+ * - Playing version: always shown at front center (prominent)
+ * - Hovered version (different from playing): shown at random outer positions
  * - Uses album color palette for neon styling
  */
 export function AlbumGridTextDisplay({ hoveredVersion, playingVersion, albumPalette }: AlbumGridTextDisplayProps) {
@@ -47,16 +49,21 @@ export function AlbumGridTextDisplay({ hoveredVersion, playingVersion, albumPale
   const [shadowFlicker1, setShadowFlicker1] = useState(1)
   const [shadowFlicker2, setShadowFlicker2] = useState(1)
   
-  // Random outer-edge position to avoid orb obstruction
-  const [position, setPosition] = useState<[number, number, number]>(ALBUM_TEXT_SPOTS[0])
+  // Random outer-edge position for hovered versions
+  const [hoverPosition, setHoverPosition] = useState<[number, number, number]>(ALBUM_TEXT_SPOTS[0])
   
-  // Pick new random position when hovered/playing version changes
+  // Pick new random position when hovering a DIFFERENT version than playing
   useEffect(() => {
-    if (hoveredVersion || playingVersion) {
+    if (hoveredVersion && hoveredVersion.id !== playingVersion?.id) {
       const randomIndex = Math.floor(Math.random() * ALBUM_TEXT_SPOTS.length)
-      setPosition(ALBUM_TEXT_SPOTS[randomIndex])
+      setHoverPosition(ALBUM_TEXT_SPOTS[randomIndex])
     }
   }, [hoveredVersion?.id, playingVersion?.id])
+  
+  // Determine which version to show and where
+  const isShowingPlaying = !hoveredVersion || hoveredVersion.id === playingVersion?.id
+  const displayVersion = hoveredVersion || playingVersion
+  const position = isShowingPlaying ? FRONT_CENTER_POSITION : hoverPosition
 
   // Use album palette passed from scene
   const palette = albumPalette || {
@@ -86,9 +93,6 @@ export function AlbumGridTextDisplay({ hoveredVersion, playingVersion, albumPale
       setShadowFlicker2(Math.random() < 0.3 ? 0.3 : 1)
     }
   })
-
-  // PRIORITY: hovered version wins, otherwise show playing version
-  const displayVersion = hoveredVersion || playingVersion
 
   // Nothing hovered and nothing playing → show nothing
   if (!displayVersion) return null

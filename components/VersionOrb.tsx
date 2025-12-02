@@ -12,12 +12,14 @@ import { useSmartTexture } from '@/hooks/useSmartTexture'
 import { useAudioStore } from '@/lib/audio-store'
 
 /**
- * Extended version with song context for orb display
+ * Extended version with song and album context for orb display
  */
 export interface ExtendedVersion extends SongVersion {
   songTitle: string
   songId: string
   trackNo: number | null
+  albumTitle?: string
+  albumSlug?: string
 }
 
 /**

@@ -49,7 +49,9 @@ export function AlbumPage({ album }: AlbumPageProps) {
           ...version,
           songTitle: song.title,
           songId: song.id,
-          trackNo: song.track_no
+          trackNo: song.track_no,
+          albumTitle: album.title,
+          albumSlug: album.slug
         }))
       )
     

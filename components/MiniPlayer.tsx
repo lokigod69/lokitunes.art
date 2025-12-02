@@ -44,6 +44,13 @@ export function MiniPlayer() {
   const accentColor = currentPalette?.accent1 || '#4F9EFF'
   const bgColor = currentPalette?.dominant || '#090B0D'
 
+  // Extract album title from extended version data
+  const extended = currentVersion as unknown as { albumTitle?: string }
+  const albumTitle = extended?.albumTitle
+  const displayTitle = albumTitle 
+    ? `${albumTitle} — ${currentVersion.label}` 
+    : currentVersion.label
+
   return (
     <div
       ref={miniPlayerRef}
@@ -82,7 +89,7 @@ export function MiniPlayer() {
         {/* Track Info */}
         <div className="flex-1 min-w-0">
           <p className="text-bone text-sm font-medium truncate">
-            {currentVersion.label}
+            {displayTitle}
           </p>
           <p className="text-bone/50 text-xs">
             {formatTime(currentTime)} / {formatTime(duration)}

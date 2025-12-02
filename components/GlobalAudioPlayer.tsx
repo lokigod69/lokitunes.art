@@ -49,22 +49,30 @@ export function GlobalAudioPlayer() {
   const isHomePage = pathname === '/'
   const [isIOS, setIsIOS] = useState(false)
 
+  // Extract album info from extended version data (available from global queue)
+  const extended = currentVersion as unknown as { albumSlug?: string; albumTitle?: string }
+  const albumTitle = extended?.albumTitle
+  const albumSlug = extended?.albumSlug
+
   // Navigate to album page when clicking on song title
   const handleTitleClick = () => {
     if (!currentVersion) return
-    // Get album slug from extended version data (available from global queue)
-    const extended = currentVersion as unknown as { albumSlug?: string }
-    let albumSlug = extended.albumSlug
+    let slug = albumSlug
     
     // Fallback: extract from current pathname if on album page
-    if (!albumSlug && pathname.startsWith('/album/')) {
-      albumSlug = pathname.replace('/album/', '')
+    if (!slug && pathname.startsWith('/album/')) {
+      slug = pathname.replace('/album/', '')
     }
     
-    if (albumSlug && pathname !== `/album/${albumSlug}`) {
-      router.push(`/album/${albumSlug}`)
+    if (slug && pathname !== `/album/${slug}`) {
+      router.push(`/album/${slug}`)
     }
   }
+
+  // Format display title: "Album Title — Version Label" or just "Version Label"
+  const displayTitle = albumTitle 
+    ? `${albumTitle} — ${currentVersion?.label}` 
+    : currentVersion?.label
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -247,7 +255,7 @@ export function GlobalAudioPlayer() {
                         onClick={handleTitleClick}
                         title="Go to album"
                       >
-                        {currentVersion.label}
+                        {displayTitle}
                       </p>
                       <p className="text-[11px] text-bone/60">
                         {formatTime(currentTime)} / {formatTime(duration)}
@@ -436,7 +444,7 @@ export function GlobalAudioPlayer() {
                           onClick={handleTitleClick}
                           title="Go to album"
                         >
-                          {currentVersion.label}
+                          {displayTitle}
                         </p>
                         <p className="text-[11px] text-bone/60">
                           {formatTime(currentTime)} / {formatTime(duration)}
@@ -565,13 +573,13 @@ export function GlobalAudioPlayer() {
                 )}
 
                 <div className="flex flex-col min-w-0 gap-0.5">
-                  {/* Row 1: Title only */}
+                  {/* Row 1: Album — Version title */}
                   <p 
                     className="text-sm font-medium text-bone truncate cursor-pointer hover:underline"
                     onClick={handleTitleClick}
                     title="Go to album"
                   >
-                    {currentVersion.label}
+                    {displayTitle}
                   </p>
                   
                   {/* Row 2: Ratings + Rate + Download */}
