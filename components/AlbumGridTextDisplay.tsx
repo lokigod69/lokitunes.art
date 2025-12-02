@@ -1,11 +1,32 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Text } from '@react-three/drei'
 import * as THREE from 'three'
 import type { Album } from '@/lib/supabase'
 import type { ExtendedVersion } from './VersionOrb'
+
+// Outer-edge text spots - avoids center where orbs cluster
+// X: far left/right edges, Z: far back or near front
+const ALBUM_TEXT_SPOTS: [number, number, number][] = [
+  // Left edge (far from center orbs)
+  [-18, -12, -8],
+  [-15, -12, -5],
+  [-16, -12, -10],
+  // Right edge
+  [18, -12, -8],
+  [15, -12, -5],
+  [16, -12, -10],
+  // Far back (behind orbs at Z=0)
+  [-8, -12, -12],
+  [0, -12, -14],
+  [8, -12, -12],
+  // Near front (in front of orbs)
+  [-10, -12, 2],
+  [0, -12, 3],
+  [10, -12, 2],
+]
 
 interface AlbumGridTextDisplayProps {
   hoveredVersion: ExtendedVersion | null
@@ -17,7 +38,7 @@ interface AlbumGridTextDisplayProps {
  * AlbumGridTextDisplay
  * - Used on ALBUM PAGES only (VersionOrbField scene)
  * - Shows the HOVERED version label, or falls back to currently PLAYING version
- * - Always centered on the album grid
+ * - Appears at random outer-edge positions to avoid orb obstruction
  * - Uses album color palette for neon styling
  */
 export function AlbumGridTextDisplay({ hoveredVersion, playingVersion, albumPalette }: AlbumGridTextDisplayProps) {
@@ -25,11 +46,17 @@ export function AlbumGridTextDisplay({ hoveredVersion, playingVersion, albumPale
   const [flicker, setFlicker] = useState(1)
   const [shadowFlicker1, setShadowFlicker1] = useState(1)
   const [shadowFlicker2, setShadowFlicker2] = useState(1)
-
-  // Centered position on album grid
-  // Y = -12 raises text above grid a bit so it's easier to read when vertical
-  // Z = -5 moves text forward to first horizontal grid line
-  const position: [number, number, number] = [0, -12, -5]
+  
+  // Random outer-edge position to avoid orb obstruction
+  const [position, setPosition] = useState<[number, number, number]>(ALBUM_TEXT_SPOTS[0])
+  
+  // Pick new random position when hovered/playing version changes
+  useEffect(() => {
+    if (hoveredVersion || playingVersion) {
+      const randomIndex = Math.floor(Math.random() * ALBUM_TEXT_SPOTS.length)
+      setPosition(ALBUM_TEXT_SPOTS[randomIndex])
+    }
+  }, [hoveredVersion?.id, playingVersion?.id])
 
   // Use album palette passed from scene
   const palette = albumPalette || {
