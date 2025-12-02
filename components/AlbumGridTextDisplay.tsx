@@ -8,7 +8,8 @@ import type { Album } from '@/lib/supabase'
 import type { ExtendedVersion } from './VersionOrb'
 
 // Front center position - for playing version (prominent, always visible)
-const FRONT_CENTER_POSITION: [number, number, number] = [0, -12, 5]
+// Z=-5 keeps text on the grid plane where orbs are, but centered
+const FRONT_CENTER_POSITION: [number, number, number] = [0, -12, -5]
 
 // Outer-edge text spots - for hovered versions (avoids center where orbs cluster)
 const ALBUM_TEXT_SPOTS: [number, number, number][] = [
@@ -72,7 +73,8 @@ export function AlbumGridTextDisplay({ hoveredVersion, playingVersion, albumPale
     accent2: '#FF6B4A',
   }
 
-  const mainColor = palette.dominant || '#4F9EFF'
+  // Use accent1 for main text (bright neon color), NOT dominant (which is often dark)
+  const mainColor = palette.accent1 || palette.dominant || '#4F9EFF'
   const accent1 = palette.accent1 || mainColor
   const accent2 = palette.accent2 || accent1
 

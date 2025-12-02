@@ -147,6 +147,8 @@ export function VersionOrb({
     // If this orb was docked/docking but is no longer playing (another orb took over)
     if ((animationState === 'docked' || animationState === 'docking') && !isThisPlaying) {
       console.log('🔄 Another orb started playing, undocking:', version.label)
+      // Reset originalPosition to initial spawn position (ensures orb returns to valid location)
+      originalPosition.current = position
       setAnimationState('undocking')
     }
     
@@ -155,7 +157,7 @@ export function VersionOrb({
       console.log('🔄 Orb clicked while undocking, re-docking:', version.label)
       setAnimationState('docking')
     }
-  }, [isThisPlaying, animationState, version.label])
+  }, [isThisPlaying, animationState, version.label, position])
   
   // Safety reset: If orb gets stuck in a non-idle state while not playing, force reset after 3s
   useEffect(() => {
@@ -317,12 +319,19 @@ export function VersionOrb({
       
       // When animation complete, return to idle state
       if (animationProgress.current <= 0) {
+        // Ensure orb is at a valid position (initial spawn location)
+        body.setTranslation({
+          x: position[0],
+          y: position[1],
+          z: position[2],
+        }, true)
+        
         setAnimationState('idle')
         currentScale.current = 1
         if (groupRef.current) {
           groupRef.current.scale.setScalar(1)
         }
-        console.log('🎯 Orb undocked:', version.label)
+        console.log('🎯 Orb undocked to spawn position:', version.label)
         
         // Give the orb a small impulse to start moving again
         body.applyImpulse({

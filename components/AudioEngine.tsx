@@ -6,6 +6,7 @@ import { useAudioStore } from '@/lib/audio-store'
 export default function AudioEngine() {
   const audioRef = useRef<HTMLAudioElement>(null)
   const lastLoadedUrl = useRef<string>('')  // Track last loaded URL to prevent double-load
+  const isLoadingNewTrack = useRef(false)    // Prevent play during load
   
   const currentVersion = useAudioStore((state) => state.currentVersion)
   const isPlaying = useAudioStore((state) => state.isPlaying)
@@ -29,18 +30,34 @@ export default function AudioEngine() {
     // Only load if URL actually changed (prevents restart on re-renders)
     if (newSrc && newSrc !== lastLoadedUrl.current) {
       console.log('[AudioEngine] Loading new audio:', currentVersion?.label)
+      isLoadingNewTrack.current = true
       lastLoadedUrl.current = newSrc
       audio.src = newSrc
       audio.load()
+      
+      // Auto-play after load if isPlaying is true
+      audio.oncanplay = () => {
+        isLoadingNewTrack.current = false
+        if (isPlaying && audio.paused) {
+          audio.play().catch((err) => {
+            console.error('[AudioEngine] Auto-play after load failed:', err)
+          })
+        }
+        audio.oncanplay = null  // Clear handler
+      }
     } else if (!newSrc) {
       lastLoadedUrl.current = ''
+      isLoadingNewTrack.current = false
     }
-  }, [currentVersion])
+  }, [currentVersion, isPlaying])
 
-  // Play/pause control
+  // Play/pause control - ONLY for pause/resume, not initial load
   useEffect(() => {
     const audio = audioRef.current
     if (!audio || !audio.src) return
+    
+    // Skip if we're loading a new track (handled by oncanplay above)
+    if (isLoadingNewTrack.current) return
 
     if (isPlaying) {
       // Only call play() if actually paused (prevents restart issues)
@@ -52,7 +69,7 @@ export default function AudioEngine() {
     } else {
       audio.pause()
     }
-  }, [isPlaying, currentVersion])
+  }, [isPlaying])  // Remove currentVersion - we don't want to re-trigger on track change
 
   // Volume control
   useEffect(() => {
