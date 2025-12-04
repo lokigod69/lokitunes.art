@@ -8,10 +8,11 @@ import type { Album } from '@/lib/supabase'
 import type { ExtendedVersion } from './VersionOrb'
 
 // Front center position - for playing version (prominent, always visible)
-// Z=-2 moves the text slightly forward toward the first grid row while staying anchored to the grid plane
+// Z=-2 keeps the playing label near the front grid row while avoiding clipping
 const FRONT_CENTER_POSITION: [number, number, number] = [0, -12, -2]
 
 // Outer-edge text spots - for hovered versions (avoids center where orbs cluster)
+// Z values are kept well behind the fixed playing label (Z = -2) so hover text never clips
 const ALBUM_TEXT_SPOTS: [number, number, number][] = [
   // Left edge (far from center orbs)
   [-18, -12, -8],
@@ -25,10 +26,10 @@ const ALBUM_TEXT_SPOTS: [number, number, number][] = [
   [-8, -12, -12],
   [0, -12, -14],
   [8, -12, -12],
-  // Near front (in front of orbs)
-  [-10, -12, 2],
-  [0, -12, 3],
-  [10, -12, 2],
+  // Mid-layer (readable but further back so it never reaches the front edge)
+  [-10, -12, -6],
+  [0, -12, -7],
+  [10, -12, -6],
 ]
 
 interface AlbumGridTextDisplayProps {
@@ -110,7 +111,7 @@ export function AlbumGridTextDisplay({ hoveredVersion, playingVersion, albumPale
       {/* Inner white glow - subtle, under colored text */}
       <Text
         position={[0, 0, 0.01]}
-        fontSize={4.0}
+        fontSize={3.5}
         color="#ffffff"
         anchorX="center"
         anchorY="middle"
@@ -124,7 +125,7 @@ export function AlbumGridTextDisplay({ hoveredVersion, playingVersion, albumPale
       {/* Main text layer - album dominant color (BIG, always full opacity) */}
       <Text
         position={[0, 0, 0.02]}
-        fontSize={4.0}
+        fontSize={3.5}
         color={mainColor}
         anchorX="center"
         anchorY="middle"
@@ -140,7 +141,7 @@ export function AlbumGridTextDisplay({ hoveredVersion, playingVersion, albumPale
       {/* Bright color glow very close behind */}
       <Text
         position={[0, 0, -0.05]}
-        fontSize={4.0}
+        fontSize={3.5}
         color={mainColor}
         anchorX="center"
         anchorY="middle"
@@ -154,7 +155,7 @@ export function AlbumGridTextDisplay({ hoveredVersion, playingVersion, albumPale
       {/* Softer outer glow layer */}
       <Text
         position={[0, 0, -0.15]}
-        fontSize={4.0}
+        fontSize={3.5}
         color={mainColor}
         anchorX="center"
         anchorY="middle"
@@ -168,7 +169,7 @@ export function AlbumGridTextDisplay({ hoveredVersion, playingVersion, albumPale
       {/* Shadow 1 - accent1 color, slight offset */}
       <Text
         position={[0.15, 0, -0.25]}
-        fontSize={4.0}
+        fontSize={3.5}
         color={accent1}
         anchorX="center"
         anchorY="middle"
@@ -185,7 +186,7 @@ export function AlbumGridTextDisplay({ hoveredVersion, playingVersion, albumPale
       {/* Shadow 2 - accent2 color, opposite offset */}
       <Text
         position={[-0.12, 0, -0.35]}
-        fontSize={4.0}
+        fontSize={3.5}
         color={accent2}
         anchorX="center"
         anchorY="middle"
