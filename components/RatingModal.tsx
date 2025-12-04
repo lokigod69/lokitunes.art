@@ -5,9 +5,33 @@ import { X, Star } from 'lucide-react'
 import { RatingStars } from '@/components/RatingStars'
 import { useAudioStore } from '@/lib/audio-store'
 
-const TAG_OPTIONS = ['melody', 'vibe', 'drums', 'vocals', 'lyrics', 'structure'] as const
+const TAG_OPTIONS = ['melody', 'vibe', 'drums', 'vocals', 'lyrics', 'structure', 'trash'] as const
 type TagOption = (typeof TAG_OPTIONS)[number]
 type TagType = 'like' | 'dislike'
+
+interface RatingStatsData {
+  avg_rating: number
+  rating_count: number
+}
+
+interface RatingTagsPayload {
+  likes: string[]
+  dislikes: string[]
+}
+
+interface UserRatingData {
+  id: string
+  rating: number
+  comment: string | null
+  tags?: RatingTagsPayload
+}
+
+interface RatingComment {
+  id: string
+  rating: number
+  comment: string
+  created_at: string
+}
 
 interface RatingModalProps {
   isOpen: boolean
@@ -26,9 +50,9 @@ export function RatingModal({ isOpen, onClose, onRated }: RatingModalProps) {
   const [likedTags, setLikedTags] = useState<string[]>([])
   const [dislikedTags, setDislikedTags] = useState<string[]>([])
 
-  const [stats, setStats] = useState<any>(null)
-  const [userRating, setUserRating] = useState<any>(null)
-  const [comments, setComments] = useState<any[]>([])
+  const [stats, setStats] = useState<RatingStatsData | null>(null)
+  const [userRating, setUserRating] = useState<UserRatingData | null>(null)
+  const [comments, setComments] = useState<RatingComment[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [hoverRating, setHoverRating] = useState(0)
@@ -60,13 +84,17 @@ export function RatingModal({ isOpen, onClose, onRated }: RatingModalProps) {
       try {
         const res = await fetch(`/api/ratings/${currentVersion.id}`)
         if (!res.ok) throw new Error('Failed to load ratings')
-        const data = await res.json()
+        const data = (await res.json()) as {
+          stats?: RatingStatsData | null
+          userRating?: UserRatingData | null
+          comments?: RatingComment[]
+        }
 
         if (isCancelled) return
 
-        setStats(data.stats || null)
-        setUserRating(data.userRating || null)
-        setComments(data.comments || [])
+        setStats(data.stats ?? null)
+        setUserRating(data.userRating ?? null)
+        setComments(data.comments ?? [])
 
         const userTags = data.userRating?.tags
         if (userTags) {
@@ -224,8 +252,12 @@ export function RatingModal({ isOpen, onClose, onRated }: RatingModalProps) {
       if (onRated) {
         onRated()
       }
-    } catch (err: any) {
-      setError(err?.message || 'Something went wrong while saving your rating.')
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message || 'Something went wrong while saving your rating.')
+      } else {
+        setError('Something went wrong while saving your rating.')
+      }
     } finally {
       setIsSubmitting(false)
     }
@@ -271,7 +303,9 @@ export function RatingModal({ isOpen, onClose, onRated }: RatingModalProps) {
                 <Star size={20} fill={accentColor} color={accentColor} />
               </div>
               {userRating.comment && (
-                <p className="text-sm text-bone/80 mt-2 italic">"{userRating.comment}"</p>
+                <p className="text-sm text-bone/80 mt-2 italic">
+                  &quot;{userRating.comment}&quot;
+                </p>
               )}
               <button
                 type="button"
@@ -306,7 +340,9 @@ export function RatingModal({ isOpen, onClose, onRated }: RatingModalProps) {
                       key={c.id}
                       className="p-3 bg-bone/5 rounded border-l-2 border-bone/20"
                     >
-                      <p className="text-sm text-bone/90 mb-1">"{c.comment}"</p>
+                      <p className="text-sm text-bone/90 mb-1">
+                        &quot;{c.comment}&quot;
+                      </p>
                       <div className="flex items-center gap-2 text-xs text-bone/50">
                         <span>{new Date(c.created_at).toLocaleDateString()}</span>
                         <span>•</span>
@@ -365,15 +401,16 @@ export function RatingModal({ isOpen, onClose, onRated }: RatingModalProps) {
                     size={20}
                     color={accentColor}
                   />
-                  {/* Show hover preview or locked-in rating - nothing when empty */}
-                  {(hoverRating > 0 || rating > 0) && (
-                    <span
-                      className="text-2xl font-bold tabular-nums"
-                      style={{ color: accentColor }}
-                    >
-                      {hoverRating > 0 ? `${hoverRating}/10` : `${rating}/10`}
-                    </span>
-                  )}
+                  {/* Fixed rating display so modal size doesn't jump when hovering */}
+                  <span
+                    className="text-2xl font-bold tabular-nums min-w-[4.5rem] text-right"
+                    style={{ color: accentColor }}
+                  >
+                    {(() => {
+                      const value = hoverRating > 0 ? hoverRating : rating
+                      return value > 0 ? `${value}/10` : '--/10'
+                    })()}
+                  </span>
                 </div>
               </div>
 
@@ -381,12 +418,12 @@ export function RatingModal({ isOpen, onClose, onRated }: RatingModalProps) {
               <div className="space-y-2">
                 <h4 className="text-sm font-medium text-green-400">What did you like?</h4>
                 <div className="flex flex-wrap gap-2">
-                  {TAG_OPTIONS.map((tag) => (
+                  {TAG_OPTIONS.filter((tag) => tag !== 'trash').map((tag) => (
                     <button
                       key={tag}
                       type="button"
-                      onClick={() => toggleTag(tag, 'like')}
-                      className={`px-3 py-1.5 rounded text-sm border transition-colors ${
+                      onClick={() => toggleTag(tag as TagOption, 'like')}
+                      className={`px-3 py-1.5 rounded text-sm border transition-colors cursor-pointer ${
                         likedTags.includes(tag)
                           ? 'bg-green-500/20 border-green-500 text-green-400'
                           : 'border-zinc-700 text-zinc-400 hover:border-green-500/50'
@@ -407,10 +444,14 @@ export function RatingModal({ isOpen, onClose, onRated }: RatingModalProps) {
                       key={tag}
                       type="button"
                       onClick={() => toggleTag(tag, 'dislike')}
-                      className={`px-3 py-1.5 rounded text-sm border transition-colors ${
-                        dislikedTags.includes(tag)
-                          ? 'bg-red-500/20 border-red-500 text-red-400'
-                          : 'border-zinc-700 text-zinc-400 hover:border-red-500/50'
+                      className={`px-3 py-1.5 rounded text-sm border transition-colors cursor-pointer ${
+                        tag === 'trash'
+                          ? dislikedTags.includes(tag)
+                            ? 'bg-red-600/30 border-red-500 text-red-300 font-semibold uppercase'
+                            : 'border-red-800 text-red-500/80 hover:border-red-500'
+                          : dislikedTags.includes(tag)
+                            ? 'bg-red-500/20 border-red-500 text-red-400'
+                            : 'border-zinc-700 text-zinc-400 hover:border-red-500/50'
                       }`}
                     >
                       {tag}

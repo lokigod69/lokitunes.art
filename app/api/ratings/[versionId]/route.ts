@@ -2,6 +2,29 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { getClientIp, hashIp } from '@/lib/ip-hash'
 
+interface RatingTagRow {
+  tag_type: 'like' | 'dislike'
+  tag_value: string
+}
+
+interface UserRatingRow {
+  id: string
+  version_id: string
+  song_id: string
+  rating: number
+  comment: string | null
+  ip_hash: string
+  created_at: string
+  rating_tags?: RatingTagRow[]
+}
+
+interface UserRatingWithTags extends Omit<UserRatingRow, 'rating_tags'> {
+  tags: {
+    likes: string[]
+    dislikes: string[]
+  }
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ versionId: string }> }
@@ -29,7 +52,7 @@ export async function GET(
       console.error('Supabase stats error:', statsError)
     }
 
-    let userRating: any = null
+    let userRating: UserRatingWithTags | null = null
     if (ipHash) {
       const { data, error: userError } = await supabase
         .from('song_version_ratings')
@@ -39,15 +62,16 @@ export async function GET(
         .single()
 
       if (!userError && data) {
-        const rawTags = (data as any).rating_tags || []
+        const row = data as UserRatingRow
+        const rawTags: RatingTagRow[] = row.rating_tags ?? []
         const likes = rawTags
-          .filter((t: any) => t.tag_type === 'like')
-          .map((t: any) => t.tag_value)
+          .filter((t) => t.tag_type === 'like')
+          .map((t) => t.tag_value)
         const dislikes = rawTags
-          .filter((t: any) => t.tag_type === 'dislike')
-          .map((t: any) => t.tag_value)
+          .filter((t) => t.tag_type === 'dislike')
+          .map((t) => t.tag_value)
 
-        const { rating_tags, ...rest } = data as any
+        const { rating_tags, ...rest } = row
         userRating = {
           ...rest,
           tags: {

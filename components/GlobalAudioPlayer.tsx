@@ -377,7 +377,7 @@ export function GlobalAudioPlayer() {
                       <button
                         type="button"
                         onClick={() => setIsRatingOpen(true)}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded border border-zinc-700 hover:border-[var(--voltage)] transition-colors text-xs"
+                        className="flex items-center gap-1 px-3 py-1.5 rounded border border-zinc-700 hover:border-[var(--voltage)] transition-colors text-xs cursor-pointer"
                         title="Rate this version"
                       >
                         <Star
@@ -601,7 +601,7 @@ export function GlobalAudioPlayer() {
                     <button
                       type="button"
                       onClick={() => setIsRatingOpen(true)}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded border border-zinc-700 hover:border-[var(--voltage)] transition-colors text-xs"
+                      className="flex items-center gap-1 px-3 py-1.5 rounded border border-zinc-700 hover:border-[var(--voltage)] transition-colors text-xs cursor-pointer"
                       title="Rate this version"
                     >
                       <Star

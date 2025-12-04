@@ -3,6 +3,12 @@ import type { SongVersion, Album } from './supabase'
 
 type AutoplayMode = 'off' | 'album' | 'all'
 
+type SongVersionWithMeta = SongVersion & {
+  songId?: string
+  song_id?: string
+  albumPalette?: Album['palette'] | null
+}
+
 function getInitialAutoplayMode(): AutoplayMode {
   if (typeof window === 'undefined') return 'album'
   try {
@@ -21,7 +27,7 @@ interface AudioState {
   currentPalette: Album['palette'] | null
   
   // Queue management
-  queue: SongVersion[]
+  queue: SongVersionWithMeta[]
   currentIndex: number
   
   // Playback state
@@ -34,12 +40,12 @@ interface AudioState {
   autoplayMode: AutoplayMode
   
   // Actions
-  play: (version: SongVersion, songId: string, palette?: Album['palette'], forceRestart?: boolean) => void
+  play: (version: SongVersionWithMeta, songId: string, palette?: Album['palette'], forceRestart?: boolean) => void
   pause: () => void
   stop: () => void
-  setQueue: (versions: SongVersion[], startIndex?: number) => void
-  startAlbumQueue: (versions: SongVersion[], startId: string, palette?: Album['palette']) => void
-  startGlobalQueue: (startVersion: SongVersion, palette?: Album['palette']) => Promise<void>
+  setQueue: (versions: SongVersionWithMeta[], startIndex?: number) => void
+  startAlbumQueue: (versions: SongVersionWithMeta[], startId: string, palette?: Album['palette']) => void
+  startGlobalQueue: (startVersion: SongVersionWithMeta, palette?: Album['palette']) => Promise<void>
   next: () => void
   previous: () => void
   setCurrentTime: (time: number) => void
@@ -131,7 +137,7 @@ export const useAudioStore = create<AudioState>((set, get) => ({
 
       set({
         currentVersion: fallback,
-        currentSongId: (fallback as any).songId ?? (fallback as any).song_id ?? null,
+        currentSongId: fallback.songId ?? fallback.song_id ?? null,
         currentPalette: resolvedPalette ?? null,
         isPlaying: true,
         currentTime: 0,
@@ -152,7 +158,7 @@ export const useAudioStore = create<AudioState>((set, get) => ({
     set({
       queue,
       currentVersion: clicked,
-      currentSongId: (clicked as any).songId ?? (clicked as any).song_id ?? null,
+      currentSongId: clicked.songId ?? clicked.song_id ?? null,
       currentPalette: resolvedPalette ?? null,
       currentIndex: 0,
       isPlaying: true,
@@ -165,15 +171,15 @@ export const useAudioStore = create<AudioState>((set, get) => ({
     try {
       const res = await fetch('/api/versions')
       if (!res.ok) throw new Error('Failed to fetch versions')
-      const data = await res.json()
-      const allVersions = data.versions || []
+      const data = (await res.json()) as { versions?: SongVersionWithMeta[] }
+      const allVersions: SongVersionWithMeta[] = data.versions ?? []
       
       if (allVersions.length === 0) {
         // Fallback to single track
         const resolvedPalette = palette !== undefined ? palette : get().currentPalette
         set({
           currentVersion: startVersion,
-          currentSongId: (startVersion as any).songId ?? (startVersion as any).song_id ?? null,
+          currentSongId: startVersion.songId ?? startVersion.song_id ?? null,
           currentPalette: resolvedPalette ?? null,
           isPlaying: true,
           currentTime: 0,
@@ -184,7 +190,7 @@ export const useAudioStore = create<AudioState>((set, get) => ({
       }
       
       // Build queue: clicked version first, then shuffle the rest
-      const rest = allVersions.filter((v: any) => v.id !== startVersion.id)
+      const rest = allVersions.filter((v) => v.id !== startVersion.id)
       const shuffledRest = [...rest].sort(() => Math.random() - 0.5)
       const queue = [startVersion, ...shuffledRest]
       
@@ -193,7 +199,7 @@ export const useAudioStore = create<AudioState>((set, get) => ({
       set({
         queue,
         currentVersion: startVersion,
-        currentSongId: (startVersion as any).songId ?? (startVersion as any).song_id ?? null,
+        currentSongId: startVersion.songId ?? startVersion.song_id ?? null,
         currentPalette: resolvedPalette ?? null,
         currentIndex: 0,
         isPlaying: true,
@@ -207,7 +213,7 @@ export const useAudioStore = create<AudioState>((set, get) => ({
       const resolvedPalette = palette !== undefined ? palette : get().currentPalette
       set({
         currentVersion: startVersion,
-        currentSongId: (startVersion as any).songId ?? (startVersion as any).song_id ?? null,
+        currentSongId: startVersion.songId ?? startVersion.song_id ?? null,
         currentPalette: resolvedPalette ?? null,
         isPlaying: true,
         currentTime: 0,
@@ -222,7 +228,7 @@ export const useAudioStore = create<AudioState>((set, get) => ({
     if (queue.length === 0) return
     
     const nextIndex = (currentIndex + 1) % queue.length
-    const nextVersion = queue[nextIndex] as any
+    const nextVersion = queue[nextIndex]
     
     // Update palette if the next track has album info (for global shuffle)
     const nextPalette = nextVersion.albumPalette || get().currentPalette
@@ -241,7 +247,7 @@ export const useAudioStore = create<AudioState>((set, get) => ({
     if (queue.length === 0) return
     
     const prevIndex = currentIndex === 0 ? queue.length - 1 : currentIndex - 1
-    const prevVersion = queue[prevIndex] as any
+    const prevVersion = queue[prevIndex]
     
     // Update palette if the previous track has album info (for global shuffle)
     const prevPalette = prevVersion.albumPalette || get().currentPalette
