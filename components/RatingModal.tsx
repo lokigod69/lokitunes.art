@@ -5,7 +5,7 @@ import { X, Star } from 'lucide-react'
 import { RatingStars } from '@/components/RatingStars'
 import { useAudioStore } from '@/lib/audio-store'
 
-const TAG_OPTIONS = ['melody', 'vibe', 'drums', 'vocals', 'lyrics', 'structure', 'trash'] as const
+const TAG_OPTIONS = ['everything', 'melody', 'vibe', 'drums', 'vocals', 'lyrics', 'structure', 'trash'] as const
 type TagOption = (typeof TAG_OPTIONS)[number]
 type TagType = 'like' | 'dislike'
 
@@ -418,20 +418,30 @@ export function RatingModal({ isOpen, onClose, onRated }: RatingModalProps) {
               <div className="space-y-2">
                 <h4 className="text-sm font-medium text-green-400">What did you like?</h4>
                 <div className="flex flex-wrap gap-2">
-                  {TAG_OPTIONS.filter((tag) => tag !== 'trash').map((tag) => (
-                    <button
-                      key={tag}
-                      type="button"
-                      onClick={() => toggleTag(tag as TagOption, 'like')}
-                      className={`px-3 py-1.5 rounded text-sm border transition-colors cursor-pointer ${
-                        likedTags.includes(tag)
+                  {TAG_OPTIONS.filter((tag) => tag !== 'trash').map((tag) => {
+                    const isSelected = likedTags.includes(tag)
+                    const baseClasses =
+                      'px-3 py-1.5 rounded text-sm border transition-colors cursor-pointer'
+                    const variantClasses =
+                      tag === 'everything'
+                        ? isSelected
+                          ? 'bg-green-500/40 border-green-400 text-green-200 font-semibold uppercase tracking-wide'
+                          : 'border-green-500 text-green-400 hover:bg-green-500/10'
+                        : isSelected
                           ? 'bg-green-500/20 border-green-500 text-green-400'
                           : 'border-zinc-700 text-zinc-400 hover:border-green-500/50'
-                      }`}
-                    >
-                      {tag}
-                    </button>
-                  ))}
+
+                    return (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => toggleTag(tag as TagOption, 'like')}
+                        className={`${baseClasses} ${variantClasses}`}
+                      >
+                        {tag}
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
 
@@ -439,7 +449,7 @@ export function RatingModal({ isOpen, onClose, onRated }: RatingModalProps) {
               <div className="space-y-2">
                 <h4 className="text-sm font-medium text-red-400">What could improve?</h4>
                 <div className="flex flex-wrap gap-2">
-                  {TAG_OPTIONS.map((tag) => (
+                  {TAG_OPTIONS.filter((tag) => tag !== 'everything').map((tag) => (
                     <button
                       key={tag}
                       type="button"

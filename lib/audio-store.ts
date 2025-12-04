@@ -78,27 +78,44 @@ export const useAudioStore = create<AudioState>((set, get) => ({
   autoplayMode: getInitialAutoplayMode(),
 
   play: (version, songId, palette, forceRestart = false) => {
-    const current = get()
+    const state = get()
 
     // If no palette is provided, preserve the existing one
     const resolvedPalette =
-      palette !== undefined ? palette : current.currentPalette
-    
-    // If switching to a different version OR forceRestart is true, reset time
-    if (current.currentVersion?.id !== version.id || forceRestart) {
+      palette !== undefined ? palette : state.currentPalette
+
+    // Simple resume: same version, no restart → just set playing
+    if (!forceRestart && state.currentVersion?.id === version.id) {
+      set({ isPlaying: true })
+      return
+    }
+
+    // If this version already exists in the current queue, keep the queue
+    // and just move the playhead to that index.
+    const existingIndex = state.queue.findIndex((v) => v.id === version.id)
+
+    if (existingIndex !== -1) {
       set({
         currentVersion: version,
         currentSongId: songId,
         currentPalette: resolvedPalette ?? null,
         isPlaying: true,
         currentTime: 0,
-        queue: [version],
-        currentIndex: 0,
+        currentIndex: existingIndex,
       })
-    } else {
-      // Resume current version
-      set({ isPlaying: true })
+      return
     }
+
+    // Otherwise, start a new single-track session with its own queue.
+    set({
+      currentVersion: version,
+      currentSongId: songId,
+      currentPalette: resolvedPalette ?? null,
+      isPlaying: true,
+      currentTime: 0,
+      queue: [version],
+      currentIndex: 0,
+    })
   },
 
   pause: () => set({ isPlaying: false }),
@@ -226,17 +243,18 @@ export const useAudioStore = create<AudioState>((set, get) => ({
   next: () => {
     const { queue, currentIndex, autoplayMode } = get()
     if (queue.length === 0) return
-    
+
     const nextIndex = (currentIndex + 1) % queue.length
     const nextVersion = queue[nextIndex]
-    
+
     // Update palette if the next track has album info (for global shuffle)
     const nextPalette = nextVersion.albumPalette || get().currentPalette
-    
+
     set({
       currentIndex: nextIndex,
       currentVersion: nextVersion,
-      currentPalette: nextPalette,
+      currentSongId: nextVersion.songId ?? nextVersion.song_id ?? null,
+      currentPalette: nextPalette ?? null,
       isPlaying: true,
       currentTime: 0,
     })
@@ -245,17 +263,18 @@ export const useAudioStore = create<AudioState>((set, get) => ({
   previous: () => {
     const { queue, currentIndex } = get()
     if (queue.length === 0) return
-    
+
     const prevIndex = currentIndex === 0 ? queue.length - 1 : currentIndex - 1
     const prevVersion = queue[prevIndex]
-    
+
     // Update palette if the previous track has album info (for global shuffle)
     const prevPalette = prevVersion.albumPalette || get().currentPalette
-    
+
     set({
       currentIndex: prevIndex,
       currentVersion: prevVersion,
-      currentPalette: prevPalette,
+      currentSongId: prevVersion.songId ?? prevVersion.song_id ?? null,
+      currentPalette: prevPalette ?? null,
       isPlaying: true,
       currentTime: 0,
     })

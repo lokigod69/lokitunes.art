@@ -425,6 +425,19 @@ export function VersionOrb({
       }
     }
 
+    // Clamp linear velocity to prevent orbs from shooting too far away
+    const vel = body.linvel()
+    const maxSpeed = 6
+    const speedSq = vel.x * vel.x + vel.y * vel.y + vel.z * vel.z
+    if (speedSq > maxSpeed * maxSpeed) {
+      const speed = Math.sqrt(speedSq)
+      const scale = maxSpeed / speed
+      body.setLinvel(
+        { x: vel.x * scale, y: vel.y * scale, z: vel.z * scale },
+        true
+      )
+    }
+
     // PULSING GLOW - Enhanced when playing/docked
     if (glowRef.current) {
       if (animationState === 'docked' || animationState === 'docking') {
