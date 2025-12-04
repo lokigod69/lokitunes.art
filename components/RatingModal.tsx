@@ -5,6 +5,10 @@ import { X, Star } from 'lucide-react'
 import { RatingStars } from '@/components/RatingStars'
 import { useAudioStore } from '@/lib/audio-store'
 
+const TAG_OPTIONS = ['melody', 'vibe', 'drums', 'vocals', 'lyrics', 'structure'] as const
+type TagOption = (typeof TAG_OPTIONS)[number]
+type TagType = 'like' | 'dislike'
+
 interface RatingModalProps {
   isOpen: boolean
   onClose: () => void
@@ -18,6 +22,9 @@ export function RatingModal({ isOpen, onClose, onRated }: RatingModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+
+  const [likedTags, setLikedTags] = useState<string[]>([])
+  const [dislikedTags, setDislikedTags] = useState<string[]>([])
 
   const [stats, setStats] = useState<any>(null)
   const [userRating, setUserRating] = useState<any>(null)
@@ -60,6 +67,15 @@ export function RatingModal({ isOpen, onClose, onRated }: RatingModalProps) {
         setStats(data.stats || null)
         setUserRating(data.userRating || null)
         setComments(data.comments || [])
+
+        const userTags = data.userRating?.tags
+        if (userTags) {
+          setLikedTags(Array.isArray(userTags.likes) ? userTags.likes : [])
+          setDislikedTags(Array.isArray(userTags.dislikes) ? userTags.dislikes : [])
+        } else {
+          setLikedTags([])
+          setDislikedTags([])
+        }
 
         if (data.userRating) {
           setRating(data.userRating.rating || 0)
@@ -122,6 +138,21 @@ export function RatingModal({ isOpen, onClose, onRated }: RatingModalProps) {
     )
   }
 
+  const toggleTag = (tag: TagOption, type: TagType) => {
+    if (type === 'like') {
+      setLikedTags((prev) =>
+        prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+      )
+      // Ensure the same tag cannot be both liked and disliked
+      setDislikedTags((prev) => prev.filter((t) => t !== tag))
+    } else {
+      setDislikedTags((prev) =>
+        prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+      )
+      setLikedTags((prev) => prev.filter((t) => t !== tag))
+    }
+  }
+
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
     if (isSubmitting) return
@@ -151,6 +182,10 @@ export function RatingModal({ isOpen, onClose, onRated }: RatingModalProps) {
           songId: currentVersion.song_id,
           ratingStars: rating,
           comment: trimmedComment || undefined,
+          tags: {
+            likes: likedTags,
+            dislikes: dislikedTags,
+          },
         }),
       })
 
@@ -293,6 +328,21 @@ export function RatingModal({ isOpen, onClose, onRated }: RatingModalProps) {
                   if (userRating) {
                     setRating(userRating.rating)
                     setComment(userRating.comment || '')
+                    if (userRating.tags) {
+                      setLikedTags(
+                        Array.isArray(userRating.tags.likes)
+                          ? userRating.tags.likes
+                          : []
+                      )
+                      setDislikedTags(
+                        Array.isArray(userRating.tags.dislikes)
+                          ? userRating.tags.dislikes
+                          : []
+                      )
+                    } else {
+                      setLikedTags([])
+                      setDislikedTags([])
+                    }
                   }
                 }}
                 className="w-full mb-3 text-sm text-bone/60 hover:text-bone cursor-pointer text-left"
@@ -324,6 +374,48 @@ export function RatingModal({ isOpen, onClose, onRated }: RatingModalProps) {
                       {hoverRating > 0 ? `${hoverRating}/10` : `${rating}/10`}
                     </span>
                   )}
+                </div>
+              </div>
+
+              {/* Quick tags: what worked */}
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium text-green-400">What did you like?</h4>
+                <div className="flex flex-wrap gap-2">
+                  {TAG_OPTIONS.map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => toggleTag(tag, 'like')}
+                      className={`px-3 py-1.5 rounded text-sm border transition-colors ${
+                        likedTags.includes(tag)
+                          ? 'bg-green-500/20 border-green-500 text-green-400'
+                          : 'border-zinc-700 text-zinc-400 hover:border-green-500/50'
+                      }`}
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Quick tags: what could improve */}
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium text-red-400">What could improve?</h4>
+                <div className="flex flex-wrap gap-2">
+                  {TAG_OPTIONS.map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => toggleTag(tag, 'dislike')}
+                      className={`px-3 py-1.5 rounded text-sm border transition-colors ${
+                        dislikedTags.includes(tag)
+                          ? 'bg-red-500/20 border-red-500 text-red-400'
+                          : 'border-zinc-700 text-zinc-400 hover:border-red-500/50'
+                      }`}
+                    >
+                      {tag}
+                    </button>
+                  ))}
                 </div>
               </div>
 

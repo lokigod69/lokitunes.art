@@ -29,18 +29,33 @@ export async function GET(
       console.error('Supabase stats error:', statsError)
     }
 
-    let userRating = null
+    let userRating: any = null
     if (ipHash) {
       const { data, error: userError } = await supabase
         .from('song_version_ratings')
-        .select('*')
+        .select('*, rating_tags (tag_type, tag_value)')
         .eq('version_id', versionId)
         .eq('ip_hash', ipHash)
         .single()
 
-      if (!userError) {
-        userRating = data
-      } else if (userError.code !== 'PGRST116') {
+      if (!userError && data) {
+        const rawTags = (data as any).rating_tags || []
+        const likes = rawTags
+          .filter((t: any) => t.tag_type === 'like')
+          .map((t: any) => t.tag_value)
+        const dislikes = rawTags
+          .filter((t: any) => t.tag_type === 'dislike')
+          .map((t: any) => t.tag_value)
+
+        const { rating_tags, ...rest } = data as any
+        userRating = {
+          ...rest,
+          tags: {
+            likes,
+            dislikes,
+          },
+        }
+      } else if (userError && userError.code !== 'PGRST116') {
         console.error('Supabase userRating error:', userError)
       }
     }

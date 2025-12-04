@@ -190,6 +190,7 @@ export function GlobalAudioPlayer() {
 
   const hasRatingStats = !isRatingLoading && !!(ratingStats && ratingStats.rating_count > 0)
   const hasUserRating = !isRatingLoading && !!userRating
+  const isRated = hasUserRating
 
   const renderAutoplayToggle = () => {
     if (!currentVersion) return null
@@ -376,13 +377,14 @@ export function GlobalAudioPlayer() {
                       <button
                         type="button"
                         onClick={() => setIsRatingOpen(true)}
-                        className="text-[11px] px-2 py-0.5 rounded-full border text-bone/80 hover:text-bone transition-colors cursor-pointer"
-                        style={{
-                          borderColor: `${accentColor}60`,
-                          backgroundColor: 'transparent',
-                        }}
+                        className="flex items-center gap-1 px-3 py-1.5 rounded border border-zinc-700 hover:border-[var(--voltage)] transition-colors text-xs"
+                        title="Rate this version"
                       >
-                        Rate
+                        <Star
+                          className="w-4 h-4"
+                          fill={isRated ? 'currentColor' : 'none'}
+                        />
+                        <span className="text-xs">Rate</span>
                       </button>
                       <button
                         type="button"
@@ -599,13 +601,14 @@ export function GlobalAudioPlayer() {
                     <button
                       type="button"
                       onClick={() => setIsRatingOpen(true)}
-                      className="text-[10px] px-1.5 py-0.5 rounded-full border text-bone/80 hover:text-bone transition-colors cursor-pointer"
-                      style={{
-                        borderColor: `${accentColor}60`,
-                        backgroundColor: 'transparent',
-                      }}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded border border-zinc-700 hover:border-[var(--voltage)] transition-colors text-xs"
+                      title="Rate this version"
                     >
-                      Rate
+                      <Star
+                        className="w-3.5 h-3.5"
+                        fill={isRated ? 'currentColor' : 'none'}
+                      />
+                      <span className="text-[10px]">Rate</span>
                     </button>
                     <button
                       type="button"

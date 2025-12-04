@@ -5,7 +5,7 @@ import { getClientIp, hashIp } from '@/lib/ip-hash'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { versionId, songId, ratingStars, comment } = body || {}
+    const { versionId, songId, ratingStars, comment, tags } = body || {}
 
     if (!versionId || !songId) {
       return NextResponse.json(
@@ -51,12 +51,51 @@ export async function POST(request: NextRequest) {
       .select()
       .single()
 
-    if (error) {
+    if (error || !data) {
       console.error('Supabase upsert error (ratings):', error)
       return NextResponse.json(
         { error: 'Failed to save rating' },
         { status: 500 }
       )
+    }
+
+    // Optional: save tags for this rating
+    if (tags && data.id) {
+      const likes: string[] = Array.isArray(tags.likes) ? tags.likes : []
+      const dislikes: string[] = Array.isArray(tags.dislikes) ? tags.dislikes : []
+
+      // Clear existing tags for this rating
+      const { error: deleteError } = await supabase
+        .from('rating_tags')
+        .delete()
+        .eq('rating_id', data.id)
+
+      if (deleteError) {
+        console.error('Supabase delete error (rating_tags):', deleteError)
+      }
+
+      const rows = [
+        ...likes.map((tag) => ({
+          rating_id: data.id,
+          tag_type: 'like' as const,
+          tag_value: tag,
+        })),
+        ...dislikes.map((tag) => ({
+          rating_id: data.id,
+          tag_type: 'dislike' as const,
+          tag_value: tag,
+        })),
+      ]
+
+      if (rows.length > 0) {
+        const { error: insertError } = await supabase
+          .from('rating_tags')
+          .insert(rows)
+
+        if (insertError) {
+          console.error('Supabase insert error (rating_tags):', insertError)
+        }
+      }
     }
 
     const { data: stats } = await supabase
