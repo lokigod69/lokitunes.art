@@ -403,13 +403,17 @@ export function RatingModal({ isOpen, onClose, onRated }: RatingModalProps) {
                   />
                   {/* Fixed rating display so modal size doesn't jump when hovering */}
                   <span
-                    className="text-2xl font-bold tabular-nums w-[4.5rem] text-right"
+                    className="relative inline-block text-2xl font-bold tabular-nums w-[4.5rem] text-right"
                     style={{ color: accentColor }}
                   >
-                    {(() => {
-                      const value = hoverRating > 0 ? hoverRating : rating
-                      return value > 0 ? `${value}/10` : ''
-                    })()}
+                    {/* Invisible placeholder to lock width/height */}
+                    <span className="opacity-0">10/10</span>
+                    <span className="absolute inset-0">
+                      {(() => {
+                        const value = hoverRating > 0 ? hoverRating : rating
+                        return value > 0 ? `${value}/10` : ''
+                      })()}
+                    </span>
                   </span>
                 </div>
               </div>
@@ -426,7 +430,7 @@ export function RatingModal({ isOpen, onClose, onRated }: RatingModalProps) {
                       tag === 'everything'
                         ? isSelected
                           ? 'bg-green-500/20 border-green-500 text-green-400 font-semibold uppercase tracking-wide'
-                          : 'border-zinc-700 text-zinc-400 hover:border-green-500/60'
+                          : 'border-zinc-700 text-green-400 hover:border-green-500/60'
                         : isSelected
                           ? 'bg-green-500/20 border-green-500 text-green-400'
                           : 'border-zinc-700 text-zinc-400 hover:border-green-500/50'
@@ -458,7 +462,7 @@ export function RatingModal({ isOpen, onClose, onRated }: RatingModalProps) {
                         tag === 'trash'
                           ? dislikedTags.includes(tag)
                             ? 'bg-red-500/20 border-red-500 text-red-400 font-semibold uppercase'
-                            : 'border-zinc-700 text-zinc-400 hover:border-red-500/60'
+                            : 'border-zinc-700 text-red-400 hover:border-red-500/60'
                           : dislikedTags.includes(tag)
                             ? 'bg-red-500/20 border-red-500 text-red-400'
                             : 'border-zinc-700 text-zinc-400 hover:border-red-500/50'
