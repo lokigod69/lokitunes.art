@@ -5,7 +5,7 @@ import { X, Star } from 'lucide-react'
 import { RatingStars } from '@/components/RatingStars'
 import { useAudioStore } from '@/lib/audio-store'
 
-const TAG_OPTIONS = ['everything', 'melody', 'vibe', 'drums', 'vocals', 'lyrics', 'structure', 'trash'] as const
+const TAG_OPTIONS = ['melody', 'vibe', 'drums', 'vocals', 'lyrics', 'structure', 'everything', 'trash'] as const
 type TagOption = (typeof TAG_OPTIONS)[number]
 type TagType = 'like' | 'dislike'
 
@@ -408,7 +408,7 @@ export function RatingModal({ isOpen, onClose, onRated }: RatingModalProps) {
                   >
                     {(() => {
                       const value = hoverRating > 0 ? hoverRating : rating
-                      return value > 0 ? `${value}/10` : '--/10'
+                      return value > 0 ? `${value}/10` : ''
                     })()}
                   </span>
                 </div>
