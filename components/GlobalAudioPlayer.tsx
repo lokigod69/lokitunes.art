@@ -382,7 +382,8 @@ export function GlobalAudioPlayer() {
                       >
                         <Star
                           className="w-4 h-4"
-                          fill={isRated ? 'currentColor' : 'none'}
+                          color={accentColor}
+                          fill={isRated ? accentColor : 'transparent'}
                         />
                         <span className="text-xs">Rate</span>
                       </button>
@@ -606,7 +607,8 @@ export function GlobalAudioPlayer() {
                     >
                       <Star
                         className="w-3.5 h-3.5"
-                        fill={isRated ? 'currentColor' : 'none'}
+                        color={accentColor}
+                        fill={isRated ? accentColor : 'transparent'}
                       />
                       <span className="text-[10px]">Rate</span>
                     </button>

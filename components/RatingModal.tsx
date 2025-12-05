@@ -403,7 +403,7 @@ export function RatingModal({ isOpen, onClose, onRated }: RatingModalProps) {
                   />
                   {/* Fixed rating display so modal size doesn't jump when hovering */}
                   <span
-                    className="text-2xl font-bold tabular-nums min-w-[4.5rem] text-right"
+                    className="text-2xl font-bold tabular-nums w-[4.5rem] text-right"
                     style={{ color: accentColor }}
                   >
                     {(() => {
@@ -425,8 +425,8 @@ export function RatingModal({ isOpen, onClose, onRated }: RatingModalProps) {
                     const variantClasses =
                       tag === 'everything'
                         ? isSelected
-                          ? 'bg-green-500/40 border-green-400 text-green-200 font-semibold uppercase tracking-wide'
-                          : 'border-green-500 text-green-400 hover:bg-green-500/10'
+                          ? 'bg-green-500/20 border-green-500 text-green-400 font-semibold uppercase tracking-wide'
+                          : 'border-zinc-700 text-zinc-400 hover:border-green-500/60'
                         : isSelected
                           ? 'bg-green-500/20 border-green-500 text-green-400'
                           : 'border-zinc-700 text-zinc-400 hover:border-green-500/50'
@@ -457,8 +457,8 @@ export function RatingModal({ isOpen, onClose, onRated }: RatingModalProps) {
                       className={`px-3 py-1.5 rounded text-sm border transition-colors cursor-pointer ${
                         tag === 'trash'
                           ? dislikedTags.includes(tag)
-                            ? 'bg-red-600/30 border-red-500 text-red-300 font-semibold uppercase'
-                            : 'border-red-800 text-red-500/80 hover:border-red-500'
+                            ? 'bg-red-500/20 border-red-500 text-red-400 font-semibold uppercase'
+                            : 'border-zinc-700 text-zinc-400 hover:border-red-500/60'
                           : dislikedTags.includes(tag)
                             ? 'bg-red-500/20 border-red-500 text-red-400'
                             : 'border-zinc-700 text-zinc-400 hover:border-red-500/50'

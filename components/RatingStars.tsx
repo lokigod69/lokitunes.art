@@ -30,7 +30,12 @@ export function RatingStars({
   const activeValue = hover || value
 
   return (
-    <div className="flex gap-1">
+    <div
+      className="flex gap-1"
+      onMouseLeave={() => {
+        if (!readOnly) handleHover(0)
+      }}
+    >
       {Array.from({ length: 10 }).map((_, index) => {
         const star = index + 1
         const isActive = star <= activeValue
@@ -48,9 +53,6 @@ export function RatingStars({
             }}
             onMouseEnter={() => {
               if (!readOnly) handleHover(star)
-            }}
-            onMouseLeave={() => {
-              if (!readOnly) handleHover(0)
             }}
             className={readOnly ? 'cursor-default' : 'cursor-pointer transition-all'}
             aria-label={`${star} star${star === 1 ? "" : "s"}`}
