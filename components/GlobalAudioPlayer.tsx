@@ -95,6 +95,7 @@ export function GlobalAudioPlayer() {
   const [ratingRefreshToken, setRatingRefreshToken] = useState(0)
   const versionId = currentVersion?.id
   const isOriginal = !!currentVersion?.is_original
+  const canSkip = queue.length > 1 && !isOriginal
 
   useEffect(() => {
     if (!versionId || isOriginal) {
@@ -278,16 +279,25 @@ export function GlobalAudioPlayer() {
 
                     {/* Prev / Play/Pause / Next */}
                     <div className="flex items-center gap-1 flex-shrink-0">
-                      {queue.length > 1 && (
-                        <button
-                          onClick={previous}
-                          className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-105 cursor-pointer border"
-                          style={{ borderColor: accentColor, color: accentColor }}
-                          aria-label="Previous track"
-                        >
-                          <SkipBack className="w-4 h-4" />
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        onClick={previous}
+                        disabled={!canSkip}
+                        className={
+                          "w-8 h-8 rounded-full flex items-center justify-center transition-all border " +
+                          (canSkip
+                            ? 'hover:scale-105 cursor-pointer'
+                            : 'opacity-30 cursor-not-allowed')
+                        }
+                        style={{
+                          borderColor: canSkip ? accentColor : `${accentColor}40`,
+                          color: canSkip ? accentColor : `${accentColor}40`,
+                        }}
+                        aria-label="Previous track"
+                        title={canSkip ? 'Previous track' : 'No other tracks'}
+                      >
+                        <SkipBack className="w-4 h-4" />
+                      </button>
                       <button
                         onClick={() =>
                           isPlaying
@@ -306,16 +316,25 @@ export function GlobalAudioPlayer() {
                           <Play className="w-5 h-5 text-void ml-0.5" fill="currentColor" />
                         )}
                       </button>
-                      {queue.length > 1 && (
-                        <button
-                          onClick={next}
-                          className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-105 cursor-pointer border"
-                          style={{ borderColor: accentColor, color: accentColor }}
-                          aria-label="Next track"
-                        >
-                          <SkipForward className="w-4 h-4" />
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        onClick={next}
+                        disabled={!canSkip}
+                        className={
+                          "w-8 h-8 rounded-full flex items-center justify-center transition-all border " +
+                          (canSkip
+                            ? 'hover:scale-105 cursor-pointer'
+                            : 'opacity-30 cursor-not-allowed')
+                        }
+                        style={{
+                          borderColor: canSkip ? accentColor : `${accentColor}40`,
+                          color: canSkip ? accentColor : `${accentColor}40`,
+                        }}
+                        aria-label="Next track"
+                        title={canSkip ? 'Next track' : 'No other tracks'}
+                      >
+                        <SkipForward className="w-4 h-4" />
+                      </button>
                     </div>
 
                     {!isIOS && (
@@ -479,16 +498,25 @@ export function GlobalAudioPlayer() {
 
                     {/* Center: Prev / Play/Pause / Next */}
                     <div className="flex items-center gap-2 flex-shrink-0">
-                      {queue.length > 1 && (
-                        <button
-                          onClick={previous}
-                          className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-105 cursor-pointer border"
-                          style={{ borderColor: accentColor, color: accentColor }}
-                          aria-label="Previous track"
-                        >
-                          <SkipBack className="w-4 h-4" />
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        onClick={previous}
+                        disabled={!canSkip}
+                        className={
+                          "w-8 h-8 rounded-full flex items-center justify-center transition-all border " +
+                          (canSkip
+                            ? 'hover:scale-105 cursor-pointer'
+                            : 'opacity-30 cursor-not-allowed')
+                        }
+                        style={{
+                          borderColor: canSkip ? accentColor : `${accentColor}40`,
+                          color: canSkip ? accentColor : `${accentColor}40`,
+                        }}
+                        aria-label="Previous track"
+                        title={canSkip ? 'Previous track' : 'No other tracks'}
+                      >
+                        <SkipBack className="w-4 h-4" />
+                      </button>
                       <button
                         onClick={() =>
                           isPlaying
@@ -507,16 +535,25 @@ export function GlobalAudioPlayer() {
                           <Play className="w-5 h-5 text-void ml-0.5" fill="currentColor" />
                         )}
                       </button>
-                      {queue.length > 1 && (
-                        <button
-                          onClick={next}
-                          className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-105 cursor-pointer border"
-                          style={{ borderColor: accentColor, color: accentColor }}
-                          aria-label="Next track"
-                        >
-                          <SkipForward className="w-4 h-4" />
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        onClick={next}
+                        disabled={!canSkip}
+                        className={
+                          "w-8 h-8 rounded-full flex items-center justify-center transition-all border " +
+                          (canSkip
+                            ? 'hover:scale-105 cursor-pointer'
+                            : 'opacity-30 cursor-not-allowed')
+                        }
+                        style={{
+                          borderColor: canSkip ? accentColor : `${accentColor}40`,
+                          color: canSkip ? accentColor : `${accentColor}40`,
+                        }}
+                        aria-label="Next track"
+                        title={canSkip ? 'Next track' : 'No other tracks'}
+                      >
+                        <SkipForward className="w-4 h-4" />
+                      </button>
                     </div>
 
                     {/* Right: Volume */}
@@ -664,16 +701,25 @@ export function GlobalAudioPlayer() {
               <div className="flex items-center gap-3 flex-1 min-w-[400px]">
                 {/* Transport controls */}
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  {queue.length > 1 && (
-                    <button
-                      onClick={previous}
-                      className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-105 cursor-pointer border"
-                      style={{ borderColor: accentColor, color: accentColor }}
-                      aria-label="Previous track"
-                    >
-                      <SkipBack className="w-4 h-4" />
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={previous}
+                    disabled={!canSkip}
+                    className={
+                      "w-8 h-8 rounded-full flex items-center justify-center transition-all border " +
+                      (canSkip
+                        ? 'hover:scale-105 cursor-pointer'
+                        : 'opacity-30 cursor-not-allowed')
+                    }
+                    style={{
+                      borderColor: canSkip ? accentColor : `${accentColor}40`,
+                      color: canSkip ? accentColor : `${accentColor}40`,
+                    }}
+                    aria-label="Previous track"
+                    title={canSkip ? 'Previous track' : 'No other tracks'}
+                  >
+                    <SkipBack className="w-4 h-4" />
+                  </button>
                   <button
                     onClick={() =>
                       isPlaying
@@ -692,16 +738,25 @@ export function GlobalAudioPlayer() {
                       <Play className="w-5 h-5 text-void ml-0.5" fill="currentColor" />
                     )}
                   </button>
-                  {queue.length > 1 && (
-                    <button
-                      onClick={next}
-                      className="w-8 h-8 rounded-full flex items-center justify-center transition-all hover:scale-105 cursor-pointer border"
-                      style={{ borderColor: accentColor, color: accentColor }}
-                      aria-label="Next track"
-                    >
-                      <SkipForward className="w-4 h-4" />
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={next}
+                    disabled={!canSkip}
+                    className={
+                      "w-8 h-8 rounded-full flex items-center justify-center transition-all border " +
+                      (canSkip
+                        ? 'hover:scale-105 cursor-pointer'
+                        : 'opacity-30 cursor-not-allowed')
+                    }
+                    style={{
+                      borderColor: canSkip ? accentColor : `${accentColor}40`,
+                      color: canSkip ? accentColor : `${accentColor}40`,
+                    }}
+                    aria-label="Next track"
+                    title={canSkip ? 'Next track' : 'No other tracks'}
+                  >
+                    <SkipForward className="w-4 h-4" />
+                  </button>
                 </div>
 
                 {/* Progress bar (fills remaining center space) */}

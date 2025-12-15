@@ -87,7 +87,17 @@ export const useAudioStore = create<AudioState>((set, get) => ({
 
     // Simple resume: same version, no restart → just set playing
     if (!forceRestart && state.currentVersion?.id === version.id) {
-      set({ isPlaying: true })
+      // If we somehow ended up with an empty queue for a normal play session,
+      // restore a single-track queue so end-of-track behavior stays consistent.
+      if (state.queue.length === 0) {
+        set({
+          isPlaying: true,
+          queue: [version],
+          currentIndex: 0,
+        })
+      } else {
+        set({ isPlaying: true })
+      }
       return
     }
 
@@ -123,7 +133,8 @@ export const useAudioStore = create<AudioState>((set, get) => ({
     const state = get()
 
     if (state.currentVersion?.id === version.id) {
-      set({ isPlaying: true })
+      // Always keep standalone playback queue-less, even on resume.
+      set({ isPlaying: true, queue: [], currentIndex: 0 })
       return
     }
 

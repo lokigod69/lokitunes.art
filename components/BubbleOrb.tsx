@@ -59,7 +59,6 @@ export function BubbleOrb({
 }: BubbleOrbProps) {
   console.log('🔵 BubbleOrb rendering:', album.title, '| roughness: 0.7 | emissive: 1.0/0.5 | pointLight: 0.2x')
   const ref = useRef<RapierRigidBody>(null)
-  const glowRef = useRef<THREE.PointLight>(null)
   const innerMeshRef = useRef<THREE.Mesh>(null)
   const [hovered, setHovered] = useState(false)
   
@@ -95,7 +94,6 @@ export function BubbleOrb({
   // Use album's dominant color for glow, fallback to voltage blue
   // Palette colors are now cleaned at the source (queries.ts)
   const glowColor = album.palette?.dominant || album.palette?.accent1 || '#4F9EFF'
-  const normalizedIntensity = normalizeEmissiveIntensity(glowColor)
   
   // Hover state is now managed by parent OrbField component
   // Album info displays in bottom-left InfoDisplayCube
@@ -189,12 +187,6 @@ export function BubbleOrb({
       body.applyImpulse(attraction, true)
     }
 
-    // PULSING GLOW - Cyberpunk aesthetic
-    if (glowRef.current) {
-      const pulse = Math.sin(t * 1.5) * 0.5 + 1.5
-      glowRef.current.intensity = normalizedIntensity * pulse
-    }
-
     // Gentle rotation for inner sphere
     if (innerMeshRef.current) {
       innerMeshRef.current.rotation.y = t * 0.1
@@ -243,14 +235,6 @@ export function BubbleOrb({
       position={position}
     >
       <group scale={visualScale}>
-        {/* Inner glow - PULSING */}
-        <pointLight
-          ref={glowRef}
-          color={glowColor}
-          intensity={normalizedIntensity * 0.2}  // 🎨 OPTION C: Maximum texture visibility
-          distance={radius * 5}
-        />
-
         {/* Outer glass shell - BARELY THERE (just a subtle shine) */}
         <mesh
           onClick={() => {
@@ -269,7 +253,7 @@ export function BubbleOrb({
         >
           <sphereGeometry args={[radius, quality.sphereSegments, quality.sphereSegments]} />
           <MeshTransmissionMaterial
-            transmission={0.995}
+            transmission={0}
             thickness={0.04}
             roughness={0.35}
             ior={1.15}
@@ -279,7 +263,9 @@ export function BubbleOrb({
             samples={quality.samples}
             toneMapped={false}
             color="white"
-            opacity={0.06}
+            opacity={0}
+            colorWrite={false}
+            depthWrite={false}
           />
         </mesh>
 

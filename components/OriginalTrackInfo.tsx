@@ -26,6 +26,7 @@ export function OriginalTrackInfo({ albumSlug, original, albumPalette }: Origina
   const isThisPlaying = isThisActive && isPlaying
 
   const accentColor = albumPalette?.accent1 || '#4F9EFF'
+  const albumTitle = original.albumTitle || 'Album'
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -80,7 +81,7 @@ export function OriginalTrackInfo({ albumSlug, original, albumPalette }: Origina
       <button
         type="button"
         onClick={() => setIsOpen((v) => !v)}
-        className="text-bone/50 hover:text-bone/80 transition-colors"
+        className="text-bone/50 hover:text-bone/80 transition-colors cursor-pointer"
         aria-label="Original demo info"
         title="Original demo"
       >
@@ -89,7 +90,7 @@ export function OriginalTrackInfo({ albumSlug, original, albumPalette }: Origina
 
       {isOpen && (
         <div
-          className="absolute right-0 top-full mt-2 w-[260px] rounded-lg border border-white/10 bg-void/95 backdrop-blur-lg shadow-xl p-3 z-20"
+          className="absolute left-full top-full mt-2 ml-2 w-[260px] rounded-lg border border-white/10 bg-void/95 backdrop-blur-lg shadow-xl p-3 z-20"
           style={{ boxShadow: `0 12px 40px ${accentColor}22` }}
         >
           <div className="flex items-start gap-3">
@@ -109,8 +110,8 @@ export function OriginalTrackInfo({ albumSlug, original, albumPalette }: Origina
             )}
 
             <div className="min-w-0 flex-1">
+              <div className="text-sm text-bone truncate">{albumTitle}</div>
               <div className="text-xs text-bone/50">Original Demo</div>
-              <div className="text-sm text-bone truncate">{original.label}</div>
             </div>
 
             <button
