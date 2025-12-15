@@ -2,7 +2,8 @@
 
 import { Attractor } from '@react-three/rapier-addons'
 import { useThree, useFrame } from '@react-three/fiber'
-import { useState, memo, useRef } from 'react'
+import { useState, memo, useEffect, useRef } from 'react'
+import { useRapier } from '@react-three/rapier'
 import * as THREE from 'three'
 
 /**
@@ -15,10 +16,9 @@ import * as THREE from 'three'
 // Wrap in React.memo to prevent infinite re-renders!
 function MouseAttractionComponent({ albumCount }: { albumCount?: number }) {
   const { camera, pointer } = useThree()
+  const { world } = useRapier()
   const [attractorPos, setAttractorPos] = useState<[number, number, number]>([0, 0, 0])
-  const [isActive, setIsActive] = useState(false)
-  const prevPointer = useRef({ x: 0, y: 0 })
-  const lastActive = useRef(false)
+  const frameCount = useRef(0)
   
   // Dynamic attraction settings based on album size
   // Range scales with album size (larger albums need longer reach)
@@ -36,19 +36,7 @@ function MouseAttractionComponent({ albumCount }: { albumCount?: number }) {
   const attractorStrength = isTouchDevice ? baseStrength * 1.2 : baseStrength  // 180 on mobile, 150 on desktop
   
   useFrame(() => {
-    const dx = pointer.x - prevPointer.current.x
-    const dy = pointer.y - prevPointer.current.y
-    const moving = Math.abs(dx) > 0.001 || Math.abs(dy) > 0.001
-    prevPointer.current = { x: pointer.x, y: pointer.y }
-
-    if (moving !== lastActive.current) {
-      lastActive.current = moving
-      setIsActive(moving)
-    }
-
-    if (!moving) {
-      return
-    }
+    frameCount.current++
     
     // Convert 2D mouse pointer to 3D world position
     const vector = new THREE.Vector3(pointer.x, pointer.y, 0.5)
@@ -63,7 +51,7 @@ function MouseAttractionComponent({ albumCount }: { albumCount?: number }) {
   return (
     <Attractor 
       position={attractorPos}
-      strength={isActive ? attractorStrength : 0}
+      strength={attractorStrength}
       range={attractorRange}
       type="linear"
     />

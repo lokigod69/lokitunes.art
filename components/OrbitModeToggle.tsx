@@ -17,6 +17,13 @@ export function OrbitModeToggle({ is3D, onToggle }: OrbitModeToggleProps) {
 
   useEffect(() => {
     setMounted(true)
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[OrbitModeToggle] Mounted:', {
+        is3D,
+        storedValue: safeLocalStorage.getItem(STORAGE_KEY),
+      })
+    }
   }, [is3D])
 
   const handleToggle = () => {
@@ -24,6 +31,13 @@ export function OrbitModeToggle({ is3D, onToggle }: OrbitModeToggleProps) {
 
     safeLocalStorage.setItem(STORAGE_KEY, newValue ? '3d' : '2d')
     onToggle(newValue)
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[OrbitModeToggle] Toggled:', {
+        from: is3D ? '3D' : '2D',
+        to: newValue ? '3D' : '2D',
+      })
+    }
   }
 
   if (!mounted) {

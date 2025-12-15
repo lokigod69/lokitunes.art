@@ -29,6 +29,7 @@ export default function AudioEngine() {
     
     // Only load if URL actually changed (prevents restart on re-renders)
     if (newSrc && newSrc !== lastLoadedUrl.current) {
+      console.log('[AudioEngine] Loading new audio:', currentVersion?.label)
       isLoadingNewTrack.current = true
       lastLoadedUrl.current = newSrc
       audio.src = newSrc
@@ -98,18 +99,23 @@ export default function AudioEngine() {
   useEffect(() => {
     const audio = audioRef.current
     if (!audio) {
+      console.warn('[AudioEngine] No audio element for event listeners')
       return
     }
+
+    console.log('[AudioEngine] Attaching event listeners')
 
     const handleTimeUpdate = () => {
       updateTime(audio.currentTime)
     }
 
     const handleLoadedMetadata = () => {
+      console.log('[AudioEngine] Metadata loaded, duration:', audio.duration)
       setDuration(audio.duration)
     }
 
     const handleEnded = () => {
+      console.log('[AudioEngine] Track ended')
       handleTrackEnd()
     }
 
@@ -123,6 +129,7 @@ export default function AudioEngine() {
     audio.addEventListener('error', handleError)
 
     return () => {
+      console.log('[AudioEngine] Removing event listeners')
       audio.removeEventListener('timeupdate', handleTimeUpdate)
       audio.removeEventListener('loadedmetadata', handleLoadedMetadata)
       audio.removeEventListener('ended', handleEnded)

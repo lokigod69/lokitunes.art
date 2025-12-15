@@ -98,6 +98,7 @@ export function AlbumArtworkDisplay({
   // Handle vinyl click - release docked orb
   const handleVinylClick = () => {
     if (onVinylClick) {
+      console.log('🎵 Vinyl clicked - releasing docked orb')
       onVinylClick()
     }
   }

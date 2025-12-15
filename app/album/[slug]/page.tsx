@@ -14,5 +14,17 @@ export default async function Album({ params }: PageProps) {
     notFound()
   }
 
+  // 🔥🔥🔥 DEBUG: Log exact palette data on server
+  console.log('🔥🔥🔥 SERVER: Album data for', slug, ':', {
+    palette: album.palette,
+    paletteType: typeof album.palette,
+    dominantColor: album.palette?.dominant,
+    dominantLength: album.palette?.dominant?.length,
+    accent1Color: album.palette?.accent1,
+    accent1Length: album.palette?.accent1?.length,
+    accent2Color: album.palette?.accent2,
+    accent2Length: album.palette?.accent2?.length,
+  })
+
   return <AlbumPage album={album} />
 }

@@ -3,7 +3,7 @@
 import { Suspense, useState, useEffect, useRef } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { Environment, PerformanceMonitor } from '@react-three/drei'
-import { Physics, RigidBody, BallCollider } from '@react-three/rapier'
+import { Physics, useRapier, RigidBody, BallCollider } from '@react-three/rapier'
 import { EffectComposer, Bloom, ChromaticAberration, ToneMapping } from '@react-three/postprocessing'
 import { KernelSize, ToneMappingMode } from 'postprocessing'
 import { VersionOrb, type ExtendedVersion } from './VersionOrb'
@@ -20,6 +20,34 @@ interface VersionOrbFieldProps {
   versions: ExtendedVersion[]
   albumCoverUrl: string
   albumPalette: Album['palette']
+}
+
+// 🧹 VERIFICATION COMPONENT - Confirms physics world is clean (no ghost orbs)
+function PhysicsCleanup({ expectedCount }: { expectedCount: number }) {
+  const { world } = useRapier()
+  
+  useEffect(() => {
+    // Delay check to ensure all orbs have mounted
+    const timer = setTimeout(() => {
+      const actualCount = world.bodies.len()
+      console.log(`🧹 Physics World Health Check:`)
+      console.log(`   Expected: ${expectedCount} orbs`)
+      console.log(`   Actual: ${actualCount} rigid bodies`)
+      
+      if (actualCount === expectedCount) {
+        console.log(`✅ PERFECT! Physics world is clean - no ghost orbs!`)
+      } else if (actualCount > expectedCount) {
+        console.log(`🚨 WARNING: ${actualCount - expectedCount} extra rigid bodies detected!`)
+        console.log(`   This suggests ghost orbs still exist - Physics key may not be working`)
+      } else {
+        console.log(`⚠️ FEWER bodies than expected - orbs may still be mounting`)
+      }
+    }, 1000) // Wait 1 second for orbs to mount
+    
+    return () => clearTimeout(timer)
+  }, [world, expectedCount])
+  
+  return null
 }
 
 // Vinyl center position constant - where orbs dock to
@@ -89,27 +117,36 @@ function OrbScene({
   // This clears ALL rigid bodies and prevents ghost orbs from deleted tracks
   const physicsKey = versions.map(v => v.id).sort().join('-')
   
+  console.log(`🎵 Rendering ${versions.length} version orbs with radius ${radius}`)
+  console.log(`🧹 Physics World Key: ${physicsKey.slice(0, 30)}... (forces remount on version changes)`)
+  
   return (
     <Physics key={physicsKey} gravity={[0, 0, 0]}>
       <Suspense fallback={null}>
         <group>
-          {versions.map((version, index) => (
-            <VersionOrb
-              key={version.id}
-              version={version}
-              allVersions={versions}
-              position={positions[index]}
-              radius={radius}
-              orbCount={versions.length}
-              deviceTier={deviceTier}
-              albumPalette={albumPalette}
-              albumCoverUrl={albumCoverUrl}
-              onHover={onHover}
-              vinylCenterPosition={VINYL_CENTER_POSITION}
-              isVinylVisible={!!(hoveredVersion || playingVersion)}
-            />
-          ))}
+          {versions.map((version, index) => {
+            console.log(`  Orb ${index + 1}: ${version.label}`)
+            return (
+              <VersionOrb
+                key={version.id}
+                version={version}
+                allVersions={versions}
+                position={positions[index]}
+                radius={radius}
+                orbCount={versions.length}
+                deviceTier={deviceTier}
+                albumPalette={albumPalette}
+                albumCoverUrl={albumCoverUrl}
+                onHover={onHover}
+                vinylCenterPosition={VINYL_CENTER_POSITION}
+                isVinylVisible={!!(hoveredVersion || playingVersion)}
+              />
+            )
+          })}
         </group>
+        
+        {/* 🧹 Clean up ghost rigid bodies from deleted tracks */}
+        <PhysicsCleanup expectedCount={versions.length} />
         
         {/* Mouse attraction - Dynamic range for large albums */}
         <MouseAttraction albumCount={versions.length} />
@@ -159,6 +196,15 @@ export function VersionOrbField({
   albumCoverUrl, 
   albumPalette 
 }: VersionOrbFieldProps) {
+  // 🔥 DEBUG: Log palette received by VersionOrbField
+  console.log('🔥 VersionOrbField received palette:', {
+    palette: albumPalette,
+    dominant: albumPalette?.dominant,
+    dominantLength: albumPalette?.dominant?.length,
+    accent1: albumPalette?.accent1,
+    accent1Length: albumPalette?.accent1?.length,
+  })
+
   const [deviceTier, setDeviceTier] = useState<DeviceTier>('high')
   const [dpr, setDpr] = useState(1.5)
   const [hoveredVersion, setHoveredVersion] = useState<ExtendedVersion | null>(null)
@@ -185,6 +231,8 @@ export function VersionOrbField({
   
   // Calculate camera distance based on version count
   const cameraDistance = calculateCameraDistance(versions.length)
+  
+  console.log(`📷 Camera distance for ${versions.length} versions: ${cameraDistance}`)
 
   return (
     <>

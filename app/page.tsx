@@ -43,6 +43,9 @@ export default function Home() {
 
     // Fetch albums
     getAlbumsWithVersionCounts().then((data) => {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Home albums fetched:', data.length)
+      }
       setAlbums(data)
       setLoading(false)
     })
@@ -52,10 +55,31 @@ export default function Home() {
     }
   }, [])
 
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Home is3D state changed:', is3D)
+    }
+  }, [is3D])
+
   const baseFallback = prefersReducedMotion || !hasWebGL
   const shouldUseFallback = baseFallback || (isMobile && !is3D)
 
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Home orbit state', {
+      isMobile,
+      is3D,
+      prefersReducedMotion,
+      hasWebGL,
+      baseFallback,
+      shouldUseFallback,
+    })
+  }
+
   const handleOrbitToggle = (nextIs3D: boolean) => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Orbit toggle clicked', { previous: is3D, next: nextIs3D })
+    }
+
     setIs3D(nextIs3D)
 
     try {
@@ -78,6 +102,19 @@ export default function Home() {
         />
       )}
 
+      {true && (  // TEMPORARY: Always show debug panel
+        <div className="fixed top-20 right-4 z-50 p-3 bg-black/80 backdrop-blur border border-zinc-700 rounded text-xs space-y-1 max-w-[200px]">
+          <div className="text-[var(--voltage)] font-bold">Debug Info:</div>
+          <div>Mobile: {isMobile ? 'YES' : 'NO'}</div>
+          <div>3D Mode: {is3D ? 'YES' : 'NO'}</div>
+          <div>Fallback: {shouldUseFallback ? 'YES' : 'NO'}</div>
+          <div>ReducedMotion: {prefersReducedMotion ? 'YES' : 'NO'}</div>
+          <div>HasWebGL: {hasWebGL ? 'YES' : 'NO'}</div>
+          <div>Width: {typeof window !== 'undefined' ? window.innerWidth : 'SSR'}</div>
+          <div>Albums: {albums.length}</div>
+        </div>
+      )}
+
       {hasLoaded && (
         <>
           <OnboardingModal
@@ -96,6 +133,15 @@ export default function Home() {
         </div>
       ) : shouldUseFallback ? (
         <>
+          {process.env.NODE_ENV === 'development' && (
+            <div className="fixed top-20 left-4 z-[9999] bg-red-500 text-white text-xs px-3 py-2 rounded shadow">
+              <div>isMobile: {String(isMobile)}</div>
+              <div>is3D: {String(is3D)}</div>
+              <div>albums: {albums.length}</div>
+              <div>fallback: {String(shouldUseFallback)}</div>
+            </div>
+          )}
+
           {/* Logo */}
           <Logo3D />
           <div className="fixed top-6 left-6 z-40 pointer-events-none">
@@ -107,6 +153,15 @@ export default function Home() {
         </>
       ) : (
         <>
+          {process.env.NODE_ENV === 'development' && (
+            <div className="fixed top-20 left-4 z-[9999] bg-green-600 text-white text-xs px-3 py-2 rounded shadow">
+              <div>isMobile: {String(isMobile)}</div>
+              <div>is3D: {String(is3D)}</div>
+              <div>albums: {albums.length}</div>
+              <div>fallback: {String(shouldUseFallback)}</div>
+            </div>
+          )}
+
           {/* Fullscreen 3D Canvas - Background layer (z-0) */}
           <div className="fixed inset-0 w-full h-full z-0">
             <OrbField key="3d-mode" albums={albums} isMobile={isMobile} />
