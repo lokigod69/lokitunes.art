@@ -59,6 +59,7 @@ export function BubbleOrb({
 }: BubbleOrbProps) {
   console.log('🔵 BubbleOrb rendering:', album.title, '| roughness: 0.7 | emissive: 1.0/0.5 | pointLight: 0.2x')
   const ref = useRef<RapierRigidBody>(null)
+  const glowRef = useRef<THREE.PointLight>(null)
   const innerMeshRef = useRef<THREE.Mesh>(null)
   const [hovered, setHovered] = useState(false)
   
@@ -91,15 +92,38 @@ export function BubbleOrb({
   // Detect mobile for enhanced visuals
   const isMobile = deviceTier === 'low' || deviceTier === 'medium'
 
+  // Mobile gets brighter glow for better visibility
+  const mobileIntensityBoost = isMobile ? 1.2 : 1.0
+
   // Use album's dominant color for glow, fallback to voltage blue
   // Palette colors are now cleaned at the source (queries.ts)
   const glowColor = album.palette?.dominant || album.palette?.accent1 || '#4F9EFF'
+  const normalizedIntensity = normalizeEmissiveIntensity(glowColor)
+
+  function isColorBright(hexColor: string): boolean {
+    if (!hexColor) return false
+
+    const hex = hexColor.replace('#', '')
+    if (hex.length < 6) return false
+
+    const r = parseInt(hex.substring(0, 2), 16)
+    const g = parseInt(hex.substring(2, 4), 16)
+    const b = parseInt(hex.substring(4, 6), 16)
+
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+    return luminance > 0.7
+  }
+
+  const isBrightCover = album.palette?.dominant
+    ? isColorBright(album.palette.dominant)
+    : false
+
+  const baseEmissive = 0.75
+  const emissiveReduction = isBrightCover ? 0.3 : 1.0
+  const emissiveIntensity = baseEmissive * emissiveReduction * mobileIntensityBoost
   
   // Hover state is now managed by parent OrbField component
   // Album info displays in bottom-left InfoDisplayCube
-  
-  // Mobile gets brighter glow for better visibility
-  const mobileIntensityBoost = isMobile ? 1.2 : 1.0
 
   // Depth interaction constants - SIMPLIFIED
   const PUSH_FORCE = -15        // Moderate push
@@ -192,6 +216,11 @@ export function BubbleOrb({
       innerMeshRef.current.rotation.y = t * 0.1
     }
 
+    if (glowRef.current) {
+      const pulse = Math.sin(t * 1.5) * 0.5 + 1.5
+      glowRef.current.intensity = normalizedIntensity * pulse
+    }
+
     // SPRING RETURN TO FRONT - Depth interaction
     // Only activate if pushed back past -0.5
     if (pos.z < -0.5) {
@@ -235,6 +264,13 @@ export function BubbleOrb({
       position={position}
     >
       <group scale={visualScale}>
+        <pointLight
+          ref={glowRef}
+          color={glowColor}
+          intensity={normalizedIntensity * 0.2}
+          distance={radius * 5}
+        />
+
         {/* Outer glass shell - BARELY THERE (just a subtle shine) */}
         <mesh
           onClick={() => {
@@ -253,7 +289,7 @@ export function BubbleOrb({
         >
           <sphereGeometry args={[radius, quality.sphereSegments, quality.sphereSegments]} />
           <MeshTransmissionMaterial
-            transmission={0}
+            transmission={0.995}
             thickness={0.04}
             roughness={0.35}
             ior={1.15}
@@ -263,9 +299,7 @@ export function BubbleOrb({
             samples={quality.samples}
             toneMapped={false}
             color="white"
-            opacity={0}
-            colorWrite={false}
-            depthWrite={false}
+            opacity={0.06}
           />
         </mesh>
 
@@ -287,7 +321,7 @@ export function BubbleOrb({
               map={texture}
               emissive="white"
               emissiveMap={texture}
-              emissiveIntensity={0.75 * mobileIntensityBoost}
+              emissiveIntensity={emissiveIntensity}
               metalness={0.3}
               roughness={0.7}  // 🎨 OPTION C: Was 0.1
               toneMapped={false}
