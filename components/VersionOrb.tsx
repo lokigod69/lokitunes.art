@@ -598,7 +598,7 @@ export function VersionOrb({
               map={texture}
               emissive="white"
               emissiveMap={texture}
-              emissiveIntensity={(isThisPlaying ? 2.25 : (hovered ? 0.9 : 0.75)) * mobileIntensityBoost}  // 🎨 OPTION C: Maximum texture visibility
+              emissiveIntensity={(isThisPlaying ? 2.25 : 0.75) * mobileIntensityBoost}  // 🎨 OPTION C: Maximum texture visibility
               metalness={0.3}
               roughness={0.7}  // 🎨 OPTION C: More diffuse for better texture detail
               toneMapped={false}

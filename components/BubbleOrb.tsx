@@ -301,7 +301,7 @@ export function BubbleOrb({
               map={texture}
               emissive="white"
               emissiveMap={texture}
-              emissiveIntensity={(hovered ? 0.9 : 0.75) * mobileIntensityBoost}
+              emissiveIntensity={0.75 * mobileIntensityBoost}
               metalness={0.3}
               roughness={0.7}  // 🎨 OPTION C: Was 0.1
               toneMapped={false}
