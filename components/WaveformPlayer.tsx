@@ -41,9 +41,6 @@ export function WaveformPlayer({ version, songId, accentColor = '#4F9EFF' }: Wav
   useEffect(() => {
     if (!waveformRef.current) return
 
-    console.log('🎵 Initializing WaveSurfer for:', version.label)
-    console.log('📍 Audio URL:', version.audio_url)
-
     const ws = WaveSurfer.create({
       container: waveformRef.current,
       waveColor: '#4A5568',
@@ -60,11 +57,9 @@ export function WaveformPlayer({ version, songId, accentColor = '#4F9EFF' }: Wav
     wavesurferRef.current = ws
 
     // Load audio
-    console.log('⏳ Loading audio...')
     ws.load(version.audio_url)
 
     ws.on('ready', () => {
-      console.log('✅ Audio ready, duration:', ws.getDuration())
       setIsLoading(false)
       const duration = ws.getDuration()
       setLocalDuration(duration)
@@ -120,22 +115,14 @@ export function WaveformPlayer({ version, songId, accentColor = '#4F9EFF' }: Wav
   }, [volume])
 
   const handlePlayPause = () => {
-    console.log('🎮 Play/Pause clicked')
-    console.log('   isActive:', isActive)
-    console.log('   isPlaying:', isPlaying)
-    console.log('   wavesurfer:', wavesurferRef.current)
-    
     if (isActive) {
       if (isPlaying) {
-        console.log('⏸️ Pausing')
         pause()
       } else {
-        console.log('▶️ Playing (same version)')
         play(version, songId)
       }
     } else {
       // Switch to this version with fade
-      console.log('▶️ Playing (new version)')
       play(version, songId)
     }
   }

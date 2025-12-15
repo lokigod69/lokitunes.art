@@ -26,7 +26,7 @@ interface OrbFieldProps {
   isMobile?: boolean
 }
 
-function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGlassBubbles, onRegisterRigidBody, onReset, hoveredAlbum }: {
+function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGlassBubbles, onRegisterRigidBody, hoveredAlbum }: {
   albums: Album[]
   pushTrigger: number
   onHover: (title: string | null) => void
@@ -34,7 +34,6 @@ function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGla
   deviceTier: DeviceTier
   useGlassBubbles: boolean
   onRegisterRigidBody: (id: string, body: RapierRigidBody, initialPos: [number, number, number]) => void
-  onReset: number
   hoveredAlbum: Album | null
 }) {
   const OrbComponent = useGlassBubbles ? BubbleOrb : SonicOrb
@@ -59,7 +58,6 @@ function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGla
               onHover={onHover}
               onNavigate={onNavigate}
               onRegisterRigidBody={(body) => onRegisterRigidBody(album.id, body, positions[index])}
-              resetTrigger={onReset}
             />
           ))}
         </group>
@@ -123,18 +121,7 @@ export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
   const [dpr, setDpr] = useState(1.5)
   const [useGlassBubbles, setUseGlassBubbles] = useState(true)
   const [pushTrigger, setPushTrigger] = useState(0)
-  const [resetTrigger, setResetTrigger] = useState(0)
   const [isHolding, setIsHolding] = useState(false)
-
-  if (process.env.NODE_ENV === 'development') {
-    console.log('OrbField rendering with albums:', albums.length)
-  }
-  
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[OrbField] useGlassBubbles changed:', useGlassBubbles)
-    }
-  }, [useGlassBubbles])
   
   // Track rigid bodies and their initial positions
   const rigidBodies = useRef(new Map<string, { body: RapierRigidBody, initialPos: [number, number, number] }>())
@@ -160,14 +147,10 @@ export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
     const clickedAlbum = albums.find(a => a.slug === slug)
     const clickedId = clickedAlbum?.id
     
-    console.log('🎯 handleNavigate called:', slug, 'clickedId:', clickedId)
-    console.log('🎯 rigidBodies count:', rigidBodies.current.size)
-    
     // Scatter all OTHER orbs violently, freeze the clicked one
     rigidBodies.current.forEach(({ body }, id) => {
       if (id === clickedId) {
         // FREEZE the clicked orb - stop all movement
-        console.log('❄️ Freezing clicked orb:', id)
         body.setLinvel({ x: 0, y: 0, z: 0 }, true)
         body.setAngvel({ x: 0, y: 0, z: 0 }, true)
       } else {
@@ -178,7 +161,6 @@ export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
           y: (Math.random() - 0.5) * speed * 2,
           z: (Math.random() - 0.5) * speed * 2,
         }
-        console.log('💥 Scattering orb:', id, velocity)
         body.wakeUp()
         body.setLinvel(velocity, true)
       }
@@ -205,30 +187,11 @@ export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
   }, [hoveredAlbum])
   
   const handleDepthPush = useCallback(() => {
-    console.log('🎯 Depth push triggered!')
     setPushTrigger(prev => prev + 1)
   }, [])
 
   const handleRegisterRigidBody = useCallback((id: string, body: RapierRigidBody, initialPos: [number, number, number]) => {
     rigidBodies.current.set(id, { body, initialPos })
-  }, [])
-
-  const handleReset = useCallback(() => {
-    console.log('🔄 Resetting all orbs to initial positions')
-    
-    rigidBodies.current.forEach(({ body, initialPos }) => {
-      // Reset position
-      body.setTranslation({ x: initialPos[0], y: initialPos[1], z: initialPos[2] }, true)
-      
-      // Stop all movement
-      body.setLinvel({ x: 0, y: 0, z: 0 }, true)
-      body.setAngvel({ x: 0, y: 0, z: 0 }, true)
-      
-      // Wake up body
-      body.wakeUp()
-    })
-    
-    setResetTrigger(prev => prev + 1)
   }, [])
 
   const handlePointerDown = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
@@ -327,15 +290,14 @@ export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
           deviceTier={deviceTier}
           useGlassBubbles={useGlassBubbles}
           onRegisterRigidBody={handleRegisterRigidBody}
-          onReset={resetTrigger}
           hoveredAlbum={hoveredAlbum}
         />
         
         {/* Post-processing effects */}
         <EffectComposer multisampling={quality.multisampling}>
           <Bloom
-            intensity={quality.bloomIntensity}
-            luminanceThreshold={0.9}
+            intensity={quality.bloomIntensity * 0.35}
+            luminanceThreshold={0.98}
             luminanceSmoothing={0.025}
             mipmapBlur={true}
             kernelSize={KernelSize.LARGE}
@@ -354,45 +316,6 @@ export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
           <p className="text-bone/50 text-lg">No albums available</p>
         </div>
       )}
-
-      {/* RESET BUTTON - Minimal, echoes header style (20% intensity) */}
-      <button
-        onClick={handleReset}
-        style={{
-          position: 'fixed',
-          bottom: '100px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          zIndex: 9999,
-          padding: '12px 24px',
-          background: 'transparent',
-          color: '#00ffff',
-          border: '1px solid rgba(0, 255, 255, 0.3)',
-          borderRadius: '4px',
-          cursor: 'pointer',
-          fontWeight: 'bold',
-          fontSize: '14px',
-          fontFamily: 'monospace',
-          textTransform: 'uppercase',
-          letterSpacing: '3px',
-          backdropFilter: 'blur(5px)',
-          boxShadow: '0 0 10px rgba(0, 255, 255, 0.2)',
-          transition: 'all 0.3s ease',
-          opacity: 0.7
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.borderColor = 'rgba(0, 255, 255, 0.6)'
-          e.currentTarget.style.boxShadow = '0 0 15px rgba(0, 255, 255, 0.4)'
-          e.currentTarget.style.opacity = '1'
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.borderColor = 'rgba(0, 255, 255, 0.3)'
-          e.currentTarget.style.boxShadow = '0 0 10px rgba(0, 255, 255, 0.2)'
-          e.currentTarget.style.opacity = '0.7'
-        }}
-      >
-        RESET
-      </button>
     </>
   )
 }
@@ -400,10 +323,6 @@ export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
 // Static fallback for reduced motion or no WebGL
 export function OrbFieldFallback({ albums }: OrbFieldProps) {
   const router = useRouter()
-
-  if (process.env.NODE_ENV === 'development') {
-    console.log('OrbFieldFallback rendering with albums:', albums.length)
-  }
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 p-8">

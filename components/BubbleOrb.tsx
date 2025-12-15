@@ -11,26 +11,6 @@ import { getQualitySettings } from '@/lib/device-detection'
 import { getAlbumCoverUrl } from '@/lib/supabase-images'
 import { useSmartTexture } from '@/hooks/useSmartTexture'
 
-/**
- * Normalize emissive intensity based on color brightness
- * Darker colors get higher emissive, lighter colors get lower
- * This ensures all orbs have similar perceived brightness
- */
-function normalizeEmissiveIntensity(colorHex: string): number {
-  // Convert hex to RGB
-  const r = parseInt(colorHex.slice(1, 3), 16) / 255
-  const g = parseInt(colorHex.slice(3, 5), 16) / 255
-  const b = parseInt(colorHex.slice(5, 7), 16) / 255
-  
-  // Calculate perceived brightness (0-1)
-  const brightness = (r * 0.299 + g * 0.587 + b * 0.114)
-  
-  // Inverse relationship - darker colors need MORE emissive
-  return brightness < 0.5 
-    ? 3.5  // Dark colors: high emissive
-    : 2.0  // Light colors: lower emissive
-}
-
 interface BubbleOrbProps {
   album: Album
   pushTrigger?: number
@@ -57,10 +37,10 @@ export function BubbleOrb({
   onRegisterRigidBody,
   resetTrigger
 }: BubbleOrbProps) {
-  console.log('🔵 BubbleOrb rendering:', album.title, '| roughness: 0.7 | emissive: 1.0/0.5 | pointLight: 0.2x')
   const ref = useRef<RapierRigidBody>(null)
   const innerMeshRef = useRef<THREE.Mesh>(null)
   const [hovered, setHovered] = useState(false)
+  const prevPointer = useRef({ x: 0, y: 0 })
   
   const quality = getQualitySettings(deviceTier)
 
@@ -69,27 +49,20 @@ export function BubbleOrb({
   const possibleUrls = directCoverUrl
     ? [directCoverUrl, ...getAlbumCoverUrl(album.slug)]
     : getAlbumCoverUrl(album.slug)
-  console.log(`🔍 Attempting to load texture for ${album.title}:`, possibleUrls.slice(0, 3))
   const texture = useSmartTexture(possibleUrls, album.title)
 
   // Configure texture for maximum sharpness
   useEffect(() => {
     if (texture) {
-      console.log(`✅ Texture loaded for ${album.title}:`, texture)
       texture.colorSpace = THREE.SRGBColorSpace
       texture.minFilter = THREE.LinearFilter  // Sharp when zoomed out
       texture.magFilter = THREE.LinearFilter  // Sharp when zoomed in
       texture.anisotropy = 16  // Maximum sharpness
       texture.needsUpdate = true
-    } else {
-      console.log(`❌ NO texture for ${album.title} - using fallback color`)
     }
   }, [texture, album.title])
 
   const seed = album.id.charCodeAt(0) * 137.5
-
-  // Detect mobile for enhanced visuals
-  const isMobile = deviceTier === 'low' || deviceTier === 'medium'
 
   // Use album's dominant color for glow, fallback to voltage blue
   // Palette colors are now cleaned at the source (queries.ts)
@@ -98,9 +71,6 @@ export function BubbleOrb({
   // Hover state is now managed by parent OrbField component
   // Album info displays in bottom-left InfoDisplayCube
   
-  // Mobile gets brighter glow for better visibility
-  const mobileIntensityBoost = isMobile ? 1.2 : 1.0
-
   // Depth interaction constants - SIMPLIFIED
   const PUSH_FORCE = -15        // Moderate push
   const SPRING_STRENGTH = 0.3   // Gentle pull
@@ -138,8 +108,6 @@ export function BubbleOrb({
     const body = ref.current
     const velBefore = body.linvel()
     
-    console.log('🟦 Pushing', album.title, 'backward')
-    
     // RESET timer on each push (allows extending settle time)
     lastPushTime.current = Date.now()
     
@@ -159,10 +127,10 @@ export function BubbleOrb({
     const body = ref.current
     const pos = body.translation()
 
-    // Perlin noise drift for organic motion
-    const noiseX = Math.sin(t * 0.3 + seed) * 0.05
-    const noiseY = Math.cos(t * 0.2 + seed * 0.7) * 0.05
-    body.applyImpulse({ x: noiseX, y: noiseY, z: 0 }, true)
+    const dx = state.pointer.x - prevPointer.current.x
+    const dy = state.pointer.y - prevPointer.current.y
+    const isPointerMoving = Math.abs(dx) > 0.001 || Math.abs(dy) > 0.001
+    prevPointer.current = { x: state.pointer.x, y: state.pointer.y }
 
     // Mouse interaction field with proper 3D unprojection
     const vector = new THREE.Vector3(state.pointer.x, state.pointer.y, 0.5)
@@ -176,7 +144,9 @@ export function BubbleOrb({
 
     // Stronger attraction with larger range
     const tooClose = 2
-    if (distance < tooClose) {
+    if (!isPointerMoving) {
+      // no mouse forces when pointer is still
+    } else if (distance < tooClose) {
       // Repel when too close
       const repulsion = toCursor.clone().normalize().multiplyScalar(-0.2)
       body.applyImpulse(repulsion, true)
@@ -225,10 +195,10 @@ export function BubbleOrb({
       ref={ref}
       type="dynamic"            // CRITICAL: Must be dynamic to respond to forces!
       colliders="ball"
-      restitution={0.8}         // More bouncy
-      friction={0.1}            // Less friction = more slippery
-      linearDamping={0.05}      // REDUCED - Less damping = more movement
-      angularDamping={0.5}      // REDUCED - More rotation
+      restitution={0.1}
+      friction={0.7}
+      linearDamping={2.0}
+      angularDamping={2.0}
       gravityScale={0}
       mass={radius * 0.5}       // LIGHTER = more responsive to forces
       ccd={true}                // Continuous collision detection
@@ -285,12 +255,9 @@ export function BubbleOrb({
             />
             <meshStandardMaterial
               map={texture}
-              emissive="white"
-              emissiveMap={texture}
-              emissiveIntensity={0.75 * mobileIntensityBoost}
               metalness={0.3}
               roughness={0.7}  // 🎨 OPTION C: Was 0.1
-              toneMapped={false}
+              toneMapped={true}
               dispose={null}
             />
           </mesh>
@@ -308,9 +275,9 @@ export function BubbleOrb({
             />
             <meshStandardMaterial 
               color={glowColor}
-              emissive={glowColor}
-              emissiveIntensity={1.5}
-              toneMapped={false}
+              metalness={0.0}
+              roughness={0.9}
+              toneMapped={true}
               dispose={null}
             />
           </mesh>

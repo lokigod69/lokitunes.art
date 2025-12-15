@@ -20,11 +20,10 @@ interface OrbProps {
 }
 
 export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1, deviceTier, onHover, onNavigate, onRegisterRigidBody, resetTrigger }: OrbProps) {
-  console.log('🟠 SonicOrb rendering:', album.title, '| NO glass layer | roughness: 0.6 | NO emissive')
   const ref = useRef<RapierRigidBody>(null)
-  const glowRef = useRef<THREE.PointLight>(null)
   const meshRef = useRef<THREE.Mesh>(null)
   const [texture, setTexture] = useState<THREE.Texture | null>(null)
+  const prevPointer = useRef({ x: 0, y: 0 })
   
   // CRITICAL FIX: Load texture with proper CORS handling using Image element
   useEffect(() => {
@@ -43,7 +42,6 @@ export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1
       newTexture.colorSpace = THREE.SRGBColorSpace
       newTexture.needsUpdate = true
       setTexture(newTexture)
-      console.log('✅ Texture loaded:', album.title, album.cover_url)
     }
     
     img.onerror = (err) => {
@@ -100,8 +98,6 @@ export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1
     const body = ref.current
     const velBefore = body.linvel()
     
-    console.log('🟠 Pushing', album.title, 'backward')
-    
     // RESET timer on each push (allows extending settle time)
     lastPushTime.current = Date.now()
     
@@ -121,10 +117,10 @@ export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1
     const body = ref.current
     const pos = body.translation()
 
-    // Perlin noise drift (increased for more motion)
-    const noiseX = Math.sin(t * 0.3 + seed) * 0.05
-    const noiseY = Math.cos(t * 0.2 + seed * 0.7) * 0.05
-    body.applyImpulse({ x: noiseX, y: noiseY, z: 0 }, true)
+    const dx = state.pointer.x - prevPointer.current.x
+    const dy = state.pointer.y - prevPointer.current.y
+    const isPointerMoving = Math.abs(dx) > 0.001 || Math.abs(dy) > 0.001
+    prevPointer.current = { x: state.pointer.x, y: state.pointer.y }
 
     // Mouse interaction field (repulsion when too close, attraction when near)
     const mouse = new THREE.Vector3(
@@ -137,7 +133,9 @@ export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1
     const toCursor = mouse.clone().sub(orbPos)
 
     const tooClose = 2  // Personal space radius
-    if (distance < tooClose) {
+    if (!isPointerMoving) {
+      // no mouse forces when pointer is still
+    } else if (distance < tooClose) {
       // Push away from cursor when too close
       const repulsion = toCursor.clone().normalize().multiplyScalar(-0.15)
       body.applyImpulse(repulsion, true)
@@ -146,11 +144,6 @@ export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1
       const strength = 0.12 * (1 - distance / 6)
       const attraction = toCursor.normalize().multiplyScalar(strength)
       body.applyImpulse(attraction, true)
-    }
-
-    // Glow pulse
-    if (glowRef.current) {
-      glowRef.current.intensity = 0.8 + Math.sin(t * 0.7) * 0.2
     }
 
     // Gentle rotation
@@ -190,24 +183,16 @@ export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1
       ref={ref}
       type="dynamic"            // CRITICAL: Must be dynamic to respond to forces!
       colliders="ball"
-      restitution={0.8}         // Match BubbleOrb/VersionOrb (was 0.7)
-      friction={0.1}            // Match BubbleOrb/VersionOrb (was 0.2)
-      linearDamping={0.05}      // Match BubbleOrb/VersionOrb (was 0.2) ⭐ KEY FIX
-      angularDamping={0.5}      // Match BubbleOrb/VersionOrb (was 0.3)
+      restitution={0.1}
+      friction={0.7}
+      linearDamping={2.0}
+      angularDamping={2.0}
       gravityScale={0}          // Add missing property
       mass={radius * 0.5}       // Add missing property - LIGHTER = more responsive
       ccd={true}                // Add continuous collision detection
       position={position}
     >
       <group scale={visualScale}>
-        {/* Inner glow */}
-        <pointLight
-          ref={glowRef}
-          color={accentColor}
-          intensity={1}
-          distance={radius * 2}
-        />
-
         {/* Orb mesh */}
         <mesh
           ref={meshRef}
@@ -228,10 +213,7 @@ export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1
               metalness={0.2}
               roughness={0.4}
               envMapIntensity={0.8}
-              emissive="white"
-              emissiveMap={texture}
-              emissiveIntensity={1.2}
-              toneMapped={false}
+              toneMapped={true}
               dispose={null}
             />
           ) : (
@@ -239,9 +221,7 @@ export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1
               color={accentColor}
               metalness={0.2}
               roughness={0.4}
-              emissive={accentColor}
-              emissiveIntensity={1.2}
-              toneMapped={false}
+              toneMapped={true}
               dispose={null}
             />
           )}
