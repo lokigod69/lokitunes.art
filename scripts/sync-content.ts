@@ -44,6 +44,7 @@ interface VersionData {
   coverPath?: string
   audioUrl?: string
   coverUrl?: string
+  isOriginal?: boolean
 }
 
 interface DbAlbum {
@@ -66,6 +67,7 @@ interface DbVersion {
   song_id: string
   label: string
   audio_url: string
+  is_original?: boolean
 }
 
 interface SyncChanges {
@@ -174,6 +176,16 @@ function isAudioFile(filename: string): boolean {
   return ['.wav', '.mp3', '.ogg', '.flac'].includes(ext)
 }
 
+function isOriginalFile(filename: string): boolean {
+  const name = filename.toLowerCase()
+
+  if (name.startsWith('00-')) return true
+  if (name.includes('-original-source')) return true
+  if (name.includes('-source')) return true
+
+  return false
+}
+
 function getContentType(fileName: string): string {
   const ext = path.extname(fileName).toLowerCase()
   const types: Record<string, string> = {
@@ -269,12 +281,41 @@ function scanAlbumFolder(albumPath: string, slug: string): AlbumData | null {
   
   // Parse audio files and group by track
   const songs = new Map<number, SongData>()
+
+  const deferredOriginals: { filePath: string; coverPath?: string }[] = []
   
   for (const audioFile of audioFiles) {
+    const isSourceOriginal = isOriginalFile(audioFile)
     const parsed = parseAudioFilename(audioFile)
     if (!parsed) continue
     
     const { trackNo, title, version } = parsed
+
+    if (isSourceOriginal && trackNo === 0) {
+      // Treat 00-* files as album-level source original and attach them to the first song.
+      const baseName = audioFile.replace(/\.(wav|mp3|flac|ogg)$/i, '')
+      const possibleCovers = [
+        `${baseName}.jpg`,
+        `${baseName}.jpeg`,
+        `${baseName}.png`,
+        `${baseName}.webp`,
+      ]
+
+      let versionCoverPath: string | undefined
+      for (const coverName of possibleCovers) {
+        const coverPath = path.join(albumPath, coverName)
+        if (fs.existsSync(coverPath)) {
+          versionCoverPath = coverPath
+          break
+        }
+      }
+
+      deferredOriginals.push({
+        filePath: path.join(albumPath, audioFile),
+        coverPath: versionCoverPath,
+      })
+      continue
+    }
     
     if (!songs.has(trackNo)) {
       songs.set(trackNo, {
@@ -306,7 +347,32 @@ function scanAlbumFolder(albumPath: string, slug: string): AlbumData | null {
       label: version,
       filePath: path.join(albumPath, audioFile),
       coverPath: versionCoverPath,
+      isOriginal: false,
     })
+  }
+
+  if (deferredOriginals.length > 0) {
+    const firstTrackNo = Array.from(songs.keys()).sort((a, b) => a - b)[0]
+    if (firstTrackNo !== undefined) {
+      const firstSong = songs.get(firstTrackNo)
+      if (firstSong) {
+        for (const [index, deferred] of deferredOriginals.entries()) {
+          firstSong.versions.push({
+            label: index === 0 ? 'Original Demo' : `Original Demo ${index + 1}`,
+            filePath: deferred.filePath,
+            coverPath: deferred.coverPath,
+            isOriginal: false,
+          })
+        }
+      }
+    }
+  }
+
+  for (const song of songs.values()) {
+    const candidates = song.versions.filter((v) => isOriginalFile(path.basename(v.filePath)))
+    if (song.versions.length >= 2 && candidates.length === 1) {
+      candidates[0].isOriginal = true
+    }
   }
   
   return {
@@ -452,6 +518,23 @@ function detectChanges(
             changes.versionsToDelete.push({ song: dbSong, version: dbVersion })
           }
         }
+
+        // Detect versions to update (is_original only)
+        for (const [label, dbVersion] of dbVersionsByLabel) {
+          const localVersion = localVersionsByLabel.get(label)
+          if (!localVersion) continue
+
+          const localIsOriginal = !!localVersion.isOriginal
+          const dbIsOriginal = !!dbVersion.is_original
+
+          if (localIsOriginal !== dbIsOriginal) {
+            changes.versionsToUpdate.push({
+              song: dbSong,
+              oldVersion: dbVersion,
+              newVersion: localVersion,
+            })
+          }
+        }
       }
     }
   }
@@ -504,6 +587,12 @@ function displayChanges(changes: SyncChanges): void {
     console.log(`✗ ${changes.versionsToDelete.length} version(s) to delete:`)
     changes.versionsToDelete.forEach(v => console.log(`   • ${v.song.title} - ${v.version.label}`))
     totalChanges += changes.versionsToDelete.length
+  }
+
+  if (changes.versionsToUpdate.length > 0) {
+    console.log(`⚠ ${changes.versionsToUpdate.length} version(s) to update:`)
+    changes.versionsToUpdate.forEach(v => console.log(`   • ${v.song.title} - ${v.oldVersion.label}`))
+    totalChanges += changes.versionsToUpdate.length
   }
   
   if (totalChanges === 0) {
@@ -596,6 +685,23 @@ async function applyChanges(changes: SyncChanges, forceMode: boolean): Promise<v
     }
   }
   
+  // Update versions (is_original)
+  if (changes.versionsToUpdate.length > 0) {
+    console.log(`✏️  Updating ${changes.versionsToUpdate.length} version(s)...`)
+    for (const { oldVersion, newVersion, song } of changes.versionsToUpdate) {
+      const { error } = await supabase
+        .from('song_versions')
+        .update({ is_original: newVersion.isOriginal ?? false })
+        .eq('id', oldVersion.id)
+
+      if (error) {
+        console.log(`   ❌ Failed to update ${song.title} - ${oldVersion.label}: ${error.message}`)
+      } else {
+        console.log(`   ✅ Updated ${song.title} - ${oldVersion.label}`)
+      }
+    }
+  }
+
   // Add new albums
   if (changes.albumsToAdd.length > 0) {
     console.log(`➕ Adding ${changes.albumsToAdd.length} new album(s)...`)
@@ -737,6 +843,7 @@ async function addVersion(song: DbSong, version: VersionData): Promise<void> {
         cover_url: versionCoverUrl,
         duration_sec: null,
         waveform_json: null,
+        is_original: version.isOriginal ?? false,
       })
     
     if (versionError) {
@@ -812,7 +919,8 @@ async function syncContent(contentDir: string) {
     changes.songsToDelete.length > 0 ||
     changes.songsToUpdate.length > 0 ||
     changes.versionsToAdd.length > 0 ||
-    changes.versionsToDelete.length > 0
+    changes.versionsToDelete.length > 0 ||
+    changes.versionsToUpdate.length > 0
   
   if (!hasChanges) {
     console.log('💡 Everything is already in sync!\n')

@@ -33,6 +33,7 @@ create table public.song_versions (
   cover_url text,
   duration_sec int,
   waveform_json text,
+  is_original boolean default false,
   play_count int default 0,
   created_at timestamptz default now()
 );
@@ -40,6 +41,7 @@ create table public.song_versions (
 -- Create indexes for better query performance
 create index idx_songs_album_id on public.songs(album_id);
 create index idx_song_versions_song_id on public.song_versions(song_id);
+create index idx_song_versions_is_original on public.song_versions(is_original);
 create index idx_albums_slug on public.albums(slug);
 create index idx_albums_is_public on public.albums(is_public);
 

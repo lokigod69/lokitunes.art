@@ -34,6 +34,7 @@ export function GlobalAudioPlayer() {
     volume,
     isMuted,
     play, 
+    playStandalone,
     pause, 
     setCurrentTime,
     setVolume,
@@ -93,9 +94,10 @@ export function GlobalAudioPlayer() {
   const [isRatingLoading, setIsRatingLoading] = useState(false)
   const [ratingRefreshToken, setRatingRefreshToken] = useState(0)
   const versionId = currentVersion?.id
+  const isOriginal = !!currentVersion?.is_original
 
   useEffect(() => {
-    if (!versionId) {
+    if (!versionId || isOriginal) {
       setRatingStats(null)
       setUserRating(null)
       setIsRatingLoading(false)
@@ -131,7 +133,13 @@ export function GlobalAudioPlayer() {
     return () => {
       isCancelled = true
     }
-  }, [versionId, ratingRefreshToken])
+  }, [versionId, ratingRefreshToken, isOriginal])
+
+  useEffect(() => {
+    if (isOriginal) {
+      setIsRatingOpen(false)
+    }
+  }, [isOriginal])
 
   const seekFromClientX = (clientX: number) => {
     if (!progressBarRef.current || !duration) return
@@ -193,7 +201,7 @@ export function GlobalAudioPlayer() {
   const isRated = hasUserRating
 
   const renderAutoplayToggle = () => {
-    if (!currentVersion) return null
+    if (!currentVersion || isOriginal) return null
     const modes: { mode: 'off' | 'album' | 'all'; label: string }[] = [
       { mode: 'off', label: 'Off' },
       { mode: 'album', label: 'Album' },
@@ -252,11 +260,16 @@ export function GlobalAudioPlayer() {
 
                     <div className="flex flex-col min-w-0 flex-1">
                       <p 
-                        className="text-sm font-medium text-bone truncate cursor-pointer hover:underline"
+                        className="text-sm font-medium text-bone cursor-pointer hover:underline flex items-center gap-2 min-w-0"
                         onClick={handleTitleClick}
                         title="Go to album"
                       >
-                        {displayTitle}
+                        <span className="truncate">{displayTitle}</span>
+                        {isOriginal && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded border border-white/10 text-bone/60 flex-shrink-0">
+                            Original
+                          </span>
+                        )}
                       </p>
                       <p className="text-[11px] text-bone/60">
                         {formatTime(currentTime)} / {formatTime(duration)}
@@ -279,7 +292,9 @@ export function GlobalAudioPlayer() {
                         onClick={() =>
                           isPlaying
                             ? pause()
-                            : play(currentVersion, currentVersion.song_id)
+                            : isOriginal
+                              ? playStandalone(currentVersion, currentVersion.song_id)
+                              : play(currentVersion, currentVersion.song_id)
                         }
                         className="w-10 h-10 rounded-full flex items-center justify-center hover:opacity-90 transition-transform hover:scale-105 cursor-pointer"
                         style={{ backgroundColor: accentColor }}
@@ -374,19 +389,21 @@ export function GlobalAudioPlayer() {
                   {/* Actions + rating summary */}
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setIsRatingOpen(true)}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded border border-zinc-700 hover:border-[var(--voltage)] transition-colors text-xs cursor-pointer"
-                        title="Rate this version"
-                      >
-                        <Star
-                          className="w-4 h-4"
-                          color={accentColor}
-                          fill={isRated ? accentColor : 'transparent'}
-                        />
-                        <span className="text-xs">Rate</span>
-                      </button>
+                      {!isOriginal && (
+                        <button
+                          type="button"
+                          onClick={() => setIsRatingOpen(true)}
+                          className="flex items-center gap-1 px-3 py-1.5 rounded border border-zinc-700 hover:border-[var(--voltage)] transition-colors text-xs cursor-pointer"
+                          title="Rate this version"
+                        >
+                          <Star
+                            className="w-4 h-4"
+                            color={accentColor}
+                            fill={isRated ? accentColor : 'transparent'}
+                          />
+                          <span className="text-xs">Rate</span>
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={handleDownload}
@@ -402,7 +419,7 @@ export function GlobalAudioPlayer() {
                       </button>
                     </div>
 
-                    {(hasRatingStats || hasUserRating) && (
+                    {!isOriginal && (hasRatingStats || hasUserRating) && (
                       <div className="flex flex-col items-end gap-0.5">
                         {hasRatingStats && ratingStats && (
                           <div className="flex items-center gap-1 text-[11px] text-bone/70">
@@ -443,11 +460,16 @@ export function GlobalAudioPlayer() {
 
                       <div className="flex flex-col min-w-0">
                         <p 
-                          className="text-sm font-medium text-bone truncate cursor-pointer hover:underline"
+                          className="text-sm font-medium text-bone cursor-pointer hover:underline flex items-center gap-2 min-w-0"
                           onClick={handleTitleClick}
                           title="Go to album"
                         >
-                          {displayTitle}
+                          <span className="truncate">{displayTitle}</span>
+                          {isOriginal && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded border border-white/10 text-bone/60 flex-shrink-0">
+                              Original
+                            </span>
+                          )}
                         </p>
                         <p className="text-[11px] text-bone/60">
                           {formatTime(currentTime)} / {formatTime(duration)}
@@ -471,7 +493,9 @@ export function GlobalAudioPlayer() {
                         onClick={() =>
                           isPlaying
                             ? pause()
-                            : play(currentVersion, currentVersion.song_id)
+                            : isOriginal
+                              ? playStandalone(currentVersion, currentVersion.song_id)
+                              : play(currentVersion, currentVersion.song_id)
                         }
                         className="w-10 h-10 rounded-full flex items-center justify-center hover:opacity-90 transition-transform hover:scale-105 cursor-pointer"
                         style={{ backgroundColor: accentColor }}
@@ -578,40 +602,47 @@ export function GlobalAudioPlayer() {
                 <div className="flex flex-col min-w-0 gap-0.5">
                   {/* Row 1: Album — Version title */}
                   <p 
-                    className="text-sm font-medium text-bone truncate cursor-pointer hover:underline"
+                    className="text-sm font-medium text-bone cursor-pointer hover:underline flex items-center gap-2 min-w-0"
                     onClick={handleTitleClick}
                     title="Go to album"
                   >
-                    {displayTitle}
+                    <span className="truncate">{displayTitle}</span>
+                    {isOriginal && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded border border-white/10 text-bone/60 flex-shrink-0">
+                        Original
+                      </span>
+                    )}
                   </p>
                   
                   {/* Row 2: Ratings + Rate + Download */}
                   <div className="flex items-center gap-2 overflow-hidden">
-                    {hasRatingStats && ratingStats && (
+                    {!isOriginal && hasRatingStats && ratingStats && (
                       <div className="flex items-center gap-1 text-[10px] text-bone/70">
                         <Star className="w-3 h-3" fill={accentColor} color={accentColor} />
                         <span>{ratingStats.avg_rating.toFixed(1)}/10</span>
                         <span className="text-bone/40">({ratingStats.rating_count})</span>
                       </div>
                     )}
-                    {hasUserRating && userRating && (
+                    {!isOriginal && hasUserRating && userRating && (
                       <div className="text-[10px] text-bone/60">
                         You: <span style={{ color: accentColor }}>{userRating.rating}/10</span>
                       </div>
                     )}
-                    <button
-                      type="button"
-                      onClick={() => setIsRatingOpen(true)}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded border border-zinc-700 hover:border-[var(--voltage)] transition-colors text-xs cursor-pointer"
-                      title="Rate this version"
-                    >
-                      <Star
-                        className="w-3.5 h-3.5"
-                        color={accentColor}
-                        fill={isRated ? accentColor : 'transparent'}
-                      />
-                      <span className="text-[10px]">Rate</span>
-                    </button>
+                    {!isOriginal && (
+                      <button
+                        type="button"
+                        onClick={() => setIsRatingOpen(true)}
+                        className="flex items-center gap-1 px-3 py-1.5 rounded border border-zinc-700 hover:border-[var(--voltage)] transition-colors text-xs cursor-pointer"
+                        title="Rate this version"
+                      >
+                        <Star
+                          className="w-3.5 h-3.5"
+                          color={accentColor}
+                          fill={isRated ? accentColor : 'transparent'}
+                        />
+                        <span className="text-[10px]">Rate</span>
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={handleDownload}
@@ -647,7 +678,9 @@ export function GlobalAudioPlayer() {
                     onClick={() =>
                       isPlaying
                         ? pause()
-                        : play(currentVersion, currentVersion.song_id)
+                        : isOriginal
+                          ? playStandalone(currentVersion, currentVersion.song_id)
+                          : play(currentVersion, currentVersion.song_id)
                     }
                     className="w-10 h-10 rounded-full flex items-center justify-center hover:opacity-90 transition-transform hover:scale-105 cursor-pointer"
                     style={{ backgroundColor: accentColor }}
@@ -773,7 +806,7 @@ export function GlobalAudioPlayer() {
         </div>
       )}
       <RatingModal
-        isOpen={isRatingOpen}
+        isOpen={isRatingOpen && !isOriginal}
         onClose={() => setIsRatingOpen(false)}
         onRated={() => setRatingRefreshToken((token) => token + 1)}
       />

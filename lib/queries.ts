@@ -116,6 +116,7 @@ export async function getAlbumBySlug(slug: string): Promise<AlbumWithSongs | nul
         cover_url: v.cover_url,
         duration_sec: v.duration_sec,
         waveform_json: v.waveform_json,
+        is_original: v.is_original,
         play_count: v.play_count,
         created_at: v.created_at,
       }

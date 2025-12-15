@@ -41,6 +41,7 @@ interface AudioState {
   
   // Actions
   play: (version: SongVersionWithMeta, songId: string, palette?: Album['palette'], forceRestart?: boolean) => void
+  playStandalone: (version: SongVersionWithMeta, songId: string, palette?: Album['palette']) => void
   pause: () => void
   stop: () => void
   setQueue: (versions: SongVersionWithMeta[], startIndex?: number) => void
@@ -114,6 +115,28 @@ export const useAudioStore = create<AudioState>((set, get) => ({
       isPlaying: true,
       currentTime: 0,
       queue: [version],
+      currentIndex: 0,
+    })
+  },
+
+  playStandalone: (version, songId, palette) => {
+    const state = get()
+
+    if (state.currentVersion?.id === version.id) {
+      set({ isPlaying: true })
+      return
+    }
+
+    const resolvedPalette =
+      palette !== undefined ? palette : state.currentPalette
+
+    set({
+      currentVersion: version,
+      currentSongId: songId,
+      currentPalette: resolvedPalette ?? null,
+      isPlaying: true,
+      currentTime: 0,
+      queue: [],
       currentIndex: 0,
     })
   },

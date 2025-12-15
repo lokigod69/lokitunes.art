@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { SongRow } from '@/components/SongRow'
 import { VersionOrbField } from '@/components/VersionOrbField'
+import { OriginalTrackInfo } from '@/components/OriginalTrackInfo'
 import type { ExtendedVersion } from '@/components/VersionOrb'
 import type { AlbumWithSongs } from '@/lib/supabase'
 
@@ -61,6 +62,17 @@ export function AlbumPage({ album }: AlbumPageProps) {
     
     return versions
   }, [album])
+
+  const orbVersions: ExtendedVersion[] = useMemo(() => {
+    const nonOriginal = allVersions.filter((v) => !v.is_original)
+    return nonOriginal.length > 0 ? nonOriginal : allVersions
+  }, [allVersions])
+
+  const originalVersion: ExtendedVersion | null = useMemo(() => {
+    return allVersions.find((v) => v.is_original) ?? null
+  }, [allVersions])
+
+  const showOriginalInfo = !!originalVersion && allVersions.length >= 2
 
   // Inject album palette into CSS variables
   useEffect(() => {
@@ -125,9 +137,18 @@ export function AlbumPage({ album }: AlbumPageProps) {
                 {album.title}
               </h1>
               {/* NOTE: Backend supports multiple songs per album, but the UI treats each album as a single song concept and only surfaces total version count for clarity. */}
-              <p className="text-bone/70 text-lg">
-                {allVersions.length} {allVersions.length === 1 ? 'version' : 'versions'}
-              </p>
+              <div className="flex items-center gap-2">
+                <p className="text-bone/70 text-lg">
+                  {orbVersions.length} {orbVersions.length === 1 ? 'version' : 'versions'}
+                </p>
+                {showOriginalInfo && originalVersion && (
+                  <OriginalTrackInfo
+                    albumSlug={album.slug}
+                    original={originalVersion}
+                    albumPalette={album.palette}
+                  />
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -142,7 +163,7 @@ export function AlbumPage({ album }: AlbumPageProps) {
             </div>
           ) : (
             <VersionOrbField 
-              versions={allVersions}
+              versions={orbVersions}
               albumCoverUrl={album.cover_url || ''}
               albumPalette={album.palette}
             />

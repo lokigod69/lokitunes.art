@@ -21,6 +21,33 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const { data: versionRow, error: versionError } = await supabase
+      .from('song_versions')
+      .select('id, song_id, is_original')
+      .eq('id', versionId)
+      .single()
+
+    if (versionError || !versionRow) {
+      return NextResponse.json(
+        { error: 'Version not found' },
+        { status: 404 }
+      )
+    }
+
+    if (versionRow.song_id !== songId) {
+      return NextResponse.json(
+        { error: 'Version does not belong to this song' },
+        { status: 400 }
+      )
+    }
+
+    if (versionRow.is_original) {
+      return NextResponse.json(
+        { error: 'Original tracks cannot be rated' },
+        { status: 403 }
+      )
+    }
+
     const ip = getClientIp(request)
     const ipHash = hashIp(ip)
 

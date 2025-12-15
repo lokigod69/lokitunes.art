@@ -41,6 +41,7 @@ export interface SongVersion {
   cover_url: string | null
   duration_sec: number | null
   waveform_json: string | null
+  is_original?: boolean
   play_count: number
   created_at: string
 }

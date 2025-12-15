@@ -36,7 +36,9 @@ export async function GET() {
     }
 
     // Flatten the data structure for easier consumption
-    const flattenedVersions = (versions || []).map((v: any) => ({
+    const flattenedVersions = (versions || [])
+      .filter((v: any) => !v.is_original)
+      .map((v: any) => ({
       ...v,
       songId: v.songs.id,
       songTitle: v.songs.title,
