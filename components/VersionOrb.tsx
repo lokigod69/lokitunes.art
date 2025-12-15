@@ -211,7 +211,7 @@ export function VersionOrb({
   const normalizedIntensity = normalizeEmissiveIntensity(glowColor)
   
   // Mobile gets brighter glow for better visibility
-  const mobileIntensityBoost = isMobile ? 1.5 : 1.0
+  const mobileIntensityBoost = isMobile ? 1.2 : 1.0
 
   // Count-based physics tweak: small albums (≤5 orbs) get reduced damping for more lively motion
   const effectiveOrbCount = orbCount ?? 10
@@ -543,16 +543,17 @@ export function VersionOrb({
         >
           <sphereGeometry args={[radius, quality.sphereSegments, quality.sphereSegments]} />
           <MeshTransmissionMaterial
-            transmission={0.98}
-            thickness={0.08}
-            roughness={0.2}
+            transmission={0.995}
+            thickness={0.04}
+            roughness={0.35}
+            ior={1.15}
             chromaticAberration={0}
             anisotropicBlur={0}
             distortion={0}
             samples={quality.samples}
             toneMapped={false}
             color="white"
-            opacity={0.12}
+            opacity={0.06}
           />
         </mesh>
 
@@ -595,8 +596,9 @@ export function VersionOrb({
             />
             <meshStandardMaterial
               map={texture}
-              emissive={(glowColor || '#4F9EFF').slice(0, 7)}
-              emissiveIntensity={isThisPlaying ? 1.5 : (hovered ? 1.0 : 0.5)}  // 🎨 OPTION C: Maximum texture visibility
+              emissive="white"
+              emissiveMap={texture}
+              emissiveIntensity={(isThisPlaying ? 2.25 : (hovered ? 1.5 : 0.75)) * mobileIntensityBoost}  // 🎨 OPTION C: Maximum texture visibility
               metalness={0.3}
               roughness={0.7}  // 🎨 OPTION C: More diffuse for better texture detail
               toneMapped={false}

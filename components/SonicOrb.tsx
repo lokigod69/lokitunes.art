@@ -228,8 +228,9 @@ export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1
               metalness={0.2}
               roughness={0.4}
               envMapIntensity={0.8}
-              emissive={accentColor}
-              emissiveIntensity={0.8}
+              emissive="white"
+              emissiveMap={texture}
+              emissiveIntensity={1.2}
               toneMapped={false}
               dispose={null}
             />
@@ -239,7 +240,7 @@ export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1
               metalness={0.2}
               roughness={0.4}
               emissive={accentColor}
-              emissiveIntensity={1.0}
+              emissiveIntensity={1.2}
               toneMapped={false}
               dispose={null}
             />

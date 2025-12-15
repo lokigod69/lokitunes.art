@@ -101,7 +101,7 @@ export function BubbleOrb({
   // Album info displays in bottom-left InfoDisplayCube
   
   // Mobile gets brighter glow for better visibility
-  const mobileIntensityBoost = isMobile ? 1.5 : 1.0
+  const mobileIntensityBoost = isMobile ? 1.2 : 1.0
 
   // Depth interaction constants - SIMPLIFIED
   const PUSH_FORCE = -15        // Moderate push
@@ -269,16 +269,17 @@ export function BubbleOrb({
         >
           <sphereGeometry args={[radius, quality.sphereSegments, quality.sphereSegments]} />
           <MeshTransmissionMaterial
-            transmission={0.98}  // 🎨 MATCH VersionOrb: Was 0.1 (too opaque!)
-            thickness={0.08}     // 🎨 MATCH VersionOrb: Was 0.1
-            roughness={0.2}
+            transmission={0.995}
+            thickness={0.04}
+            roughness={0.35}
+            ior={1.15}
             chromaticAberration={0}
             anisotropicBlur={0}
             distortion={0}
             samples={quality.samples}
             toneMapped={false}
             color="white"
-            opacity={0.12}       // 🎨 MATCH VersionOrb: Was 0.3 (too opaque!)
+            opacity={0.06}
           />
         </mesh>
 
@@ -298,8 +299,9 @@ export function BubbleOrb({
             />
             <meshStandardMaterial
               map={texture}
-              emissive={glowColor}
-              emissiveIntensity={hovered ? 1.0 : 0.5}  // 🎨 OPTION C: Was 4.0/3.0
+              emissive="white"
+              emissiveMap={texture}
+              emissiveIntensity={(hovered ? 1.5 : 0.75) * mobileIntensityBoost}
               metalness={0.3}
               roughness={0.7}  // 🎨 OPTION C: Was 0.1
               toneMapped={false}
