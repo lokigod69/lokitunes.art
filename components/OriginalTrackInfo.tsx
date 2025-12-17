@@ -18,7 +18,6 @@ interface OriginalTrackInfoProps {
 export function OriginalTrackInfo({ albumSlug, original, albumPalette }: OriginalTrackInfoProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const [isOpen, setIsOpen] = useState(false)
-  const [isDismissed, setIsDismissed] = useState(false)
 
   const { currentVersion, isPlaying, playStandalone, pause } = useAudioStore()
 
@@ -27,17 +26,6 @@ export function OriginalTrackInfo({ albumSlug, original, albumPalette }: Origina
 
   const accentColor = albumPalette?.accent1 || '#4F9EFF'
   const albumTitle = original.albumTitle || 'Album'
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    try {
-      const key = `lokitunes-original-dismissed-${albumSlug}`
-      const dismissed = window.localStorage?.getItem(key) === 'true'
-      setIsDismissed(dismissed)
-    } catch {
-      // ignore storage errors
-    }
-  }, [albumSlug])
 
   useEffect(() => {
     if (!isOpen) return
@@ -53,18 +41,6 @@ export function OriginalTrackInfo({ albumSlug, original, albumPalette }: Origina
     return () => document.removeEventListener('pointerdown', onPointerDown)
   }, [isOpen])
 
-  const handleDismiss = () => {
-    setIsDismissed(true)
-    setIsOpen(false)
-    if (typeof window === 'undefined') return
-    try {
-      const key = `lokitunes-original-dismissed-${albumSlug}`
-      window.localStorage?.setItem(key, 'true')
-    } catch {
-      // ignore storage errors
-    }
-  }
-
   const handlePlayPause = () => {
     if (isThisPlaying) {
       pause()
@@ -73,8 +49,6 @@ export function OriginalTrackInfo({ albumSlug, original, albumPalette }: Origina
 
     playStandalone(original, original.song_id, albumPalette || undefined)
   }
-
-  if (isDismissed) return null
 
   return (
     <div ref={containerRef} className="relative inline-flex items-center">
@@ -116,10 +90,10 @@ export function OriginalTrackInfo({ albumSlug, original, albumPalette }: Origina
 
             <button
               type="button"
-              onClick={handleDismiss}
-              className="text-bone/40 hover:text-bone/70 transition-colors"
-              aria-label="Dismiss original demo"
-              title="Hide"
+              onClick={() => setIsOpen(false)}
+              className="text-bone/40 hover:text-bone/70 transition-colors cursor-pointer"
+              aria-label="Close"
+              title="Close"
             >
               <X className="w-4 h-4" />
             </button>
@@ -129,7 +103,7 @@ export function OriginalTrackInfo({ albumSlug, original, albumPalette }: Origina
             <button
               type="button"
               onClick={handlePlayPause}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded border border-white/10 hover:border-[var(--voltage)] transition-colors text-xs"
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded border border-white/10 hover:border-[var(--voltage)] transition-colors text-xs cursor-pointer"
               style={{ borderColor: `${accentColor}66` }}
             >
               {isThisPlaying ? (
