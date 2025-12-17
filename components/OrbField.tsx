@@ -335,7 +335,7 @@ export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
         <EffectComposer multisampling={quality.multisampling}>
           <Bloom
             intensity={quality.bloomIntensity}
-            luminanceThreshold={0.9}
+            luminanceThreshold={0.97}
             luminanceSmoothing={0.025}
             mipmapBlur={true}
             kernelSize={KernelSize.LARGE}

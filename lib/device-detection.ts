@@ -25,7 +25,7 @@ export function getQualitySettings(tier: DeviceTier) {
         thickness: 0.1,
         roughness: 0.2,
         chromaticAberration: 0,
-        bloomIntensity: 1.0,
+        bloomIntensity: 0.7,
         multisampling: 4
       }
     case 'medium':
@@ -36,7 +36,7 @@ export function getQualitySettings(tier: DeviceTier) {
         thickness: 0.3,
         roughness: 0.05,
         chromaticAberration: 0.01,
-        bloomIntensity: 1.5,
+        bloomIntensity: 1.0,
         multisampling: 8
       }
     case 'high':
@@ -47,7 +47,7 @@ export function getQualitySettings(tier: DeviceTier) {
         thickness: 0.3,
         roughness: 0.05,
         chromaticAberration: 0.01,
-        bloomIntensity: 1.5,
+        bloomIntensity: 1.0,
         multisampling: 8
       }
   }

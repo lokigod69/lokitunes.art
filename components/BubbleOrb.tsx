@@ -61,6 +61,7 @@ export function BubbleOrb({
   const ref = useRef<RapierRigidBody>(null)
   const glowRef = useRef<THREE.PointLight>(null)
   const innerMeshRef = useRef<THREE.Mesh>(null)
+  const lastClickRef = useRef(0)
   const [hovered, setHovered] = useState(false)
   
   const quality = getQualitySettings(deviceTier)
@@ -273,7 +274,11 @@ export function BubbleOrb({
 
         {/* Outer glass shell - BARELY THERE (just a subtle shine) */}
         <mesh
-          onClick={() => {
+          onClick={(e) => {
+            e.stopPropagation()
+            const now = Date.now()
+            if (now - lastClickRef.current < 400) return
+            lastClickRef.current = now
             onNavigate(album.slug)
           }}
           onPointerEnter={() => {

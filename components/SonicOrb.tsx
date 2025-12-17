@@ -25,6 +25,7 @@ export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1
   const glowRef = useRef<THREE.PointLight>(null)
   const meshRef = useRef<THREE.Mesh>(null)
   const [texture, setTexture] = useState<THREE.Texture | null>(null)
+  const lastClickRef = useRef(0)
   
   // CRITICAL FIX: Load texture with proper CORS handling using Image element
   useEffect(() => {
@@ -211,7 +212,13 @@ export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1
         {/* Orb mesh */}
         <mesh
           ref={meshRef}
-          onClick={() => onNavigate(album.slug)}
+          onClick={(e) => {
+            e.stopPropagation()
+            const now = Date.now()
+            if (now - lastClickRef.current < 400) return
+            lastClickRef.current = now
+            onNavigate(album.slug)
+          }}
           onPointerEnter={() => {
             onHover(album.title)
             document.body.style.cursor = 'pointer'

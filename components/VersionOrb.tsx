@@ -106,6 +106,7 @@ export function VersionOrb({
   const glowRef = useRef<THREE.PointLight>(null)
   const innerMeshRef = useRef<THREE.Mesh>(null)
   const groupRef = useRef<THREE.Group>(null)
+  const lastClickRef = useRef(0)
   const [hovered, setHovered] = useState(false)
   
   // Audio store integration
@@ -457,7 +458,13 @@ export function VersionOrb({
     }
   })
 
-  const handleClick = () => {
+  const handleClick = (e?: { stopPropagation?: () => void }) => {
+    e?.stopPropagation?.()
+
+    const now = Date.now()
+    if (now - lastClickRef.current < 400) return
+    lastClickRef.current = now
+
     console.log('🎮 Version orb clicked:', version.label)
     console.log('   Animation state:', animationState)
     console.log('   Version ID:', version.id)
