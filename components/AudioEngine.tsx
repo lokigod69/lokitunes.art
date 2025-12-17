@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react'
 import { useAudioStore } from '@/lib/audio-store'
+import { setAudioElement } from '@/lib/audio-element-registry'
 
 export default function AudioEngine() {
   const audioRef = useRef<HTMLAudioElement>(null)
@@ -19,6 +20,18 @@ export default function AudioEngine() {
   // IMPORTANT: Always render the audio element, just don't set src if no URL
   // This ensures event listeners are always attached
 
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio) return
+
+    audio.crossOrigin = 'anonymous'
+    setAudioElement(audio)
+
+    return () => {
+      setAudioElement(null)
+    }
+  }, [])
+
   // Update src when version changes
   // FIX: Use ref to track last loaded URL instead of comparing audio.src (which returns absolute URL)
   useEffect(() => {
@@ -32,6 +45,7 @@ export default function AudioEngine() {
       console.log('[AudioEngine] Loading new audio:', currentVersion?.label)
       isLoadingNewTrack.current = true
       lastLoadedUrl.current = newSrc
+      audio.crossOrigin = 'anonymous'
       audio.src = newSrc
       audio.load()
       
@@ -143,6 +157,7 @@ export default function AudioEngine() {
   return (
     <audio
       ref={audioRef}
+      crossOrigin="anonymous"
       preload="metadata"
       className="hidden"
     />

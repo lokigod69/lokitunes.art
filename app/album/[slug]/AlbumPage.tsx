@@ -3,9 +3,9 @@
 import { useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
-import { SongRow } from '@/components/SongRow'
 import { VersionOrbField } from '@/components/VersionOrbField'
 import { OriginalTrackInfo } from '@/components/OriginalTrackInfo'
+import { SpectrumAnalyzer } from '@/components/SpectrumAnalyzer'
 import type { ExtendedVersion } from '@/components/VersionOrb'
 import type { AlbumWithSongs } from '@/lib/supabase'
 
@@ -90,7 +90,7 @@ export function AlbumPage({ album }: AlbumPageProps) {
 
   return (
     <div
-      className="min-h-screen bg-background pb-20"
+      className="min-h-screen bg-background pb-28"
       style={{
         backgroundImage: `radial-gradient(circle at top, ${hexWithOpacity(palette.dominant, 0.08)} 0%, transparent 40%),
           radial-gradient(circle at bottom right, ${hexWithOpacity(palette.accent1, 0.06)} 0%, transparent 35%)`,
@@ -170,6 +170,8 @@ export function AlbumPage({ album }: AlbumPageProps) {
           )}
         </div>
       </div>
+
+      <SpectrumAnalyzer />
     </div>
   )
 }
