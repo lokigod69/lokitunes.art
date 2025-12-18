@@ -20,6 +20,7 @@ interface VersionOrbFieldProps {
   versions: ExtendedVersion[]
   albumCoverUrl: string
   albumPalette: Album['palette']
+  isMobile?: boolean
 }
 
 // 🧹 VERIFICATION COMPONENT - Confirms physics world is clean (no ghost orbs)
@@ -81,7 +82,8 @@ function OrbScene({
   playingVersion,
   onHover, 
   deviceTier,
-  onStopPlaying  // NEW: Callback to stop playing (releases docked orb)
+  onStopPlaying,
+  isMobile = false
 }: {
   versions: ExtendedVersion[]
   albumCoverUrl: string
@@ -90,10 +92,11 @@ function OrbScene({
   playingVersion: ExtendedVersion | null
   onHover: (version: ExtendedVersion | null) => void
   deviceTier: DeviceTier
-  onStopPlaying: () => void  // NEW
+  onStopPlaying: () => void
+  isMobile?: boolean
 }) {
-  // Calculate dynamic layout based on version count
-  const { positions, radius } = calculateOrbLayout(versions.length)
+  // Calculate dynamic layout based on version count (with mobile scaling)
+  const { positions, radius } = calculateOrbLayout(versions.length, isMobile)
 
   // Normalize grid opacity across albums
   const gridRef = useRef<any>(null)
@@ -166,15 +169,17 @@ function OrbScene({
       />
       
       {/* MINIMAL GRID - Album page style (clean, flat background) */}
+      {/* Mobile: narrower grid (40 units) shifted back to emphasize depth */}
+      {/* Desktop: standard 100×100 grid */}
       <gridHelper 
         ref={gridRef}
         args={[
-          100,                                      // Size
-          10,                                       // Divisions
+          isMobile ? 50 : 100,                      // Size: narrower on mobile
+          isMobile ? 8 : 10,                        // Divisions
           (albumPalette?.accent1 || '#4F9EFF').slice(0, 7),
           (albumPalette?.accent1 || '#4F9EFF').slice(0, 7)
         ]}
-        position={[0, -15, 0]} 
+        position={[0, -15, isMobile ? -15 : 0]}    // Shift back on mobile for depth
       />
       
       {/* VINYL ARTWORK DISPLAY - Standing at back of grid, shows on hover or when playing */}
@@ -194,7 +199,8 @@ function OrbScene({
 export function VersionOrbField({ 
   versions, 
   albumCoverUrl, 
-  albumPalette 
+  albumPalette,
+  isMobile = false
 }: VersionOrbFieldProps) {
   // 🔥 DEBUG: Log palette received by VersionOrbField
   console.log('🔥 VersionOrbField received palette:', {
@@ -229,10 +235,24 @@ export function VersionOrbField({
     setDpr(settings.dpr)
   }, [])
   
-  // Calculate camera distance based on version count
-  const cameraDistance = calculateCameraDistance(versions.length)
+  // Calculate aspect ratio for camera distance adjustment
+  const [aspectRatio, setAspectRatio] = useState(16/9)
   
-  console.log(`📷 Camera distance for ${versions.length} versions: ${cameraDistance}`)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const updateAspectRatio = () => {
+        setAspectRatio(window.innerWidth / window.innerHeight)
+      }
+      updateAspectRatio()
+      window.addEventListener('resize', updateAspectRatio)
+      return () => window.removeEventListener('resize', updateAspectRatio)
+    }
+  }, [])
+  
+  // Calculate camera distance based on version count, mobile state, and aspect ratio
+  const cameraDistance = calculateCameraDistance(versions.length, isMobile, aspectRatio)
+  
+  console.log(`📷 Camera distance for ${versions.length} versions: ${cameraDistance} (mobile: ${isMobile}, aspect: ${aspectRatio.toFixed(2)})`)
 
   return (
     <>
@@ -284,6 +304,7 @@ export function VersionOrbField({
           onHover={setHoveredVersion}
           deviceTier={deviceTier}
           onStopPlaying={stop}
+          isMobile={isMobile}
         />
         
         {/* Post-processing effects */}

@@ -9,11 +9,16 @@ export interface OrbLayout {
   spacing: number
 }
 
-export function calculateOrbLayout(albumCount: number): OrbLayout {
+export function calculateOrbLayout(albumCount: number, isMobile: boolean = false): OrbLayout {
   // Base radius calculation - fewer albums = bigger orbs
-  const baseRadius = albumCount <= 5 ? 3.5 : 
-                     albumCount <= 10 ? 2.5 : 
-                     albumCount <= 15 ? 2.0 : 1.5
+  let baseRadius = albumCount <= 5 ? 3.5 : 
+                   albumCount <= 10 ? 2.5 : 
+                   albumCount <= 15 ? 2.0 : 1.5
+  
+  // Scale down for mobile - orbs should be ~60% of desktop size
+  if (isMobile) {
+    baseRadius *= 0.6
+  }
   
   // Spread them out in a nice grid pattern
   const gridSize = Math.ceil(Math.sqrt(albumCount))
@@ -51,15 +56,26 @@ export function calculateOrbScale(versionCount: number): number {
 /**
  * Calculate camera distance to fit all orbs in view
  */
-export function calculateCameraDistance(albumCount: number): number {
-  const { radius, spacing } = calculateOrbLayout(albumCount)
+export function calculateCameraDistance(
+  albumCount: number,
+  isMobile: boolean = false,
+  aspectRatio: number = 16/9
+): number {
+  const { radius, spacing } = calculateOrbLayout(albumCount, isMobile)
   const gridSize = Math.ceil(Math.sqrt(albumCount))
   const fieldSize = gridSize * spacing + radius * 2
   
   // FOV is 50 degrees, calculate distance to fit field
   const fov = 50
-  const distance = (fieldSize / 2) / Math.tan((fov * Math.PI) / 360)
+  let distance = (fieldSize / 2) / Math.tan((fov * Math.PI) / 360)
   
-  // Add padding
-  return Math.max(distance * 1.2, 20)
+  // On portrait (aspectRatio < 1), pull back further to fit content in narrower horizontal view
+  if (aspectRatio < 1) {
+    distance = distance / aspectRatio
+  }
+  
+  // Mobile needs extra padding due to UI elements and smaller orbs needing more context
+  const padding = isMobile ? 1.4 : 1.2
+  
+  return Math.max(distance * padding, isMobile ? 15 : 20)
 }

@@ -6,6 +6,7 @@ import { ArrowLeft } from 'lucide-react'
 import { VersionOrbField } from '@/components/VersionOrbField'
 import { OriginalTrackInfo } from '@/components/OriginalTrackInfo'
 import { SpectrumAnalyzer } from '@/components/SpectrumAnalyzer'
+import { useMobileDetection } from '@/hooks/useMobileDetection'
 import type { ExtendedVersion } from '@/components/VersionOrb'
 import type { AlbumWithSongs } from '@/lib/supabase'
 
@@ -23,6 +24,8 @@ interface AlbumPageProps {
 }
 
 export function AlbumPage({ album }: AlbumPageProps) {
+  const isMobile = useMobileDetection(768)
+
   // 🔥🔥🔥 DEBUG: Log exact palette received on CLIENT
   console.log('🔥🔥🔥 CLIENT (AlbumPage): Received album:', album.slug, {
     palette: album.palette,
@@ -156,7 +159,7 @@ export function AlbumPage({ album }: AlbumPageProps) {
 
       {/* 3D Version Orb Field */}
       <div className="container mx-auto px-4 py-8">
-        <div className="relative w-full" style={{ height: '600px', minHeight: '500px' }}>
+        <div className="relative w-full h-[60vh] md:h-[600px] min-h-[400px] max-h-[800px]">
           {allVersions.length === 0 ? (
             <div className="absolute inset-0 flex items-center justify-center">
               <p className="text-bone/50 text-lg">No versions available yet</p>
@@ -166,6 +169,7 @@ export function AlbumPage({ album }: AlbumPageProps) {
               versions={orbVersions}
               albumCoverUrl={album.cover_url || ''}
               albumPalette={album.palette}
+              isMobile={isMobile}
             />
           )}
         </div>
