@@ -296,7 +296,8 @@ export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
           left: 0,
           width: '100vw',
           height: '100vh',
-          zIndex: 0
+          zIndex: 0,
+          touchAction: 'none'  // Enable touch tracking for orb attraction
         }}
       >
         <PerformanceMonitor

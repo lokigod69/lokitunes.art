@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type MouseEvent as ReactMouseEvent } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useAudioStore } from '@/lib/audio-store'
-import { Play, Pause, Star, Volume2, Volume1, VolumeX, Download, SkipBack, SkipForward } from 'lucide-react'
+import { Play, Pause, Star, Volume2, Volume1, VolumeX, Download, SkipBack, SkipForward, Infinity as InfinityIcon } from 'lucide-react'
 import Image from 'next/image'
 import { RatingModal } from '@/components/RatingModal'
 
@@ -201,17 +201,18 @@ export function GlobalAudioPlayer() {
   const hasUserRating = !isRatingLoading && !!userRating
   const isRated = hasUserRating
 
-  const renderAutoplayToggle = () => {
+  const renderAutoplayToggle = (compact: boolean = false) => {
     if (!currentVersion || isOriginal) return null
-    const modes: { mode: 'off' | 'album' | 'all'; label: string }[] = [
-      { mode: 'off', label: 'Off' },
-      { mode: 'album', label: 'Album' },
-      { mode: 'all', label: 'All' },
+    const modes: { mode: 'off' | 'album' | 'all'; label: string; compactLabel: string }[] = [
+      { mode: 'off', label: 'Off', compactLabel: '—' },
+      { mode: 'album', label: 'Album', compactLabel: '1' },
+      { mode: 'all', label: 'All', compactLabel: '∞' },
     ]
     return (
       <div className="flex items-center gap-1 text-[10px] text-bone/60">
-        <span className="uppercase tracking-wide">Autoplay</span>
-        {modes.map(({ mode, label }) => (
+        {!compact && <span className="uppercase tracking-wide">Autoplay</span>}
+        {compact && <InfinityIcon className="w-3 h-3 text-bone/40" />}
+        {modes.map(({ mode, label, compactLabel }) => (
           <button
             key={mode}
             type="button"
@@ -222,8 +223,9 @@ export function GlobalAudioPlayer() {
                 ? 'border-[var(--voltage)] text-[var(--voltage)] bg-[var(--voltage)]/10'
                 : 'border-bone/30 text-bone/50 hover:text-bone hover:border-bone/60')
             }
+            title={`Autoplay: ${label}`}
           >
-            {label}
+            {compact ? compactLabel : label}
           </button>
         ))}
       </div>
@@ -265,7 +267,7 @@ export function GlobalAudioPlayer() {
                         onClick={handleTitleClick}
                         title="Go to album"
                       >
-                        <span className="truncate">{displayTitle}</span>
+                        <span className="truncate max-w-[140px] md:max-w-none">{displayTitle}</span>
                         {isOriginal && (
                           <span className="text-[10px] px-1.5 py-0.5 rounded border border-white/10 text-bone/60 flex-shrink-0">
                             Original
@@ -398,9 +400,9 @@ export function GlobalAudioPlayer() {
                     />
                   </div>
 
-                  {/* Autoplay toggle */}
+                  {/* Autoplay toggle - compact on mobile */}
                   <div className="flex justify-end">
-                    {renderAutoplayToggle()}
+                    {renderAutoplayToggle(true)}
                   </div>
                 </>
               ) : (
@@ -438,28 +440,15 @@ export function GlobalAudioPlayer() {
                       </button>
                     </div>
 
-                    {!isOriginal && (hasRatingStats || hasUserRating) && (
-                      <div className="flex flex-col items-end gap-0.5">
-                        {hasRatingStats && ratingStats && (
-                          <div className="flex items-center gap-1 text-[11px] text-bone/70">
-                            <Star className="w-3 h-3" fill={accentColor} color={accentColor} />
-                            <span>{ratingStats.avg_rating.toFixed(1)}/10</span>
-                            <span className="text-bone/40">
-                              ({ratingStats.rating_count}{' '}
-                              {ratingStats.rating_count === 1 ? 'rating' : 'ratings'})
-                            </span>
-                          </div>
-                        )}
-                        {hasUserRating && userRating && (
-                          <div className="text-[10px] text-bone/60">
-                            Your:{' '}
-                            <span style={{ color: accentColor }}>{userRating.rating}/10</span>
-                          </div>
-                        )}
+                    {/* Compact rating display - only user rating on mobile */}
+                    {!isOriginal && hasUserRating && userRating && (
+                      <div className="flex items-center gap-1 text-[11px]">
+                        <Star className="w-3 h-3" fill={accentColor} color={accentColor} />
+                        <span style={{ color: accentColor }}>{userRating.rating.toFixed(1)}</span>
                       </div>
                     )}
-                    {/* Autoplay toggle (mobile full layout) */}
-                    {renderAutoplayToggle()}
+                    {/* Autoplay toggle - compact on mobile */}
+                    {renderAutoplayToggle(true)}
                   </div>
 
                   {/* Player row */}
@@ -483,7 +472,7 @@ export function GlobalAudioPlayer() {
                           onClick={handleTitleClick}
                           title="Go to album"
                         >
-                          <span className="truncate">{displayTitle}</span>
+                          <span className="truncate max-w-[140px] md:max-w-none">{displayTitle}</span>
                           {isOriginal && (
                             <span className="text-[10px] px-1.5 py-0.5 rounded border border-white/10 text-bone/60 flex-shrink-0">
                               Original
@@ -643,7 +632,7 @@ export function GlobalAudioPlayer() {
                     onClick={handleTitleClick}
                     title="Go to album"
                   >
-                    <span className="truncate">{displayTitle}</span>
+                    <span className="truncate max-w-[140px] md:max-w-none">{displayTitle}</span>
                     {isOriginal && (
                       <span className="text-[10px] px-1.5 py-0.5 rounded border border-white/10 text-bone/60 flex-shrink-0">
                         Original

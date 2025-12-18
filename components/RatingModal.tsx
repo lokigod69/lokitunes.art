@@ -269,11 +269,11 @@ export function RatingModal({ isOpen, onClose, onRated }: RatingModalProps) {
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-xl bg-void border border-bone/20 p-6 text-bone shadow-xl"
+        className="relative w-full max-w-md rounded-xl bg-void border border-bone/20 p-6 text-bone shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex justify-between items-start mb-4">
-          <div>
+        <div className={`flex items-start mb-4 ${userRating && !isEditing ? 'justify-center text-center' : 'justify-between'}`}>
+          <div className={userRating && !isEditing ? 'flex-1' : ''}>
             <h2 className="text-lg font-semibold">
               {userRating ? kudosMessage : 'Rate this version'}
             </h2>
@@ -282,7 +282,7 @@ export function RatingModal({ isOpen, onClose, onRated }: RatingModalProps) {
           <button
             type="button"
             onClick={onClose}
-            className="text-bone/60 hover:text-bone cursor-pointer"
+            className={`text-bone/60 hover:text-bone cursor-pointer ${userRating && !isEditing ? 'absolute top-4 right-4' : ''}`}
           >
             <X size={18} />
           </button>
@@ -293,10 +293,10 @@ export function RatingModal({ isOpen, onClose, onRated }: RatingModalProps) {
             <p className="text-bone/60 text-sm">Loading ratings…</p>
           </div>
         ) : userRating && !isEditing ? (
-          <div className="space-y-6">
-            <div className="p-4 bg-bone/5 rounded border border-bone/10">
+          <div className="space-y-6 text-center">
+            <div className="p-4 bg-bone/5 rounded border border-bone/10 inline-block mx-auto">
               <p className="text-xs text-bone/60 mb-2">Your rating</p>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center gap-2">
                 <span className="text-2xl font-bold" style={{ color: accentColor }}>
                   {userRating.rating}/10
                 </span>

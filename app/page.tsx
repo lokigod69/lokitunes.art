@@ -102,18 +102,6 @@ export default function Home() {
         />
       )}
 
-      {true && (  // TEMPORARY: Always show debug panel
-        <div className="fixed top-20 right-4 z-50 p-3 bg-black/80 backdrop-blur border border-zinc-700 rounded text-xs space-y-1 max-w-[200px]">
-          <div className="text-[var(--voltage)] font-bold">Debug Info:</div>
-          <div>Mobile: {isMobile ? 'YES' : 'NO'}</div>
-          <div>3D Mode: {is3D ? 'YES' : 'NO'}</div>
-          <div>Fallback: {shouldUseFallback ? 'YES' : 'NO'}</div>
-          <div>ReducedMotion: {prefersReducedMotion ? 'YES' : 'NO'}</div>
-          <div>HasWebGL: {hasWebGL ? 'YES' : 'NO'}</div>
-          <div>Width: {typeof window !== 'undefined' ? window.innerWidth : 'SSR'}</div>
-          <div>Albums: {albums.length}</div>
-        </div>
-      )}
 
       {hasLoaded && (
         <>

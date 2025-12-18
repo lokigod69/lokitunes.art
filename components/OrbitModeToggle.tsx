@@ -48,7 +48,11 @@ export function OrbitModeToggle({ is3D, onToggle }: OrbitModeToggleProps) {
     <button
       type="button"
       onClick={handleToggle}
-      className="fixed top-4 right-24 z-[9999] flex h-10 w-10 items-center justify-center rounded-lg bg-void/80 backdrop-blur-sm transition-colors hover:bg-void md:hidden"
+      onTouchEnd={(e) => {
+        e.preventDefault()
+        handleToggle()
+      }}
+      className="fixed top-4 right-4 z-[9999] flex h-12 w-12 items-center justify-center rounded-lg bg-void/90 backdrop-blur-sm border border-voltage/30 transition-colors active:bg-voltage/20 md:hidden"
       aria-label={is3D ? 'Switch to 2D grid' : 'Switch to 3D orbs'}
       title={is3D ? 'Switch to 2D Grid' : 'Switch to 3D Orbs'}
     >

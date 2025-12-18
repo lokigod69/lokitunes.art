@@ -15,9 +15,9 @@ export function calculateOrbLayout(albumCount: number, isMobile: boolean = false
                    albumCount <= 10 ? 2.5 : 
                    albumCount <= 15 ? 2.0 : 1.5
   
-  // Scale down for mobile - orbs should be ~60% of desktop size
+  // Scale down for mobile - 75% of desktop size (was 60%, too small for touch)
   if (isMobile) {
-    baseRadius *= 0.6
+    baseRadius *= 0.75
   }
   
   // Spread them out in a nice grid pattern
