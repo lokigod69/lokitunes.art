@@ -16,6 +16,9 @@ import { PulsingWireframe } from './PulsingWireframe'
 import { InfoDisplayCube } from './InfoDisplayCube'
 import { GridTextDisplay } from './GridTextDisplay'
 import { NeonHeader } from './NeonHeader'
+import { ObstacleField } from './ObstacleField'
+import { BurstManager } from './BurstManager'
+import { usePlayMode } from '@/hooks/usePlayMode'
 import type { Album } from '@/lib/supabase'
 import { detectDeviceTier, getQualitySettings, type DeviceTier } from '@/lib/device-detection'
 import { calculateOrbLayout, calculateCameraDistance, calculateOrbScale } from '@/lib/orb-layout'
@@ -26,7 +29,7 @@ interface OrbFieldProps {
   isMobile?: boolean
 }
 
-function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGlassBubbles, onRegisterRigidBody, onReset, hoveredAlbum, isMobile = false }: {
+function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGlassBubbles, onRegisterRigidBody, onReset, hoveredAlbum, isMobile = false, allBodiesRef }: {
   albums: Album[]
   pushTrigger: number
   onHover: (title: string | null) => void
@@ -37,8 +40,10 @@ function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGla
   onReset: number
   hoveredAlbum: Album | null
   isMobile?: boolean
+  allBodiesRef: React.RefObject<Map<string, { body: RapierRigidBody, initialPos: [number, number, number] }> | null>
 }) {
   const OrbComponent = useGlassBubbles ? BubbleOrb : SonicOrb
+  const { isActive: playModeActive, bursts, removeBurst } = usePlayMode()
   
   // Calculate dynamic layout based on album count
   const { positions, radius } = calculateOrbLayout(albums.length)
@@ -61,6 +66,8 @@ function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGla
               onNavigate={onNavigate}
               onRegisterRigidBody={(body) => onRegisterRigidBody(album.id, body, positions[index])}
               resetTrigger={onReset}
+              orbIndex={index}
+              allBodiesRef={allBodiesRef}
             />
           ))}
         </group>
@@ -98,36 +105,50 @@ function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGla
         visible={!!hoveredAlbum}
       />
       
-      {/* DECORATIVE PULSING WIREFRAMES - Adjusted for mobile (further back, smaller) */}
-      <PulsingWireframe 
-        position={isMobile ? [0, 3, -25] : [-10, 5, -10]} 
-        size={isMobile ? [2, 2, 2] : [3, 3, 3]} 
-        color="#ff00ff" 
-        hoveredAlbum={hoveredAlbum} 
-      />
-      <PulsingWireframe 
-        position={isMobile ? [0, -3, -28] : [10, 5, -10]} 
-        size={isMobile ? [1.5, 3, 1.5] : [2, 4, 2]} 
-        color="#00ffff" 
-        hoveredAlbum={hoveredAlbum} 
-      />
+      {/* OBSTACLE FIELD - Rainbow obstacles for play mode */}
+      <ObstacleField />
       
-      {/* INFO DISPLAY CUBES - Centered and further back on mobile */}
-      <InfoDisplayCube 
-        position={isMobile ? [-3, 0, -30] : [-10, -5, 10]} 
-        size={isMobile ? [2, 1, 2] : [4, 2, 4]} 
-        baseColor="#00ff88" 
-        hoveredAlbum={hoveredAlbum} 
-      />
-      <InfoDisplayCube 
-        position={isMobile ? [3, 0, -32] : [10, -5, 10]} 
-        size={isMobile ? [1.5, 1.5, 1.5] : [3, 3, 3]} 
-        baseColor="#ff00ff" 
-        hoveredAlbum={hoveredAlbum} 
-      />
+      {/* BURST EFFECTS - Particle explosions when orbs are destroyed */}
+      <BurstManager bursts={bursts} onBurstComplete={removeBurst} />
       
-      {/* CORNER MARKERS - Hide on mobile (too far to sides) */}
-      {!isMobile && (
+      {/* DECORATIVE PULSING WIREFRAMES - Hide during play mode */}
+      {!playModeActive && (
+        <>
+          <PulsingWireframe 
+            position={isMobile ? [0, 3, -25] : [-10, 5, -10]} 
+            size={isMobile ? [2, 2, 2] : [3, 3, 3]} 
+            color="#ff00ff" 
+            hoveredAlbum={hoveredAlbum} 
+          />
+          <PulsingWireframe 
+            position={isMobile ? [0, -3, -28] : [10, 5, -10]} 
+            size={isMobile ? [1.5, 3, 1.5] : [2, 4, 2]} 
+            color="#00ffff" 
+            hoveredAlbum={hoveredAlbum} 
+          />
+        </>
+      )}
+      
+      {/* INFO DISPLAY CUBES - Hide during play mode */}
+      {!playModeActive && (
+        <>
+          <InfoDisplayCube 
+            position={isMobile ? [-3, 0, -30] : [-10, -5, 10]} 
+            size={isMobile ? [2, 1, 2] : [4, 2, 4]} 
+            baseColor="#00ff88" 
+            hoveredAlbum={hoveredAlbum} 
+          />
+          <InfoDisplayCube 
+            position={isMobile ? [3, 0, -32] : [10, -5, 10]} 
+            size={isMobile ? [1.5, 1.5, 1.5] : [3, 3, 3]} 
+            baseColor="#ff00ff" 
+            hoveredAlbum={hoveredAlbum} 
+          />
+        </>
+      )}
+      
+      {/* CORNER MARKERS - Hide on mobile and during play mode */}
+      {!isMobile && !playModeActive && (
         <>
           <PulsingWireframe position={[-15, 0, -15]} size={[1, 1, 1]} color="#ff0000" hoveredAlbum={hoveredAlbum} />
           <PulsingWireframe position={[15, 0, -15]} size={[1, 1, 1]} color="#ff0000" hoveredAlbum={hoveredAlbum} />
@@ -149,6 +170,9 @@ export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
   const [pushTrigger, setPushTrigger] = useState(0)
   const [resetTrigger, setResetTrigger] = useState(0)
   const [isHolding, setIsHolding] = useState(false)
+  
+  // Play mode - set total orbs count
+  const { setTotalOrbs, isActive: playModeActive, stopGame } = usePlayMode()
 
   if (process.env.NODE_ENV === 'development') {
     console.log('OrbField rendering with albums:', albums.length)
@@ -174,6 +198,36 @@ export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
     setDpr(settings.dpr)
   }, [])
   
+  // Set total orbs for play mode when albums change
+  useEffect(() => {
+    setTotalOrbs(albums.length)
+  }, [albums.length, setTotalOrbs])
+  
+  // Track previous play mode state to detect when game stops
+  const prevPlayModeActive = useRef(playModeActive)
+  useEffect(() => {
+    // Reset orbs when play mode ends
+    if (prevPlayModeActive.current && !playModeActive) {
+      console.log('🎮 Play mode ended - resetting orbs')
+      rigidBodies.current.forEach(({ body, initialPos }, id) => {
+        try {
+          // Check if body is still valid before operating on it
+          body.translation()  // This will throw if body is invalid
+          
+          body.setTranslation({ x: initialPos[0], y: initialPos[1], z: initialPos[2] }, true)
+          body.setLinvel({ x: 0, y: 0, z: 0 }, true)
+          body.setAngvel({ x: 0, y: 0, z: 0 }, true)
+          body.wakeUp()
+        } catch (e) {
+          // Body no longer exists or is invalid, skip it
+          console.log(`⚠️ Skipping invalid body during reset: ${id}`)
+        }
+      })
+      setResetTrigger(prev => prev + 1)
+    }
+    prevPlayModeActive.current = playModeActive
+  }, [playModeActive])
+  
   // Calculate camera distance based on album count
   // For the homepage we pull the camera back slightly more so the grid
   // and RESET button sit higher above the global player bar.
@@ -189,22 +243,29 @@ export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
     
     // Scatter all OTHER orbs violently, freeze the clicked one
     rigidBodies.current.forEach(({ body }, id) => {
-      if (id === clickedId) {
-        // FREEZE the clicked orb - stop all movement
-        console.log('❄️ Freezing clicked orb:', id)
-        body.setLinvel({ x: 0, y: 0, z: 0 }, true)
-        body.setAngvel({ x: 0, y: 0, z: 0 }, true)
-      } else {
-        // SCATTER other orbs - use setLinvel for immediate velocity change
-        const speed = 50 + Math.random() * 30  // Very fast 50-80
-        const velocity = {
-          x: (Math.random() - 0.5) * speed * 2,
-          y: (Math.random() - 0.5) * speed * 2,
-          z: (Math.random() - 0.5) * speed * 2,
+      try {
+        // Check if body is still valid
+        body.translation()
+        
+        if (id === clickedId) {
+          // FREEZE the clicked orb - stop all movement
+          console.log('❄️ Freezing clicked orb:', id)
+          body.setLinvel({ x: 0, y: 0, z: 0 }, true)
+          body.setAngvel({ x: 0, y: 0, z: 0 }, true)
+        } else {
+          // SCATTER other orbs - use setLinvel for immediate velocity change
+          const speed = 50 + Math.random() * 30  // Very fast 50-80
+          const velocity = {
+            x: (Math.random() - 0.5) * speed * 2,
+            y: (Math.random() - 0.5) * speed * 2,
+            z: (Math.random() - 0.5) * speed * 2,
+          }
+          console.log('💥 Scattering orb:', id, velocity)
+          body.wakeUp()
+          body.setLinvel(velocity, true)
         }
-        console.log('💥 Scattering orb:', id, velocity)
-        body.wakeUp()
-        body.setLinvel(velocity, true)
+      } catch (e) {
+        // Body is invalid, skip it
       }
     })
     
@@ -355,6 +416,7 @@ export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
           onReset={resetTrigger}
           hoveredAlbum={hoveredAlbum}
           isMobile={isMobile}
+          allBodiesRef={rigidBodies}
         />
         
         {/* Post-processing effects - reduced on mobile to prevent pixelation/jitter */}

@@ -2,9 +2,11 @@
 
 import { useRef, useState, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { RigidBody, type RapierRigidBody } from '@react-three/rapier'
+import { RigidBody, BallCollider, type RapierRigidBody } from '@react-three/rapier'
 import * as THREE from 'three'
 import type { Album } from '@/lib/supabase'
+import { usePlayMode } from '@/hooks/usePlayMode'
+import { useOrbRepulsion } from '@/hooks/useOrbRepulsion'
 
 interface OrbProps {
   album: Album
@@ -17,15 +19,64 @@ interface OrbProps {
   onNavigate: (slug: string) => void
   onRegisterRigidBody?: (body: RapierRigidBody) => void
   resetTrigger?: number
+  orbIndex?: number  // Index for play mode tracking
+  allBodiesRef?: React.RefObject<Map<string, { body: RapierRigidBody, initialPos: [number, number, number] }> | null>
 }
 
-export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1, deviceTier, onHover, onNavigate, onRegisterRigidBody, resetTrigger }: OrbProps) {
+export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1, deviceTier, onHover, onNavigate, onRegisterRigidBody, resetTrigger, orbIndex = 0, allBodiesRef }: OrbProps) {
   console.log('🟠 SonicOrb rendering:', album.title, '| NO glass layer | roughness: 0.6 | NO emissive')
   const ref = useRef<RapierRigidBody>(null)
   const glowRef = useRef<THREE.PointLight>(null)
   const meshRef = useRef<THREE.Mesh>(null)
   const [texture, setTexture] = useState<THREE.Texture | null>(null)
   const lastClickRef = useRef(0)
+  const [isLost, setIsLost] = useState(false)
+  const [pendingBurst, setPendingBurst] = useState(false)
+  const lastPositionRef = useRef<[number, number, number]>([0, 0, 0])
+  
+  // Play mode state
+  const { isActive: playModeActive, isPaused: playModePaused, loseOrb, orbsLost, triggerBurst } = usePlayMode()
+  
+  // Handle pending burst in useEffect (outside physics loop to avoid Rapier crashes)
+  useEffect(() => {
+    if (pendingBurst) {
+      // Get album colors for burst
+      const burstColors = [
+        album.palette?.dominant || '#ffffff',
+        album.palette?.accent1 || '#ff00ff',
+        album.palette?.accent2 || '#00ffff',
+      ].filter(Boolean)
+      
+      // Trigger burst at last known position
+      triggerBurst(lastPositionRef.current, burstColors)
+      
+      // Mark orb as lost
+      loseOrb(orbIndex)
+      
+      // Move orb far away (but keep RigidBody alive for reset)
+      if (ref.current) {
+        try {
+          ref.current.setTranslation({ x: 0, y: -100, z: 0 }, true)
+          ref.current.setLinvel({ x: 0, y: 0, z: 0 }, true)
+        } catch (e) {
+          // Body may be invalid, ignore
+        }
+      }
+    }
+  }, [pendingBurst, triggerBurst, loseOrb, orbIndex, album.palette])
+  
+  // Restore orb when play mode ends
+  useEffect(() => {
+    if (!playModeActive && pendingBurst) {
+      setPendingBurst(false)
+    }
+  }, [playModeActive, pendingBurst])
+  
+  // Repulsion state - use hook for collider size (re-renders when changed)
+  const { repulsionStrength } = useOrbRepulsion()
+  
+  // Calculate collider radius based on repulsion - larger collider = orbs push apart physically
+  const colliderRadius = radius * visualScale * (1 + repulsionStrength * 2)
   
   // CRITICAL FIX: Load texture with proper CORS handling using Image element
   useEffect(() => {
@@ -116,22 +167,35 @@ export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1
   }, [pushTrigger, album.title])
 
   useFrame((state) => {
-    if (!ref.current) return
+    if (!ref.current || pendingBurst) return
+    
+    // Wrap body access in try-catch - body may have been removed
+    let pos, vel
+    try {
+      pos = ref.current.translation()
+      vel = ref.current.linvel()
+      // Track position for burst effect (safe to do here)
+      lastPositionRef.current = [pos.x, pos.y, pos.z]
+    } catch (e) {
+      // Body was removed, skip this frame
+      return
+    }
 
     const t = state.clock.elapsedTime
     const body = ref.current
-    const pos = body.translation()
-    const vel = body.linvel()
     
     // Calculate current speed for rest detection
     const speed = Math.sqrt(vel.x * vel.x + vel.y * vel.y + vel.z * vel.z)
-    const REST_THRESHOLD = 0.3  // Below this speed, orb is considered "at rest"
+    const REST_THRESHOLD = 0.08  // Very low threshold for true stillness
     const isAtRest = speed < REST_THRESHOLD
     
-    // Dynamic damping: increase damping when nearly at rest to prevent jitter
+    // Dynamic damping: strong damping when nearly at rest to prevent jitter
     if (isAtRest) {
-      // Apply strong damping impulse to stop jittering
-      body.applyImpulse({ x: -vel.x * 0.3, y: -vel.y * 0.3, z: -vel.z * 0.3 }, true)
+      // Apply strong damping to fully stop micro-movements
+      body.setLinvel({ x: vel.x * 0.5, y: vel.y * 0.5, z: vel.z * 0.5 }, true)
+    } else if (speed < 0.2) {
+      // Transitional damping for slow-moving orbs
+      body.applyImpulse({ x: -vel.x * 0.2, y: -vel.y * 0.2, z: -vel.z * 0.2 }, true)
     }
 
     // Perlin noise drift - ONLY when moving (prevents rest jitter)
@@ -156,24 +220,27 @@ export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1
     }
 
     // Mouse interaction field (repulsion when too close, attraction when near)
-    const mouse = new THREE.Vector3(
-      state.pointer.x * 5,
-      state.pointer.y * 3,
-      0
-    )
-    const distance = mouse.distanceTo(orbPos)
-    const toCursor = mouse.clone().sub(orbPos)
+    // Only apply when NOT at rest to prevent micro-jitter
+    if (!isAtRest) {
+      const mouse = new THREE.Vector3(
+        state.pointer.x * 5,
+        state.pointer.y * 3,
+        0
+      )
+      const distance = mouse.distanceTo(orbPos)
+      const toCursor = mouse.clone().sub(orbPos)
 
-    const tooClose = 2  // Personal space radius
-    if (distance < tooClose) {
-      // Push away from cursor when too close
-      const repulsion = toCursor.clone().normalize().multiplyScalar(-0.15)
-      body.applyImpulse(repulsion, true)
-    } else if (distance < 6) {
-      // Normal attraction when not too close
-      const strength = 0.12 * (1 - distance / 6)
-      const attraction = toCursor.normalize().multiplyScalar(strength)
-      body.applyImpulse(attraction, true)
+      const tooClose = 2  // Personal space radius
+      if (distance < tooClose) {
+        // Push away from cursor when too close
+        const repulsion = toCursor.clone().normalize().multiplyScalar(-0.15)
+        body.applyImpulse(repulsion, true)
+      } else if (distance < 6) {
+        // Normal attraction when not too close
+        const strength = 0.12 * (1 - distance / 6)
+        const attraction = toCursor.normalize().multiplyScalar(strength)
+        body.applyImpulse(attraction, true)
+      }
     }
 
     // Glow pulse
@@ -186,9 +253,24 @@ export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1
       meshRef.current.rotation.y = t * 0.1
     }
 
-    // SPRING RETURN TO FRONT - Depth interaction
+    // PLAY MODE: Only check for off-screen (no per-frame Z constraint - causes chaos)
+    if (playModeActive && !playModePaused && !orbsLost.includes(orbIndex)) {
+      // Check if orb went off-screen (lost)
+      const OFF_SCREEN_X = 22
+      const OFF_SCREEN_Y_TOP = 12
+      const OFF_SCREEN_Y_BOTTOM = -17
+      
+      if (Math.abs(pos.x) > OFF_SCREEN_X || pos.y > OFF_SCREEN_Y_TOP || pos.y < OFF_SCREEN_Y_BOTTOM) {
+        loseOrb(orbIndex)
+        setIsLost(true)
+        body.setTranslation({ x: 0, y: -100, z: 0 }, true)
+        body.setLinvel({ x: 0, y: 0, z: 0 }, true)
+      }
+    }
+    
+    // SPRING RETURN TO FRONT - Depth interaction (disabled during play mode)
     // Only activate if pushed back past -0.5
-    if (pos.z < -0.5) {
+    if (!playModeActive && pos.z < -0.5) {
       const timeSincePush = Date.now() - lastPushTime.current
       
       // SETTLE TIME: Wait before returning (RESET + SAFETY)
@@ -217,16 +299,31 @@ export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1
     <RigidBody
       ref={ref}
       type="dynamic"            // CRITICAL: Must be dynamic to respond to forces!
-      colliders="ball"
-      restitution={0.4}         // Reduced from 0.8 to prevent perpetual bouncing
-      friction={0.3}            // Increased from 0.1 for more friction on contact
-      linearDamping={0.8}       // Increased from 0.05 for faster settling
+      colliders={false}         // Use custom BallCollider for dynamic sizing
+      restitution={0.6}         // Balanced bounce - lower to prevent jittering
+      friction={0.15}           // Light friction (was 0.1, then 0.3)
+      linearDamping={0.12}      // Slight damping (was 0.05, then 0.8)
       angularDamping={0.5}      // Match BubbleOrb/VersionOrb (was 0.3)
       gravityScale={0}          // Add missing property
       mass={radius * 0.5}       // Add missing property - LIGHTER = more responsive
       ccd={true}                // Add continuous collision detection
       position={position}
+      name={`orb-${album.id}`}
+      onCollisionEnter={({ other }) => {
+        // Only process in play mode - ONLY set flag, no physics operations!
+        if (!playModeActive || pendingBurst) return
+        
+        // Check if we hit a game obstacle
+        const otherName = other.rigidBodyObject?.name || ''
+        if (otherName.includes('obstacle')) {
+          // Just set flag - burst handling happens in useEffect (next frame)
+          setPendingBurst(true)
+        }
+      }}
     >
+      {/* Dynamic collider - grows with repulsion slider */}
+      <BallCollider args={[colliderRadius]} restitution={0.6} friction={0.15} />
+      
       <group scale={visualScale}>
         {/* Inner glow */}
         <pointLight
