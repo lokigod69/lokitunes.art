@@ -13,13 +13,13 @@ interface InvisibleBoundsProps {
 export function InvisibleBounds({ size = 25 }: InvisibleBoundsProps) {
   return (
     <>
-      {/* Top wall - LOWER to account for header (keep orbs below) */}
-      <RigidBody type="fixed" position={[0, 10, 0]}>
+      {/* Top wall - Higher to allow orbs to reach near vinyl area */}
+      <RigidBody type="fixed" position={[0, 8, 0]}>
         <CuboidCollider args={[size, 0.5, 30]} />
       </RigidBody>
 
-      {/* Bottom wall */}
-      <RigidBody type="fixed" position={[0, -15, 0]}>
+      {/* Bottom wall - Match container edge */}
+      <RigidBody type="fixed" position={[0, -13, 0]}>
         <CuboidCollider args={[size, 0.5, 30]} />
       </RigidBody>
 

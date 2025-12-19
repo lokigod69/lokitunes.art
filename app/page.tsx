@@ -115,21 +115,21 @@ export default function Home() {
             onLanguageChange={setLanguage}
             onDismiss={dismiss}
           />
-          {/* Style toggle - between OrbitModeToggle and TutorialButton */}
-          <MonochromeToggle className="fixed top-4 right-16 z-50 p-2 rounded-lg bg-black/80 border border-cyan-500/30 hover:border-cyan-500 transition-all backdrop-blur flex items-center justify-center group" />
-          <TutorialButton onClick={show} />
-          {/* Play Mode Button - Desktop only */}
-          {!isMobile && (
-            <div className="fixed top-4 right-32 z-50">
-              <PlayModeButton />
-            </div>
-          )}
-          {/* Repulsion Slider - Desktop only */}
-          {!isMobile && (
-            <div className="fixed top-4 right-52 z-50 p-2 rounded-lg bg-black/80 border border-cyan-500/30 backdrop-blur">
-              <RepulsionSlider />
-            </div>
-          )}
+          {/* Desktop header controls - consolidated container */}
+          <div className="fixed top-4 right-4 z-50 flex items-center gap-3">
+            {/* Repulsion Slider - Desktop only */}
+            {!isMobile && (
+              <div className="p-2 rounded-lg bg-black/80 border border-cyan-500/30 backdrop-blur">
+                <RepulsionSlider />
+              </div>
+            )}
+            {/* Play Mode Button - Desktop only */}
+            {!isMobile && <PlayModeButton />}
+            {/* Style toggle */}
+            <MonochromeToggle className="p-2 rounded-lg bg-black/80 border border-cyan-500/30 hover:border-cyan-500 transition-all backdrop-blur flex items-center justify-center group" />
+            {/* Tutorial button */}
+            <TutorialButton onClick={show} />
+          </div>
           {/* Auth button - top left on desktop, below rating badge */}
           <div className="fixed top-16 left-6 z-40">
             <AuthButton />

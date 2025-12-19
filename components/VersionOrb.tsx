@@ -443,7 +443,7 @@ export function VersionOrb({
 
     // Clamp linear velocity to prevent orbs from shooting too far away
     const vel = body.linvel()
-    const maxSpeed = 6
+    const maxSpeed = 12  // Increased from 6 for more responsive movement
     const speedSq = vel.x * vel.x + vel.y * vel.y + vel.z * vel.z
     if (speedSq > maxSpeed * maxSpeed) {
       const speed = Math.sqrt(speedSq)

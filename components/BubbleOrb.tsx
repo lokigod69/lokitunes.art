@@ -105,12 +105,16 @@ export function BubbleOrb({
     }
   }, [pendingBurst, triggerBurst, loseOrb, orbIndex, album.palette])
   
-  // Restore orb when play mode ends
+  // Reset burst state when play mode changes (start or stop)
+  const prevPlayModeRef = useRef(playModeActive)
   useEffect(() => {
-    if (!playModeActive && pendingBurst) {
+    // Reset when game starts OR stops
+    if (playModeActive !== prevPlayModeRef.current) {
       setPendingBurst(false)
+      setIsLost(false)
     }
-  }, [playModeActive, pendingBurst])
+    prevPlayModeRef.current = playModeActive
+  }, [playModeActive])
   
   // Repulsion state - use hook for collider size (re-renders when changed)
   const { repulsionStrength } = useOrbRepulsion()
@@ -251,20 +255,25 @@ export function BubbleOrb({
     
     // Calculate current speed for rest detection
     const speed = Math.sqrt(vel.x * vel.x + vel.y * vel.y + vel.z * vel.z)
-    const REST_THRESHOLD = 0.08  // Very low threshold for true stillness
+    const REST_THRESHOLD = 0.1  // Threshold for stillness
+    const NOISE_THRESHOLD = 0.3  // Higher threshold - no noise when slow
     const isAtRest = speed < REST_THRESHOLD
+    const isSlow = speed < NOISE_THRESHOLD
     
     // Dynamic damping: strong damping when nearly at rest to prevent jitter
     if (isAtRest) {
-      // Apply strong damping to fully stop micro-movements
-      body.setLinvel({ x: vel.x * 0.5, y: vel.y * 0.5, z: vel.z * 0.5 }, true)
-    } else if (speed < 0.2) {
+      // Fully stop micro-movements and put body to sleep
+      body.setLinvel({ x: 0, y: 0, z: 0 }, true)
+      body.setAngvel({ x: 0, y: 0, z: 0 }, true)
+      // Don't apply any more forces this frame
+      return
+    } else if (isSlow) {
       // Transitional damping for slow-moving orbs
-      body.applyImpulse({ x: -vel.x * 0.2, y: -vel.y * 0.2, z: -vel.z * 0.2 }, true)
+      body.setLinvel({ x: vel.x * 0.8, y: vel.y * 0.8, z: vel.z * 0.8 }, true)
     }
 
-    // Perlin noise drift for organic motion - ONLY when moving (prevents rest jitter)
-    if (!isAtRest) {
+    // Perlin noise drift for organic motion - ONLY when moving fast enough
+    if (!isSlow) {
       const noiseX = Math.sin(t * 0.3 + seed) * 0.05
       const noiseY = Math.cos(t * 0.2 + seed * 0.7) * 0.05
       body.applyImpulse({ x: noiseX, y: noiseY, z: 0 }, true)
@@ -277,16 +286,16 @@ export function BubbleOrb({
     const toCenter = centerPos.clone().sub(orbPos)
     const distanceToCenter = toCenter.length()
     
-    // Only apply center attraction when moving or far from center
-    if (distanceToCenter > 3 && !isAtRest) {
+    // Only apply center attraction when moving fast enough
+    if (distanceToCenter > 3 && !isSlow) {
       const centerStrength = 0.015 * Math.min(distanceToCenter / 10, 1)
       const centerAttraction = toCenter.normalize().multiplyScalar(centerStrength)
       body.applyImpulse(centerAttraction, true)
     }
 
     // Mouse interaction field with proper 3D unprojection
-    // Only apply when NOT at rest to prevent micro-jitter
-    if (!isAtRest) {
+    // Only apply when moving fast enough to prevent jitter
+    if (!isSlow) {
       const vector = new THREE.Vector3(state.pointer.x, state.pointer.y, 0.5)
       vector.unproject(state.camera)
       const dir = vector.sub(state.camera.position).normalize()

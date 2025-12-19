@@ -430,8 +430,8 @@ export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
               kernelSize={KernelSize.LARGE}
             />
             <ChromaticAberration
-              offset={deviceTier === 'low' ? [0, 0] : [0.002, 0.001]}
-              radialModulation={deviceTier !== 'low'}
+              offset={deviceTier === 'low' ? [0, 0] : [0.0008, 0.0004]}
+              radialModulation={false}
             />
             <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
           </EffectComposer>

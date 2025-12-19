@@ -31,9 +31,10 @@ function MouseAttractionComponent({ albumCount }: { albumCount?: number }) {
   
   // ✅ FIX 2: Consistent strength for all album sizes (was scaled 100-300, penalizing small albums)
   // ✅ FIX M1: 20% boost for touch devices (less precise input needs stronger attraction)
+  // ✅ FIX: Increased desktop strength for more responsive physics
   const isTouchDevice = typeof window !== 'undefined' && 'ontouchstart' in window
-  const baseStrength = 150
-  const attractorStrength = isTouchDevice ? baseStrength * 1.2 : baseStrength  // 180 on mobile, 150 on desktop
+  const baseStrength = 250  // Increased from 150 for more responsive desktop physics
+  const attractorStrength = isTouchDevice ? baseStrength * 0.8 : baseStrength  // 200 on mobile, 250 on desktop
   
   useFrame(() => {
     frameCount.current++
