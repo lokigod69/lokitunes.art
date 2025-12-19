@@ -277,7 +277,7 @@ export function VersionOrbField({
           width: '100%',
           height: '100%',
           zIndex: 0,
-          touchAction: 'none'  // Enable touch tracking for orb attraction
+          touchAction: 'pan-y'  // Allow vertical scroll, capture horizontal/drag for orb physics
         }}
       >
         <PerformanceMonitor

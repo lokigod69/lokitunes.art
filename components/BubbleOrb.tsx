@@ -189,13 +189,26 @@ export function BubbleOrb({
     const noiseY = Math.cos(t * 0.2 + seed * 0.7) * 0.05
     body.applyImpulse({ x: noiseX, y: noiseY, z: 0 }, true)
 
+    // CENTER ATTRACTION - Gentle pull toward origin when idle
+    // Keeps orbs from drifting too far and creates return-to-center behavior
+    const centerPos = new THREE.Vector3(0, 0, 0)
+    const orbPos = new THREE.Vector3(pos.x, pos.y, pos.z)
+    const toCenter = centerPos.clone().sub(orbPos)
+    const distanceToCenter = toCenter.length()
+    
+    // Apply gentle center attraction (stronger when further away)
+    if (distanceToCenter > 3) {
+      const centerStrength = 0.015 * Math.min(distanceToCenter / 10, 1)
+      const centerAttraction = toCenter.normalize().multiplyScalar(centerStrength)
+      body.applyImpulse(centerAttraction, true)
+    }
+
     // Mouse interaction field with proper 3D unprojection
     const vector = new THREE.Vector3(state.pointer.x, state.pointer.y, 0.5)
     vector.unproject(state.camera)
     const dir = vector.sub(state.camera.position).normalize()
     const mousePos = state.camera.position.clone().add(dir.multiplyScalar(20))
     
-    const orbPos = new THREE.Vector3(pos.x, pos.y, pos.z)
     const distance = mousePos.distanceTo(orbPos)
     const toCursor = mousePos.clone().sub(orbPos)
 

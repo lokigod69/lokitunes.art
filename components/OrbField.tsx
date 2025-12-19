@@ -26,7 +26,7 @@ interface OrbFieldProps {
   isMobile?: boolean
 }
 
-function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGlassBubbles, onRegisterRigidBody, onReset, hoveredAlbum }: {
+function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGlassBubbles, onRegisterRigidBody, onReset, hoveredAlbum, isMobile = false }: {
   albums: Album[]
   pushTrigger: number
   onHover: (title: string | null) => void
@@ -36,6 +36,7 @@ function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGla
   onRegisterRigidBody: (id: string, body: RapierRigidBody, initialPos: [number, number, number]) => void
   onReset: number
   hoveredAlbum: Album | null
+  isMobile?: boolean
 }) {
   const OrbComponent = useGlassBubbles ? BubbleOrb : SonicOrb
   
@@ -75,18 +76,19 @@ function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGla
       </Suspense>
       
       {/* MULTI-LAYER NEON GRIDS - Cyberpunk aesthetic */}
+      {/* Mobile: narrower grids (50 units) shifted back for portrait depth */}
       <gridHelper 
-        args={[100, 50, '#00ffff', '#002244']}
-        position={[0, -15, 0]} 
+        args={[isMobile ? 50 : 100, isMobile ? 25 : 50, '#00ffff', '#002244']}
+        position={[0, -15, isMobile ? -15 : 0]} 
       />
       <gridHelper 
-        args={[100, 50, '#ff00ff', '#440044']}
-        position={[0, -14.5, 0]} 
+        args={[isMobile ? 50 : 100, isMobile ? 25 : 50, '#ff00ff', '#440044']}
+        position={[0, -14.5, isMobile ? -15 : 0]} 
         rotation={[0, Math.PI / 4, 0]}
       />
       <gridHelper 
-        args={[100, 50, '#00ff88', '#004422']}
-        position={[0, -14, 0]} 
+        args={[isMobile ? 50 : 100, isMobile ? 25 : 50, '#00ff88', '#004422']}
+        position={[0, -14, isMobile ? -15 : 0]} 
         rotation={[0, -Math.PI / 4, 0]}
       />
       
@@ -297,7 +299,7 @@ export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
           width: '100vw',
           height: '100vh',
           zIndex: 0,
-          touchAction: 'none'  // Enable touch tracking for orb attraction
+          touchAction: 'pan-y'  // Allow vertical scroll, capture horizontal/drag for orb physics
         }}
       >
         <PerformanceMonitor
@@ -330,6 +332,7 @@ export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
           onRegisterRigidBody={handleRegisterRigidBody}
           onReset={resetTrigger}
           hoveredAlbum={hoveredAlbum}
+          isMobile={isMobile}
         />
         
         {/* Post-processing effects */}
@@ -361,7 +364,7 @@ export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
         onClick={handleReset}
         style={{
           position: 'fixed',
-          bottom: '100px',
+          bottom: isMobile ? '140px' : '100px',
           left: '50%',
           transform: 'translateX(-50%)',
           zIndex: 9999,

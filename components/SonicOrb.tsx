@@ -127,13 +127,25 @@ export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1
     const noiseY = Math.cos(t * 0.2 + seed * 0.7) * 0.05
     body.applyImpulse({ x: noiseX, y: noiseY, z: 0 }, true)
 
+    // CENTER ATTRACTION - Gentle pull toward origin when idle
+    // Keeps orbs from drifting too far and creates return-to-center behavior
+    const orbPos = new THREE.Vector3(pos.x, pos.y, pos.z)
+    const centerPos = new THREE.Vector3(0, 0, 0)
+    const toCenter = centerPos.clone().sub(orbPos)
+    const distanceToCenter = toCenter.length()
+    
+    if (distanceToCenter > 3) {
+      const centerStrength = 0.015 * Math.min(distanceToCenter / 10, 1)
+      const centerAttraction = toCenter.normalize().multiplyScalar(centerStrength)
+      body.applyImpulse(centerAttraction, true)
+    }
+
     // Mouse interaction field (repulsion when too close, attraction when near)
     const mouse = new THREE.Vector3(
       state.pointer.x * 5,
       state.pointer.y * 3,
       0
     )
-    const orbPos = new THREE.Vector3(pos.x, pos.y, pos.z)
     const distance = mouse.distanceTo(orbPos)
     const toCursor = mouse.clone().sub(orbPos)
 

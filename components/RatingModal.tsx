@@ -319,7 +319,7 @@ export function RatingModal({ isOpen, onClose, onRated }: RatingModalProps) {
             {stats && stats.rating_count > 0 && (
               <div>
                 <p className="text-xs text-bone/60 mb-2">Community rating</p>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center gap-2">
                   <Star size={20} fill={accentColor} color={accentColor} />
                   <span className="text-lg font-medium text-bone">
                     {stats.avg_rating.toFixed(1)}/10

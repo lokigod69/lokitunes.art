@@ -204,14 +204,13 @@ export function GlobalAudioPlayer() {
   const renderAutoplayToggle = (compact: boolean = false) => {
     if (!currentVersion || isOriginal) return null
     const modes: { mode: 'off' | 'album' | 'all'; label: string; compactLabel: string }[] = [
-      { mode: 'off', label: 'Off', compactLabel: '—' },
-      { mode: 'album', label: 'Album', compactLabel: '1' },
+      { mode: 'off', label: 'Off', compactLabel: '✕' },
+      { mode: 'album', label: 'Album', compactLabel: 'A' },
       { mode: 'all', label: 'All', compactLabel: '∞' },
     ]
     return (
       <div className="flex items-center gap-1 text-[10px] text-bone/60">
         {!compact && <span className="uppercase tracking-wide">Autoplay</span>}
-        {compact && <InfinityIcon className="w-3 h-3 text-bone/40" />}
         {modes.map(({ mode, label, compactLabel }) => (
           <button
             key={mode}
@@ -232,6 +231,21 @@ export function GlobalAudioPlayer() {
     )
   }
 
+  // Render dual rating display (user / avg)
+  const renderDualRating = () => {
+    if (isOriginal) return null
+    const userVal = hasUserRating && userRating ? userRating.rating.toFixed(1) : '—'
+    const avgVal = hasRatingStats && ratingStats ? ratingStats.avg_rating.toFixed(1) : '—'
+    return (
+      <div className="flex items-center gap-1 text-[11px]">
+        <span className="font-medium" style={{ color: accentColor }}>{userVal}</span>
+        <span className="text-bone/40">/</span>
+        <span className="text-bone/50">{avgVal}</span>
+        <Star className="w-3 h-3" fill={accentColor} color={accentColor} />
+      </div>
+    )
+  }
+
   return (
     <>
       {/* Player UI only shows when there's a track */}
@@ -244,370 +258,158 @@ export function GlobalAudioPlayer() {
           }}
         >
           <div className="max-w-screen-2xl mx-auto px-4 py-3">
-            {/* Mobile layout */}
-            <div className="space-y-3 md:hidden">
-              {isHomePage ? (
-                <>
-                  {/* Mini player: cover + play/pause + volume */}
-                  <div className="flex items-center gap-3">
-                    {currentVersion.cover_url && (
-                      <div className="relative w-10 h-10 rounded overflow-hidden flex-shrink-0 bg-void">
-                        <Image
-                          src={currentVersion.cover_url}
-                          alt={currentVersion.label}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                    )}
+            {/* Mobile layout - UNIFIED across all pages */}
+            <div className="space-y-2 md:hidden">
+              {/* Top row: Actions + Rating + Autoplay */}
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  {!isOriginal && (
+                    <button
+                      type="button"
+                      onClick={() => setIsRatingOpen(true)}
+                      className="flex items-center gap-1 px-2 py-1 rounded border border-zinc-700 hover:border-[var(--voltage)] transition-colors text-xs cursor-pointer"
+                      title="Rate this version"
+                    >
+                      <Star
+                        className="w-3.5 h-3.5"
+                        color={accentColor}
+                        fill={isRated ? accentColor : 'transparent'}
+                      />
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleDownload}
+                    className="p-1 rounded border text-bone/80 hover:text-bone transition-colors cursor-pointer flex items-center justify-center"
+                    style={{
+                      borderColor: `${accentColor}60`,
+                      backgroundColor: 'transparent',
+                    }}
+                    aria-label="Download audio"
+                    title="Download"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                  </button>
+                </div>
 
-                    <div className="flex flex-col min-w-0 flex-1">
-                      <p 
-                        className="text-sm font-medium text-bone cursor-pointer hover:underline flex items-center gap-2 min-w-0"
-                        onClick={handleTitleClick}
-                        title="Go to album"
-                      >
-                        <span className="truncate max-w-[140px] md:max-w-none">{displayTitle}</span>
-                        {isOriginal && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded border border-white/10 text-bone/60 flex-shrink-0">
-                            Original
-                          </span>
-                        )}
-                      </p>
-                      <p className="text-[11px] text-bone/60">
-                        {formatTime(currentTime)} / {formatTime(duration)}
-                      </p>
-                    </div>
+                {/* Dual rating display: user / avg */}
+                {renderDualRating()}
 
-                    {/* Prev / Play/Pause / Next */}
-                    <div className="flex items-center gap-1 flex-shrink-0">
-                      <button
-                        type="button"
-                        onClick={previous}
-                        disabled={!canSkip}
-                        className={
-                          "w-8 h-8 rounded-full flex items-center justify-center transition-all border " +
-                          (canSkip
-                            ? 'hover:scale-105 cursor-pointer'
-                            : 'opacity-30 cursor-not-allowed')
-                        }
-                        style={{
-                          borderColor: canSkip ? accentColor : `${accentColor}40`,
-                          color: canSkip ? accentColor : `${accentColor}40`,
-                        }}
-                        aria-label="Previous track"
-                        title={canSkip ? 'Previous track' : 'No other tracks'}
-                      >
-                        <SkipBack className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() =>
-                          isPlaying
-                            ? pause()
-                            : isOriginal
-                              ? playStandalone(currentVersion, currentVersion.song_id)
-                              : play(currentVersion, currentVersion.song_id)
-                        }
-                        className="w-10 h-10 rounded-full flex items-center justify-center hover:opacity-90 transition-transform hover:scale-105 cursor-pointer"
-                        style={{ backgroundColor: accentColor }}
-                        aria-label={isPlaying ? 'Pause' : 'Play'}
-                      >
-                        {isPlaying ? (
-                          <Pause className="w-5 h-5 text-void" fill="currentColor" />
-                        ) : (
-                          <Play className="w-5 h-5 text-void ml-0.5" fill="currentColor" />
-                        )}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={next}
-                        disabled={!canSkip}
-                        className={
-                          "w-8 h-8 rounded-full flex items-center justify-center transition-all border " +
-                          (canSkip
-                            ? 'hover:scale-105 cursor-pointer'
-                            : 'opacity-30 cursor-not-allowed')
-                        }
-                        style={{
-                          borderColor: canSkip ? accentColor : `${accentColor}40`,
-                          color: canSkip ? accentColor : `${accentColor}40`,
-                        }}
-                        aria-label="Next track"
-                        title={canSkip ? 'Next track' : 'No other tracks'}
-                      >
-                        <SkipForward className="w-4 h-4" />
-                      </button>
-                    </div>
+                {/* Autoplay toggle */}
+                {renderAutoplayToggle(true)}
+              </div>
 
-                    {!isIOS && (
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <button
-                          type="button"
-                          onClick={toggleMute}
-                          className="cursor-pointer hover:opacity-80 transition-opacity"
-                          aria-label={isMuted || volume === 0 ? 'Unmute' : 'Mute'}
-                        >
-                          {isMuted || volume === 0 ? (
-                            <VolumeX className="w-4 h-4" style={{ color: accentColor }} />
-                          ) : volume < 0.5 ? (
-                            <Volume1 className="w-4 h-4" style={{ color: accentColor }} />
-                          ) : (
-                            <Volume2 className="w-4 h-4" style={{ color: accentColor }} />
-                          )}
-                        </button>
-                        <input
-                          type="range"
-                          min="0"
-                          max="1"
-                          step="0.01"
-                          value={volume}
-                          onChange={(e) => {
-                            const value = parseFloat(e.target.value)
-                            setVolume(value)
-                          }}
-                          className="w-20 cursor-pointer 
-                               [&::-webkit-slider-thumb]:appearance-none 
-                               [&::-webkit-slider-thumb]:w-3.5 
-                               [&::-webkit-slider-thumb]:h-3.5 
-                               [&::-webkit-slider-thumb]:rounded-full 
-                               [&::-webkit-slider-thumb]:bg-white
-                               [&::-webkit-slider-thumb]:cursor-pointer"
-                          style={{ accentColor }}
-                        />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Progress slider */}
-                  <div>
-                    <input
-                      type="range"
-                      min={0}
-                      max={duration || 0}
-                      value={currentTime}
-                      onChange={(e) => {
-                        const time = parseFloat(e.target.value)
-                        setCurrentTime(time)
-                      }}
-                      className="w-full cursor-pointer 
-                             [&::-webkit-slider-thumb]:appearance-none 
-                             [&::-webkit-slider-thumb]:w-3.5 
-                             [&::-webkit-slider-thumb]:h-3.5 
-                             [&::-webkit-slider-thumb]:rounded-full 
-                             [&::-webkit-slider-thumb]:bg-white
-                             [&::-webkit-slider-thumb]:cursor-pointer"
-                      style={{ accentColor }}
+              {/* Player row: Cover + Title + Controls */}
+              <div className="flex items-center gap-2">
+                {currentVersion.cover_url && (
+                  <div className="relative w-10 h-10 rounded overflow-hidden flex-shrink-0 bg-void">
+                    <Image
+                      src={currentVersion.cover_url}
+                      alt={currentVersion.label}
+                      fill
+                      className="object-cover"
                     />
                   </div>
+                )}
 
-                  {/* Autoplay toggle - compact on mobile */}
-                  <div className="flex justify-end">
-                    {renderAutoplayToggle(true)}
-                  </div>
-                </>
-              ) : (
-                <>
-                  {/* Actions + rating summary */}
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2">
-                      {!isOriginal && (
-                        <button
-                          type="button"
-                          onClick={() => setIsRatingOpen(true)}
-                          className="flex items-center gap-1 px-3 py-1.5 rounded border border-zinc-700 hover:border-[var(--voltage)] transition-colors text-xs cursor-pointer"
-                          title="Rate this version"
-                        >
-                          <Star
-                            className="w-4 h-4"
-                            color={accentColor}
-                            fill={isRated ? accentColor : 'transparent'}
-                          />
-                          <span className="text-xs">Rate</span>
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={handleDownload}
-                        className="p-1.5 rounded-full border text-bone/80 hover:text-bone transition-colors cursor-pointer flex items-center justify-center"
-                        style={{
-                          borderColor: `${accentColor}60`,
-                          backgroundColor: 'transparent',
-                        }}
-                        aria-label="Download audio"
-                        title="Download"
-                      >
-                        <Download className="w-4 h-4" />
-                      </button>
-                    </div>
-
-                    {/* Compact rating display - only user rating on mobile */}
-                    {!isOriginal && hasUserRating && userRating && (
-                      <div className="flex items-center gap-1 text-[11px]">
-                        <Star className="w-3 h-3" fill={accentColor} color={accentColor} />
-                        <span style={{ color: accentColor }}>{userRating.rating.toFixed(1)}</span>
-                      </div>
+                <div className="flex flex-col min-w-0 flex-1">
+                  <p 
+                    className="text-sm font-medium text-bone cursor-pointer hover:underline flex items-center gap-1 min-w-0"
+                    onClick={handleTitleClick}
+                    title="Go to album"
+                  >
+                    <span className="truncate max-w-[120px]">{displayTitle}</span>
+                    {isOriginal && (
+                      <span className="text-[9px] px-1 py-0.5 rounded border border-white/10 text-bone/60 flex-shrink-0">
+                        OG
+                      </span>
                     )}
-                    {/* Autoplay toggle - compact on mobile */}
-                    {renderAutoplayToggle(true)}
-                  </div>
+                  </p>
+                  <p className="text-[10px] text-bone/60">
+                    {formatTime(currentTime)} / {formatTime(duration)}
+                  </p>
+                </div>
 
-                  {/* Player row */}
-                  <div className="flex items-center gap-3">
-                    {/* Left: Cover + label + time */}
-                    <div className="flex items-center gap-3 min-w-0 flex-1">
-                      {currentVersion.cover_url && (
-                        <div className="relative w-12 h-12 rounded overflow-hidden flex-shrink-0 bg-void">
-                          <Image
-                            src={currentVersion.cover_url}
-                            alt={currentVersion.label}
-                            fill
-                            className="object-cover"
-                          />
-                        </div>
-                      )}
-
-                      <div className="flex flex-col min-w-0">
-                        <p 
-                          className="text-sm font-medium text-bone cursor-pointer hover:underline flex items-center gap-2 min-w-0"
-                          onClick={handleTitleClick}
-                          title="Go to album"
-                        >
-                          <span className="truncate max-w-[140px] md:max-w-none">{displayTitle}</span>
-                          {isOriginal && (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded border border-white/10 text-bone/60 flex-shrink-0">
-                              Original
-                            </span>
-                          )}
-                        </p>
-                        <p className="text-[11px] text-bone/60">
-                          {formatTime(currentTime)} / {formatTime(duration)}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Center: Prev / Play/Pause / Next */}
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <button
-                        type="button"
-                        onClick={previous}
-                        disabled={!canSkip}
-                        className={
-                          "w-8 h-8 rounded-full flex items-center justify-center transition-all border " +
-                          (canSkip
-                            ? 'hover:scale-105 cursor-pointer'
-                            : 'opacity-30 cursor-not-allowed')
-                        }
-                        style={{
-                          borderColor: canSkip ? accentColor : `${accentColor}40`,
-                          color: canSkip ? accentColor : `${accentColor}40`,
-                        }}
-                        aria-label="Previous track"
-                        title={canSkip ? 'Previous track' : 'No other tracks'}
-                      >
-                        <SkipBack className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() =>
-                          isPlaying
-                            ? pause()
-                            : isOriginal
-                              ? playStandalone(currentVersion, currentVersion.song_id)
-                              : play(currentVersion, currentVersion.song_id)
-                        }
-                        className="w-10 h-10 rounded-full flex items-center justify-center hover:opacity-90 transition-transform hover:scale-105 cursor-pointer"
-                        style={{ backgroundColor: accentColor }}
-                        aria-label={isPlaying ? 'Pause' : 'Play'}
-                      >
-                        {isPlaying ? (
-                          <Pause className="w-5 h-5 text-void" fill="currentColor" />
-                        ) : (
-                          <Play className="w-5 h-5 text-void ml-0.5" fill="currentColor" />
-                        )}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={next}
-                        disabled={!canSkip}
-                        className={
-                          "w-8 h-8 rounded-full flex items-center justify-center transition-all border " +
-                          (canSkip
-                            ? 'hover:scale-105 cursor-pointer'
-                            : 'opacity-30 cursor-not-allowed')
-                        }
-                        style={{
-                          borderColor: canSkip ? accentColor : `${accentColor}40`,
-                          color: canSkip ? accentColor : `${accentColor}40`,
-                        }}
-                        aria-label="Next track"
-                        title={canSkip ? 'Next track' : 'No other tracks'}
-                      >
-                        <SkipForward className="w-4 h-4" />
-                      </button>
-                    </div>
-
-                    {/* Right: Volume */}
-                    {!isIOS && (
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <button
-                          type="button"
-                          onClick={toggleMute}
-                          className="cursor-pointer hover:opacity-80 transition-opacity"
-                          aria-label={isMuted || volume === 0 ? 'Unmute' : 'Mute'}
-                        >
-                          {isMuted || volume === 0 ? (
-                            <VolumeX className="w-4 h-4" style={{ color: accentColor }} />
-                          ) : volume < 0.5 ? (
-                            <Volume1 className="w-4 h-4" style={{ color: accentColor }} />
-                          ) : (
-                            <Volume2 className="w-4 h-4" style={{ color: accentColor }} />
-                          )}
-                        </button>
-                        <input
-                          type="range"
-                          min="0"
-                          max="1"
-                          step="0.01"
-                          value={volume}
-                          onChange={(e) => {
-                            const value = parseFloat(e.target.value)
-                            setVolume(value)
-                          }}
-                          className="w-20 cursor-pointer 
-                               [&::-webkit-slider-thumb]:appearance-none 
-                               [&::-webkit-slider-thumb]:w-3.5 
-                               [&::-webkit-slider-thumb]:h-3.5 
-                               [&::-webkit-slider-thumb]:rounded-full 
-                               [&::-webkit-slider-thumb]:bg-white
-                               [&::-webkit-slider-thumb]:cursor-pointer"
-                          style={{ accentColor }}
-                        />
-                      </div>
+                {/* Play controls */}
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={previous}
+                    disabled={!canSkip}
+                    className={
+                      "w-7 h-7 rounded-full flex items-center justify-center transition-all border " +
+                      (canSkip
+                        ? 'hover:scale-105 cursor-pointer'
+                        : 'opacity-30 cursor-not-allowed')
+                    }
+                    style={{
+                      borderColor: canSkip ? accentColor : `${accentColor}40`,
+                      color: canSkip ? accentColor : `${accentColor}40`,
+                    }}
+                    aria-label="Previous track"
+                  >
+                    <SkipBack className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() =>
+                      isPlaying
+                        ? pause()
+                        : isOriginal
+                          ? playStandalone(currentVersion, currentVersion.song_id)
+                          : play(currentVersion, currentVersion.song_id)
+                    }
+                    className="w-9 h-9 rounded-full flex items-center justify-center hover:opacity-90 transition-transform hover:scale-105 cursor-pointer"
+                    style={{ backgroundColor: accentColor }}
+                    aria-label={isPlaying ? 'Pause' : 'Play'}
+                  >
+                    {isPlaying ? (
+                      <Pause className="w-4 h-4 text-void" fill="currentColor" />
+                    ) : (
+                      <Play className="w-4 h-4 text-void ml-0.5" fill="currentColor" />
                     )}
-                  </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={next}
+                    disabled={!canSkip}
+                    className={
+                      "w-7 h-7 rounded-full flex items-center justify-center transition-all border " +
+                      (canSkip
+                        ? 'hover:scale-105 cursor-pointer'
+                        : 'opacity-30 cursor-not-allowed')
+                    }
+                    style={{
+                      borderColor: canSkip ? accentColor : `${accentColor}40`,
+                      color: canSkip ? accentColor : `${accentColor}40`,
+                    }}
+                    aria-label="Next track"
+                  >
+                    <SkipForward className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
 
-                  {/* Progress slider */}
-                  <div>
-                    <input
-                      type="range"
-                      min={0}
-                      max={duration || 0}
-                      value={currentTime}
-                      onChange={(e) => {
-                        const time = parseFloat(e.target.value)
-                        setCurrentTime(time)
-                      }}
-                      className="w-full cursor-pointer 
-                             [&::-webkit-slider-thumb]:appearance-none 
-                             [&::-webkit-slider-thumb]:w-3.5 
-                             [&::-webkit-slider-thumb]:h-3.5 
-                             [&::-webkit-slider-thumb]:rounded-full 
-                             [&::-webkit-slider-thumb]:bg-white
-                             [&::-webkit-slider-thumb]:cursor-pointer"
-                      style={{ accentColor }}
-                    />
-                  </div>
-                </>
-              )}
+              {/* Progress slider */}
+              <div>
+                <input
+                  type="range"
+                  min={0}
+                  max={duration || 0}
+                  value={currentTime}
+                  onChange={(e) => {
+                    const time = parseFloat(e.target.value)
+                    setCurrentTime(time)
+                  }}
+                  className="w-full cursor-pointer 
+                         [&::-webkit-slider-thumb]:appearance-none 
+                         [&::-webkit-slider-thumb]:w-3 
+                         [&::-webkit-slider-thumb]:h-3 
+                         [&::-webkit-slider-thumb]:rounded-full 
+                         [&::-webkit-slider-thumb]:bg-white
+                         [&::-webkit-slider-thumb]:cursor-pointer"
+                  style={{ accentColor }}
+                />
+              </div>
             </div>
 
             {/* Desktop layout: 3-section fixed player */}
