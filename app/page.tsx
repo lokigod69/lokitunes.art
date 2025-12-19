@@ -164,8 +164,8 @@ export default function Home() {
             <Logo3D />
           </div> */}
           
-          {/* Header Scanline Effect - localized to header area only */}
-          <HeaderScanline />
+          {/* Header Scanline Effect - only on desktop (clutters mobile) */}
+          {!isMobile && <HeaderScanline />}
         </>
       )}
     </div>

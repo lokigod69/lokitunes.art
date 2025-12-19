@@ -98,21 +98,31 @@ function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGla
         visible={!!hoveredAlbum}
       />
       
-      {/* DECORATIVE PULSING WIREFRAMES - Color-sync with hovered album */}
-      <PulsingWireframe position={[-10, 5, -10]} size={[3, 3, 3]} color="#ff00ff" hoveredAlbum={hoveredAlbum} />
-      <PulsingWireframe position={[10, 5, -10]} size={[2, 4, 2]} color="#00ffff" hoveredAlbum={hoveredAlbum} />
+      {/* DECORATIVE PULSING WIREFRAMES - Hide on mobile to reduce clutter */}
+      {!isMobile && (
+        <>
+          <PulsingWireframe position={[-10, 5, -10]} size={[3, 3, 3]} color="#ff00ff" hoveredAlbum={hoveredAlbum} />
+          <PulsingWireframe position={[10, 5, -10]} size={[2, 4, 2]} color="#00ffff" hoveredAlbum={hoveredAlbum} />
+        </>
+      )}
       
-      {/* INFO DISPLAY CUBES - Bottom corners show album info on hover */}
-      {/* Bottom-left cube - Cyan base color */}
-      <InfoDisplayCube position={[-10, -5, 10]} size={[4, 2, 4]} baseColor="#00ff88" hoveredAlbum={hoveredAlbum} />
-      {/* Bottom-right cube - Magenta base color */}
-      <InfoDisplayCube position={[10, -5, 10]} size={[3, 3, 3]} baseColor="#ff00ff" hoveredAlbum={hoveredAlbum} />
+      {/* INFO DISPLAY CUBES - Hide on mobile (cut off on narrow viewport) */}
+      {!isMobile && (
+        <>
+          <InfoDisplayCube position={[-10, -5, 10]} size={[4, 2, 4]} baseColor="#00ff88" hoveredAlbum={hoveredAlbum} />
+          <InfoDisplayCube position={[10, -5, 10]} size={[3, 3, 3]} baseColor="#ff00ff" hoveredAlbum={hoveredAlbum} />
+        </>
+      )}
       
-      {/* CORNER MARKERS - Color-sync with hovered album */}
-      <PulsingWireframe position={[-15, 0, -15]} size={[1, 1, 1]} color="#ff0000" hoveredAlbum={hoveredAlbum} />
-      <PulsingWireframe position={[15, 0, -15]} size={[1, 1, 1]} color="#ff0000" hoveredAlbum={hoveredAlbum} />
-      <PulsingWireframe position={[-15, 0, 15]} size={[1, 1, 1]} color="#ff0000" hoveredAlbum={hoveredAlbum} />
-      <PulsingWireframe position={[15, 0, 15]} size={[1, 1, 1]} color="#ff0000" hoveredAlbum={hoveredAlbum} />
+      {/* CORNER MARKERS - Hide on mobile */}
+      {!isMobile && (
+        <>
+          <PulsingWireframe position={[-15, 0, -15]} size={[1, 1, 1]} color="#ff0000" hoveredAlbum={hoveredAlbum} />
+          <PulsingWireframe position={[15, 0, -15]} size={[1, 1, 1]} color="#ff0000" hoveredAlbum={hoveredAlbum} />
+          <PulsingWireframe position={[-15, 0, 15]} size={[1, 1, 1]} color="#ff0000" hoveredAlbum={hoveredAlbum} />
+          <PulsingWireframe position={[15, 0, 15]} size={[1, 1, 1]} color="#ff0000" hoveredAlbum={hoveredAlbum} />
+        </>
+      )}
     </Physics>
   )
 }
@@ -335,21 +345,34 @@ export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
           isMobile={isMobile}
         />
         
-        {/* Post-processing effects */}
-        <EffectComposer multisampling={quality.multisampling}>
-          <Bloom
-            intensity={quality.bloomIntensity}
-            luminanceThreshold={0.97}
-            luminanceSmoothing={0.025}
-            mipmapBlur={true}
-            kernelSize={KernelSize.LARGE}
-          />
-          <ChromaticAberration
-            offset={deviceTier === 'low' ? [0, 0] : [0.002, 0.001]}
-            radialModulation={deviceTier !== 'low'}
-          />
-          <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
-        </EffectComposer>
+        {/* Post-processing effects - reduced on mobile to prevent pixelation/jitter */}
+        {!isMobile ? (
+          <EffectComposer multisampling={quality.multisampling}>
+            <Bloom
+              intensity={quality.bloomIntensity}
+              luminanceThreshold={0.97}
+              luminanceSmoothing={0.025}
+              mipmapBlur={true}
+              kernelSize={KernelSize.LARGE}
+            />
+            <ChromaticAberration
+              offset={deviceTier === 'low' ? [0, 0] : [0.002, 0.001]}
+              radialModulation={deviceTier !== 'low'}
+            />
+            <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
+          </EffectComposer>
+        ) : (
+          <EffectComposer multisampling={0}>
+            <Bloom
+              intensity={0.3}
+              luminanceThreshold={0.98}
+              luminanceSmoothing={0.1}
+              mipmapBlur={false}
+              kernelSize={KernelSize.SMALL}
+            />
+            <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
+          </EffectComposer>
+        )}
       </Canvas>
 
       {/* Fallback for no albums */}
@@ -359,44 +382,46 @@ export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
         </div>
       )}
 
-      {/* RESET BUTTON - Minimal, echoes header style (20% intensity) */}
-      <button
-        onClick={handleReset}
-        style={{
-          position: 'fixed',
-          bottom: isMobile ? '140px' : '100px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          zIndex: 9999,
-          padding: '12px 24px',
-          background: 'transparent',
-          color: '#00ffff',
-          border: '1px solid rgba(0, 255, 255, 0.3)',
-          borderRadius: '4px',
-          cursor: 'pointer',
-          fontWeight: 'bold',
-          fontSize: '14px',
-          fontFamily: 'monospace',
-          textTransform: 'uppercase',
-          letterSpacing: '3px',
-          backdropFilter: 'blur(5px)',
-          boxShadow: '0 0 10px rgba(0, 255, 255, 0.2)',
-          transition: 'all 0.3s ease',
-          opacity: 0.7
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.borderColor = 'rgba(0, 255, 255, 0.6)'
-          e.currentTarget.style.boxShadow = '0 0 15px rgba(0, 255, 255, 0.4)'
-          e.currentTarget.style.opacity = '1'
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.borderColor = 'rgba(0, 255, 255, 0.3)'
-          e.currentTarget.style.boxShadow = '0 0 10px rgba(0, 255, 255, 0.2)'
-          e.currentTarget.style.opacity = '0.7'
-        }}
-      >
-        RESET
-      </button>
+      {/* RESET BUTTON - Only on desktop (overlaps orbs on mobile) */}
+      {!isMobile && (
+        <button
+          onClick={handleReset}
+          style={{
+            position: 'fixed',
+            bottom: '100px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 9999,
+            padding: '12px 24px',
+            background: 'transparent',
+            color: '#00ffff',
+            border: '1px solid rgba(0, 255, 255, 0.3)',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontWeight: 'bold',
+            fontSize: '14px',
+            fontFamily: 'monospace',
+            textTransform: 'uppercase',
+            letterSpacing: '3px',
+            backdropFilter: 'blur(5px)',
+            boxShadow: '0 0 10px rgba(0, 255, 255, 0.2)',
+            transition: 'all 0.3s ease',
+            opacity: 0.7
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = 'rgba(0, 255, 255, 0.6)'
+            e.currentTarget.style.boxShadow = '0 0 15px rgba(0, 255, 255, 0.4)'
+            e.currentTarget.style.opacity = '1'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = 'rgba(0, 255, 255, 0.3)'
+            e.currentTarget.style.boxShadow = '0 0 10px rgba(0, 255, 255, 0.2)'
+            e.currentTarget.style.opacity = '0.7'
+          }}
+        >
+          RESET
+        </button>
+      )}
     </>
   )
 }

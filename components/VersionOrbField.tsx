@@ -1,6 +1,7 @@
 'use client'
 
-import { Suspense, useState, useEffect, useRef } from 'react'
+import { Suspense, useState, useEffect, useRef, useCallback } from 'react'
+import type { PointerEvent as ReactPointerEvent } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { Environment, PerformanceMonitor } from '@react-three/drei'
 import { Physics, useRapier, RigidBody, BallCollider } from '@react-three/rapier'
@@ -254,10 +255,28 @@ export function VersionOrbField({
   
   console.log(`📷 Camera distance for ${versions.length} versions: ${cameraDistance} (mobile: ${isMobile}, aspect: ${aspectRatio.toFixed(2)})`)
 
+  // Pointer event handlers to ensure touch events are captured for orb attraction
+  const [isPointerActive, setIsPointerActive] = useState(false)
+  
+  const handlePointerDown = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    setIsPointerActive(true)
+  }, [])
+  
+  const handlePointerUp = useCallback(() => {
+    setIsPointerActive(false)
+  }, [])
+  
+  const handlePointerLeave = useCallback(() => {
+    setIsPointerActive(false)
+  }, [])
+
   return (
     <>
       {/* 3D Canvas - Fullscreen */}
       <Canvas
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
+        onPointerLeave={handlePointerLeave}
         dpr={dpr}
         camera={{ 
           position: [0, 0, cameraDistance],
@@ -277,7 +296,7 @@ export function VersionOrbField({
           width: '100%',
           height: '100%',
           zIndex: 0,
-          touchAction: 'pan-y'  // Allow vertical scroll, capture horizontal/drag for orb physics
+          touchAction: 'manipulation'  // Allow scroll but capture touch for orb physics
         }}
       >
         <PerformanceMonitor
