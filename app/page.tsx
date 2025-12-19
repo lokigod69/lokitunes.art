@@ -144,14 +144,6 @@ export default function Home() {
         </>
       ) : (
         <>
-          {process.env.NODE_ENV === 'development' && (
-            <div className="fixed top-20 left-4 z-[9999] bg-green-600 text-white text-xs px-3 py-2 rounded shadow">
-              <div>isMobile: {String(isMobile)}</div>
-              <div>is3D: {String(is3D)}</div>
-              <div>albums: {albums.length}</div>
-              <div>fallback: {String(shouldUseFallback)}</div>
-            </div>
-          )}
 
           {/* Fullscreen 3D Canvas - Background layer (z-0) */}
           <div className="fixed inset-0 w-full h-full z-0">

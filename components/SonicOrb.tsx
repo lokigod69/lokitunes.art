@@ -121,11 +121,25 @@ export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1
     const t = state.clock.elapsedTime
     const body = ref.current
     const pos = body.translation()
+    const vel = body.linvel()
+    
+    // Calculate current speed for rest detection
+    const speed = Math.sqrt(vel.x * vel.x + vel.y * vel.y + vel.z * vel.z)
+    const REST_THRESHOLD = 0.3  // Below this speed, orb is considered "at rest"
+    const isAtRest = speed < REST_THRESHOLD
+    
+    // Dynamic damping: increase damping when nearly at rest to prevent jitter
+    if (isAtRest) {
+      // Apply strong damping impulse to stop jittering
+      body.applyImpulse({ x: -vel.x * 0.3, y: -vel.y * 0.3, z: -vel.z * 0.3 }, true)
+    }
 
-    // Perlin noise drift (increased for more motion)
-    const noiseX = Math.sin(t * 0.3 + seed) * 0.05
-    const noiseY = Math.cos(t * 0.2 + seed * 0.7) * 0.05
-    body.applyImpulse({ x: noiseX, y: noiseY, z: 0 }, true)
+    // Perlin noise drift - ONLY when moving (prevents rest jitter)
+    if (!isAtRest) {
+      const noiseX = Math.sin(t * 0.3 + seed) * 0.05
+      const noiseY = Math.cos(t * 0.2 + seed * 0.7) * 0.05
+      body.applyImpulse({ x: noiseX, y: noiseY, z: 0 }, true)
+    }
 
     // CENTER ATTRACTION - Gentle pull toward origin when idle
     // Keeps orbs from drifting too far and creates return-to-center behavior
@@ -134,7 +148,8 @@ export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1
     const toCenter = centerPos.clone().sub(orbPos)
     const distanceToCenter = toCenter.length()
     
-    if (distanceToCenter > 3) {
+    // Only apply center attraction when moving or far from center
+    if (distanceToCenter > 3 && !isAtRest) {
       const centerStrength = 0.015 * Math.min(distanceToCenter / 10, 1)
       const centerAttraction = toCenter.normalize().multiplyScalar(centerStrength)
       body.applyImpulse(centerAttraction, true)
@@ -203,9 +218,9 @@ export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1
       ref={ref}
       type="dynamic"            // CRITICAL: Must be dynamic to respond to forces!
       colliders="ball"
-      restitution={0.8}         // Match BubbleOrb/VersionOrb (was 0.7)
-      friction={0.1}            // Match BubbleOrb/VersionOrb (was 0.2)
-      linearDamping={0.05}      // Match BubbleOrb/VersionOrb (was 0.2) ⭐ KEY FIX
+      restitution={0.4}         // Reduced from 0.8 to prevent perpetual bouncing
+      friction={0.3}            // Increased from 0.1 for more friction on contact
+      linearDamping={0.8}       // Increased from 0.05 for faster settling
       angularDamping={0.5}      // Match BubbleOrb/VersionOrb (was 0.3)
       gravityScale={0}          // Add missing property
       mass={radius * 0.5}       // Add missing property - LIGHTER = more responsive
