@@ -5,7 +5,11 @@ import { Circle, Palette } from 'lucide-react'
 
 type MonochromeMode = 'normal' | 'cyan' | 'pastel' | 'green'
 
-export default function MonochromeToggle() {
+interface MonochromeToggleProps {
+  className?: string
+}
+
+export default function MonochromeToggle({ className }: MonochromeToggleProps) {
   const [mode, setMode] = useState<MonochromeMode>(() => {
     if (typeof window === 'undefined') return 'normal'
     const stored = localStorage.getItem('monochrome-mode') as MonochromeMode | null
@@ -55,7 +59,7 @@ export default function MonochromeToggle() {
     <button
       type="button"
       onClick={cycleMode}
-      className="fixed top-4 right-4 z-50 p-3 rounded-lg bg-black/80 border border-cyan-500/30 hover:border-cyan-500 transition-all backdrop-blur flex items-center justify-center group"
+      className={className || "fixed top-4 right-4 z-50 p-3 rounded-lg bg-black/80 border border-cyan-500/30 hover:border-cyan-500 transition-all backdrop-blur flex items-center justify-center group"}
       title={`Current: ${getLabel()}. Click to cycle.`}
     >
       {isColor ? (

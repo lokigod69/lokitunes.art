@@ -169,18 +169,17 @@ function OrbScene({
         albumPalette={albumPalette}
       />
       
-      {/* MINIMAL GRID - Album page style (clean, flat background) */}
-      {/* Mobile: narrower grid (40 units) shifted back to emphasize depth */}
-      {/* Desktop: standard 100×100 grid */}
+      {/* ALBUM GRID - Matches home page grid structure for consistency */}
+      {/* Uses album palette color instead of neon colors */}
       <gridHelper 
         ref={gridRef}
         args={[
-          isMobile ? 50 : 100,                      // Size: narrower on mobile
-          isMobile ? 8 : 10,                        // Divisions
+          isMobile ? 50 : 100,                      // Size: matches home page
+          isMobile ? 25 : 50,                       // Divisions: matches home page (was 8/10)
           (albumPalette?.accent1 || '#4F9EFF').slice(0, 7),
           (albumPalette?.accent1 || '#4F9EFF').slice(0, 7)
         ]}
-        position={[0, -15, isMobile ? -15 : 0]}    // Shift back on mobile for depth
+        position={[0, -15, isMobile ? -15 : 0]}    // Matches home page position
       />
       
       {/* VINYL ARTWORK DISPLAY - Standing at back of grid, shows on hover or when playing */}

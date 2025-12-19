@@ -258,120 +258,144 @@ export function GlobalAudioPlayer() {
           }}
         >
           <div className="max-w-screen-2xl mx-auto px-4 py-3">
-            {/* Mobile layout - SINGLE LINE compact */}
-            <div className="flex items-center gap-2 md:hidden">
-              {/* Cover art - small */}
-              {currentVersion.cover_url && (
-                <div className="relative w-9 h-9 rounded overflow-hidden flex-shrink-0 bg-void">
-                  <Image
-                    src={currentVersion.cover_url}
-                    alt={currentVersion.label}
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-              )}
+            {/* Mobile layout - Controls row + Progress bar */}
+            <div className="flex flex-col w-full md:hidden">
+              {/* Row 1: Controls */}
+              <div className="flex items-center gap-2">
+                {/* Cover art - small */}
+                {currentVersion.cover_url && (
+                  <div className="relative w-9 h-9 rounded overflow-hidden flex-shrink-0 bg-void">
+                    <Image
+                      src={currentVersion.cover_url}
+                      alt={currentVersion.label}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                )}
 
-              {/* Title + Ratings stacked */}
-              <div className="flex flex-col min-w-0 flex-1" onClick={handleTitleClick}>
-                <span className="text-xs font-medium text-bone truncate cursor-pointer hover:underline">
-                  {displayTitle}
-                </span>
-                <div className="flex items-center gap-1 text-[10px] text-bone/50">
-                  <span style={{ color: accentColor }}>
-                    {hasUserRating && userRating ? userRating.rating.toFixed(1) : '—'}
+                {/* Title + Time/Rating stacked */}
+                <div className="flex flex-col min-w-0 flex-1" onClick={handleTitleClick}>
+                  <span className="text-xs font-medium text-bone truncate cursor-pointer hover:underline">
+                    {displayTitle}
                   </span>
-                  <span>/</span>
-                  <span>x̄</span>
-                  <span>
-                    {hasRatingStats && ratingStats ? ratingStats.avg_rating.toFixed(1) : '—'}
-                  </span>
-                  <Star className="w-2.5 h-2.5" fill={accentColor} color={accentColor} />
+                  <div className="flex items-center gap-1 text-[10px] text-bone/50">
+                    <span className="tabular-nums">{formatTime(currentTime)} / {formatTime(duration)}</span>
+                    <span>|</span>
+                    <span style={{ color: accentColor }}>
+                      {hasUserRating && userRating ? userRating.rating.toFixed(1) : '—'}
+                    </span>
+                    <span>/</span>
+                    <span>⊘</span>
+                    <span>
+                      {hasRatingStats && ratingStats ? ratingStats.avg_rating.toFixed(1) : '—'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Rate button - icon only (hide for originals) */}
+                {!isOriginal && (
+                  <button
+                    type="button"
+                    onClick={() => setIsRatingOpen(true)}
+                    className="p-1.5 cursor-pointer"
+                    title="Rate"
+                  >
+                    <Star
+                      className="w-4 h-4"
+                      color={accentColor}
+                      fill={isRated ? accentColor : 'transparent'}
+                    />
+                  </button>
+                )}
+
+                {/* Shuffle toggle - single button cycling through states */}
+                {!isOriginal && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const modes: ('off' | 'album' | 'all')[] = ['off', 'album', 'all']
+                      const currentIndex = modes.indexOf(autoplayMode)
+                      const nextIndex = (currentIndex + 1) % modes.length
+                      setAutoplayMode(modes[nextIndex])
+                    }}
+                    className="w-6 h-6 flex items-center justify-center text-xs font-bold rounded border cursor-pointer"
+                    style={{
+                      borderColor: autoplayMode !== 'off' ? accentColor : 'rgba(255,255,255,0.2)',
+                      color: autoplayMode !== 'off' ? accentColor : 'rgba(255,255,255,0.5)',
+                    }}
+                    title={`Autoplay: ${autoplayMode}`}
+                  >
+                    {autoplayMode === 'off' ? '✕' : autoplayMode === 'album' ? 'A' : '∞'}
+                  </button>
+                )}
+
+                {/* Transport controls - tight layout */}
+                <div className="flex items-center gap-0.5 flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={previous}
+                    disabled={!canSkip}
+                    className={`p-1 ${canSkip ? 'cursor-pointer' : 'opacity-30 cursor-not-allowed'}`}
+                    style={{ color: canSkip ? accentColor : `${accentColor}40` }}
+                    aria-label="Previous"
+                  >
+                    <SkipBack className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() =>
+                      isPlaying
+                        ? pause()
+                        : isOriginal
+                          ? playStandalone(currentVersion, currentVersion.song_id)
+                          : play(currentVersion, currentVersion.song_id)
+                    }
+                    className="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer"
+                    style={{ backgroundColor: accentColor }}
+                    aria-label={isPlaying ? 'Pause' : 'Play'}
+                  >
+                    {isPlaying ? (
+                      <Pause className="w-4 h-4 text-void" fill="currentColor" />
+                    ) : (
+                      <Play className="w-4 h-4 text-void ml-0.5" fill="currentColor" />
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={next}
+                    disabled={!canSkip}
+                    className={`p-1 ${canSkip ? 'cursor-pointer' : 'opacity-30 cursor-not-allowed'}`}
+                    style={{ color: canSkip ? accentColor : `${accentColor}40` }}
+                    aria-label="Next"
+                  >
+                    <SkipForward className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
 
-              {/* Time - compact */}
-              <span className="text-[10px] text-bone/40 flex-shrink-0 tabular-nums">
-                {formatTime(currentTime)}
-              </span>
-
-              {/* Rate button - icon only (hide for originals) */}
-              {!isOriginal && (
-                <button
-                  type="button"
-                  onClick={() => setIsRatingOpen(true)}
-                  className="p-1.5 cursor-pointer"
-                  title="Rate"
-                >
-                  <Star
-                    className="w-4 h-4"
-                    color={accentColor}
-                    fill={isRated ? accentColor : 'transparent'}
-                  />
-                </button>
-              )}
-
-              {/* Shuffle toggle - single button cycling through states */}
-              {!isOriginal && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    const modes: ('off' | 'album' | 'all')[] = ['off', 'album', 'all']
-                    const currentIndex = modes.indexOf(autoplayMode)
-                    const nextIndex = (currentIndex + 1) % modes.length
-                    setAutoplayMode(modes[nextIndex])
+              {/* Row 2: Progress/Seek bar */}
+              <div className="pt-2">
+                <input
+                  type="range"
+                  min={0}
+                  max={duration || 0}
+                  value={currentTime}
+                  onChange={(e) => {
+                    const time = parseFloat(e.target.value)
+                    setCurrentTime(time)
                   }}
-                  className="w-6 h-6 flex items-center justify-center text-xs font-bold rounded border cursor-pointer"
-                  style={{
-                    borderColor: autoplayMode !== 'off' ? accentColor : 'rgba(255,255,255,0.2)',
-                    color: autoplayMode !== 'off' ? accentColor : 'rgba(255,255,255,0.5)',
+                  className="w-full h-1 cursor-pointer appearance-none rounded-full
+                           [&::-webkit-slider-thumb]:appearance-none 
+                           [&::-webkit-slider-thumb]:w-3 
+                           [&::-webkit-slider-thumb]:h-3 
+                           [&::-webkit-slider-thumb]:rounded-full 
+                           [&::-webkit-slider-thumb]:bg-white
+                           [&::-webkit-slider-thumb]:cursor-pointer"
+                  style={{ 
+                    accentColor,
+                    background: `linear-gradient(to right, ${accentColor} ${(currentTime / (duration || 1)) * 100}%, rgba(255,255,255,0.2) ${(currentTime / (duration || 1)) * 100}%)`
                   }}
-                  title={`Autoplay: ${autoplayMode}`}
-                >
-                  {autoplayMode === 'off' ? '✕' : autoplayMode === 'album' ? 'A' : '∞'}
-                </button>
-              )}
-
-              {/* Transport controls - tight layout */}
-              <div className="flex items-center gap-0.5 flex-shrink-0">
-                <button
-                  type="button"
-                  onClick={previous}
-                  disabled={!canSkip}
-                  className={`p-1 ${canSkip ? 'cursor-pointer' : 'opacity-30 cursor-not-allowed'}`}
-                  style={{ color: canSkip ? accentColor : `${accentColor}40` }}
-                  aria-label="Previous"
-                >
-                  <SkipBack className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() =>
-                    isPlaying
-                      ? pause()
-                      : isOriginal
-                        ? playStandalone(currentVersion, currentVersion.song_id)
-                        : play(currentVersion, currentVersion.song_id)
-                  }
-                  className="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer"
-                  style={{ backgroundColor: accentColor }}
-                  aria-label={isPlaying ? 'Pause' : 'Play'}
-                >
-                  {isPlaying ? (
-                    <Pause className="w-4 h-4 text-void" fill="currentColor" />
-                  ) : (
-                    <Play className="w-4 h-4 text-void ml-0.5" fill="currentColor" />
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={next}
-                  disabled={!canSkip}
-                  className={`p-1 ${canSkip ? 'cursor-pointer' : 'opacity-30 cursor-not-allowed'}`}
-                  style={{ color: canSkip ? accentColor : `${accentColor}40` }}
-                  aria-label="Next"
-                >
-                  <SkipForward className="w-4 h-4" />
-                </button>
+                />
               </div>
             </div>
 

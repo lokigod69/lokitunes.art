@@ -11,7 +11,7 @@ export function TutorialButton({ onClick }: TutorialButtonProps) {
     <button
       type="button"
       onClick={onClick}
-      className="fixed top-4 right-16 z-50 p-2 rounded-lg bg-black/80 border border-bone/30 hover:border-bone/60 transition-all backdrop-blur flex items-center justify-center group"
+      className="fixed top-4 right-28 z-50 p-2 rounded-lg bg-black/80 border border-bone/30 hover:border-bone/60 transition-all backdrop-blur flex items-center justify-center group"
       aria-label="Show tutorial"
     >
       <HelpCircle className="w-4 h-4 text-bone" />

@@ -98,23 +98,35 @@ function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGla
         visible={!!hoveredAlbum}
       />
       
-      {/* DECORATIVE PULSING WIREFRAMES - Hide on mobile to reduce clutter */}
-      {!isMobile && (
-        <>
-          <PulsingWireframe position={[-10, 5, -10]} size={[3, 3, 3]} color="#ff00ff" hoveredAlbum={hoveredAlbum} />
-          <PulsingWireframe position={[10, 5, -10]} size={[2, 4, 2]} color="#00ffff" hoveredAlbum={hoveredAlbum} />
-        </>
-      )}
+      {/* DECORATIVE PULSING WIREFRAMES - Adjusted for mobile (further back, smaller) */}
+      <PulsingWireframe 
+        position={isMobile ? [0, 3, -25] : [-10, 5, -10]} 
+        size={isMobile ? [2, 2, 2] : [3, 3, 3]} 
+        color="#ff00ff" 
+        hoveredAlbum={hoveredAlbum} 
+      />
+      <PulsingWireframe 
+        position={isMobile ? [0, -3, -28] : [10, 5, -10]} 
+        size={isMobile ? [1.5, 3, 1.5] : [2, 4, 2]} 
+        color="#00ffff" 
+        hoveredAlbum={hoveredAlbum} 
+      />
       
-      {/* INFO DISPLAY CUBES - Hide on mobile (cut off on narrow viewport) */}
-      {!isMobile && (
-        <>
-          <InfoDisplayCube position={[-10, -5, 10]} size={[4, 2, 4]} baseColor="#00ff88" hoveredAlbum={hoveredAlbum} />
-          <InfoDisplayCube position={[10, -5, 10]} size={[3, 3, 3]} baseColor="#ff00ff" hoveredAlbum={hoveredAlbum} />
-        </>
-      )}
+      {/* INFO DISPLAY CUBES - Centered and further back on mobile */}
+      <InfoDisplayCube 
+        position={isMobile ? [-3, 0, -30] : [-10, -5, 10]} 
+        size={isMobile ? [2, 1, 2] : [4, 2, 4]} 
+        baseColor="#00ff88" 
+        hoveredAlbum={hoveredAlbum} 
+      />
+      <InfoDisplayCube 
+        position={isMobile ? [3, 0, -32] : [10, -5, 10]} 
+        size={isMobile ? [1.5, 1.5, 1.5] : [3, 3, 3]} 
+        baseColor="#ff00ff" 
+        hoveredAlbum={hoveredAlbum} 
+      />
       
-      {/* CORNER MARKERS - Hide on mobile */}
+      {/* CORNER MARKERS - Hide on mobile (too far to sides) */}
       {!isMobile && (
         <>
           <PulsingWireframe position={[-15, 0, -15]} size={[1, 1, 1]} color="#ff0000" hoveredAlbum={hoveredAlbum} />

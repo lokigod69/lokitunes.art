@@ -24,14 +24,14 @@ export function calculateOrbLayout(albumCount: number, isMobile: boolean = false
   const gridSize = Math.ceil(Math.sqrt(albumCount))
   const spacing = baseRadius * 2.5
   
-  const positions: [number, number, number][] = []
+  const rawPositions: [number, number, number][] = []
   let index = 0
   
   for (let y = 0; y < gridSize; y++) {
     for (let x = 0; x < gridSize; x++) {
       if (index >= albumCount) break
       
-      positions.push([
+      rawPositions.push([
         (x - gridSize / 2 + 0.5) * spacing,
         (gridSize / 2 - y - 0.5) * spacing,
         0
@@ -39,6 +39,17 @@ export function calculateOrbLayout(albumCount: number, isMobile: boolean = false
       index++
     }
   }
+  
+  // Calculate center of mass and shift all positions to center around origin
+  // This fixes asymmetric layouts when album count isn't a perfect square
+  const centerX = rawPositions.reduce((sum, p) => sum + p[0], 0) / rawPositions.length
+  const centerY = rawPositions.reduce((sum, p) => sum + p[1], 0) / rawPositions.length
+  
+  const positions: [number, number, number][] = rawPositions.map(p => [
+    p[0] - centerX,
+    p[1] - centerY,
+    p[2]
+  ])
   
   return { positions, radius: baseRadius, spacing }
 }
