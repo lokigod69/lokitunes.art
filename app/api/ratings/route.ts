@@ -48,12 +48,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Check if user is authenticated
+    const { data: { session } } = await supabase.auth.getSession()
+    const userId = session?.user?.id
+
+    // Get IP hash for anonymous users
     const ip = getClientIp(request)
     const ipHash = hashIp(ip)
 
-    if (!ipHash) {
+    // Must have either user_id or ip_hash
+    if (!userId && !ipHash) {
       return NextResponse.json(
-        { error: 'Could not determine client IP' },
+        { error: 'Could not determine client identity' },
         { status: 400 }
       )
     }
@@ -63,17 +69,27 @@ export async function POST(request: NextRequest) {
       ? trimmedComment.slice(0, 200)
       : null
 
+    // Build rating data based on auth status
+    // Logged in: use user_id, Anonymous: use ip_hash
+    const ratingData = {
+      version_id: versionId,
+      song_id: songId,
+      rating: ratingStars,
+      comment: finalComment,
+      updated_at: new Date().toISOString(),
+      ...(userId
+        ? { user_id: userId, ip_hash: null }
+        : { ip_hash: ipHash, user_id: null }
+      )
+    }
+
+    // Upsert based on auth status
+    // Logged in: conflict on (version_id, user_id)
+    // Anonymous: conflict on (version_id, ip_hash)
     const { data, error } = await supabase
       .from('song_version_ratings')
-      .upsert({
-        version_id: versionId,
-        song_id: songId,
-        rating: ratingStars, // 1-10 directly
-        comment: finalComment,
-        ip_hash: ipHash,
-        updated_at: new Date().toISOString(),
-      }, {
-        onConflict: 'version_id,ip_hash',
+      .upsert(ratingData, {
+        onConflict: userId ? 'version_id,user_id' : 'version_id,ip_hash',
       })
       .select()
       .single()

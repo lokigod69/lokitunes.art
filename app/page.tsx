@@ -9,6 +9,7 @@ import { OnboardingModal } from '@/components/OnboardingModal'
 import { TutorialButton } from '@/components/TutorialButton'
 import { OrbitModeToggle, loadOrbitModePreference } from '@/components/OrbitModeToggle'
 import MonochromeToggle from '@/components/MonochromeToggle'
+import { AuthButton } from '@/components/AuthButton'
 import { useOnboarding } from '@/hooks/useOnboarding'
 import { getAlbumsWithVersionCounts } from '@/lib/queries'
 import type { Album } from '@/lib/supabase'
@@ -115,6 +116,10 @@ export default function Home() {
           {/* Style toggle - between OrbitModeToggle and TutorialButton */}
           <MonochromeToggle className="fixed top-4 right-16 z-50 p-2 rounded-lg bg-black/80 border border-cyan-500/30 hover:border-cyan-500 transition-all backdrop-blur flex items-center justify-center group" />
           <TutorialButton onClick={show} />
+          {/* Auth button - top left on desktop, below rating badge */}
+          <div className="fixed top-16 left-6 z-40">
+            <AuthButton />
+          </div>
         </>
       )}
 
