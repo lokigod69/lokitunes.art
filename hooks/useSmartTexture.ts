@@ -1,5 +1,21 @@
 import { useEffect, useState } from 'react'
 import * as THREE from 'three'
+import { devLog } from '@/lib/debug'
+
+const resolvedUrlCache = new Map<string, string>()
+
+function loadImage(url: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.decoding = 'async'
+
+    img.onload = () => resolve(img)
+    img.onerror = (err) => reject(err)
+
+    img.src = url
+  })
+}
 
 /**
  * Smart texture loader that tries multiple URLs until one works
@@ -7,76 +23,73 @@ import * as THREE from 'three'
  */
 export function useSmartTexture(possibleUrls: string[], albumName: string = 'Unknown') {
   const [texture, setTexture] = useState<THREE.Texture | null>(null)
-  const [workingUrl, setWorkingUrl] = useState<string | null>(null)
-  
+  const possibleUrlsKey = possibleUrls.join('|')
+
   useEffect(() => {
     let cancelled = false
-    
-    async function findWorkingUrl() {
-      console.log(`🔍 [${albumName}] Starting texture search...`)
-      console.log(`📋 [${albumName}] Trying ${possibleUrls.length} URLs:`, possibleUrls)
-      
-      for (let i = 0; i < possibleUrls.length; i++) {
+
+    let createdTexture: THREE.Texture | null = null
+
+    async function loadTexture() {
+      if (!possibleUrls.length) {
+        setTexture(null)
+        return
+      }
+
+      devLog(`🔍 [${albumName}] Starting texture search...`)
+      devLog(`📋 [${albumName}] Trying ${possibleUrls.length} URLs:`, possibleUrls)
+
+      setTexture(null)
+
+      const cachedUrl = resolvedUrlCache.get(possibleUrlsKey)
+      const urlsToTry = cachedUrl
+        ? [cachedUrl, ...possibleUrls.filter((u) => u !== cachedUrl)]
+        : possibleUrls
+
+      for (let i = 0; i < urlsToTry.length; i++) {
         if (cancelled) return
-        
-        const url = possibleUrls[i]
-        console.log(`🌐 [${albumName}] Attempt ${i + 1}/${possibleUrls.length}: ${url}`)
-        
+
+        const url = urlsToTry[i]
+        devLog(`🌐 [${albumName}] Attempt ${i + 1}/${urlsToTry.length}: ${url}`)
+
         try {
-          // Try to fetch the image
-          const response = await fetch(url, { method: 'HEAD' })
-          console.log(`📊 [${albumName}] Response: ${response.status} ${response.statusText}`)
-          
-          if (response.ok) {
-            console.log(`✅ [${albumName}] SUCCESS! Using: ${url}`)
-            setWorkingUrl(url)
-            return
-          }
+          const img = await loadImage(url)
+          if (cancelled) return
+
+          const newTexture = new THREE.Texture(img)
+          newTexture.colorSpace = THREE.SRGBColorSpace
+          newTexture.minFilter = THREE.LinearFilter
+          newTexture.magFilter = THREE.LinearFilter
+          newTexture.needsUpdate = true
+
+          createdTexture = newTexture
+          resolvedUrlCache.set(possibleUrlsKey, url)
+
+          setTexture(newTexture)
+          devLog('✅ Texture loaded successfully:', url)
+          return
         } catch (e) {
-          console.log(`❌ [${albumName}] FAILED:`, e)
-          continue
+          if (cachedUrl && url === cachedUrl) {
+            resolvedUrlCache.delete(possibleUrlsKey)
+          }
+          devLog(`❌ [${albumName}] FAILED:`, e)
         }
       }
-      
+
       console.error(`🚨 [${albumName}] ALL URLS FAILED!`)
       console.error(`🚨 [${albumName}] Tried:`, possibleUrls)
-      // Still set first URL as fallback
-      setWorkingUrl(possibleUrls[0])
     }
-    
-    findWorkingUrl()
-    
+
+    loadTexture()
+
     return () => {
       cancelled = true
-    }
-  }, [possibleUrls.join(','), albumName])
-  
-  // Load texture once we have a working URL
-  useEffect(() => {
-    if (!workingUrl) return
-    
-    const img = new Image()
-    img.crossOrigin = 'anonymous'
-    img.src = workingUrl
-    
-    img.onload = () => {
-      const newTexture = new THREE.Texture(img)
-      newTexture.colorSpace = THREE.SRGBColorSpace
-      newTexture.needsUpdate = true
-      setTexture(newTexture)
-      console.log('✅ Texture loaded successfully:', workingUrl)
-    }
-    
-    img.onerror = (err) => {
-      console.error('❌ Texture failed to load:', workingUrl, err)
-    }
-    
-    return () => {
-      if (texture) {
-        texture.dispose()
+
+      if (createdTexture) {
+        createdTexture.dispose()
       }
     }
-  }, [workingUrl])
-  
+  }, [possibleUrlsKey, albumName])
+
   return texture
 }

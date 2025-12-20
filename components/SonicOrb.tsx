@@ -7,6 +7,7 @@ import * as THREE from 'three'
 import type { Album } from '@/lib/supabase'
 import { usePlayMode } from '@/hooks/usePlayMode'
 import { useOrbRepulsion } from '@/hooks/useOrbRepulsion'
+import { devLog } from '@/lib/debug'
 
 interface OrbProps {
   album: Album
@@ -24,7 +25,7 @@ interface OrbProps {
 }
 
 export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1, deviceTier, onHover, onNavigate, onRegisterRigidBody, resetTrigger, orbIndex = 0, allBodiesRef }: OrbProps) {
-  console.log('🟠 SonicOrb rendering:', album.title, '| NO glass layer | roughness: 0.6 | NO emissive')
+  devLog('🟠 SonicOrb rendering:', album.title, '| NO glass layer | roughness: 0.6 | NO emissive')
   const ref = useRef<RapierRigidBody>(null)
   const glowRef = useRef<THREE.PointLight>(null)
   const meshRef = useRef<THREE.Mesh>(null)
@@ -33,6 +34,8 @@ export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1
   const [isLost, setIsLost] = useState(false)
   const [pendingBurst, setPendingBurst] = useState(false)
   const lastPositionRef = useRef<[number, number, number]>([0, 0, 0])
+  const lastMouseRef = useRef<{ x: number, y: number }>({ x: 0, y: 0 })
+  const mouseIdleFrames = useRef(0)
   
   // Play mode state
   const { isActive: playModeActive, isPaused: playModePaused, loseOrb, orbsLost, triggerBurst } = usePlayMode()
@@ -65,16 +68,12 @@ export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1
     }
   }, [pendingBurst, triggerBurst, loseOrb, orbIndex, album.palette])
   
-  // Reset burst state when play mode changes (start or stop)
-  const prevPlayModeRef = useRef(playModeActive)
+  // Restore orb when play mode ends
   useEffect(() => {
-    // Reset when game starts OR stops
-    if (playModeActive !== prevPlayModeRef.current) {
+    if (!playModeActive && pendingBurst) {
       setPendingBurst(false)
-      setIsLost(false)
     }
-    prevPlayModeRef.current = playModeActive
-  }, [playModeActive])
+  }, [playModeActive, pendingBurst])
   
   // Repulsion state - use hook for collider size (re-renders when changed)
   const { repulsionStrength } = useOrbRepulsion()
@@ -99,7 +98,7 @@ export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1
       newTexture.colorSpace = THREE.SRGBColorSpace
       newTexture.needsUpdate = true
       setTexture(newTexture)
-      console.log('✅ Texture loaded:', album.title, album.cover_url)
+      devLog('✅ Texture loaded:', album.title, album.cover_url)
     }
     
     img.onerror = (err) => {
@@ -156,7 +155,7 @@ export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1
     const body = ref.current
     const velBefore = body.linvel()
     
-    console.log('🟠 Pushing', album.title, 'backward')
+    devLog('🟠 Pushing', album.title, 'backward')
     
     // RESET timer on each push (allows extending settle time)
     lastPushTime.current = Date.now()
@@ -188,49 +187,67 @@ export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1
     const t = state.clock.elapsedTime
     const body = ref.current
     
+    // MOUSE MOVEMENT DETECTION - only apply forces when cursor is moving
+    const currentMouse = { x: state.pointer.x, y: state.pointer.y }
+    const mouseDeltaX = currentMouse.x - lastMouseRef.current.x
+    const mouseDeltaY = currentMouse.y - lastMouseRef.current.y
+    const mouseSpeed = Math.sqrt(mouseDeltaX * mouseDeltaX + mouseDeltaY * mouseDeltaY)
+    lastMouseRef.current = currentMouse
+    
+    // Track how many frames mouse has been idle
+    const MOUSE_IDLE_THRESHOLD = 0.001  // Very small movement threshold
+    if (mouseSpeed < MOUSE_IDLE_THRESHOLD) {
+      mouseIdleFrames.current++
+    } else {
+      mouseIdleFrames.current = 0
+    }
+    
+    // Mouse is considered "at rest" after ~20 frames (~0.33 seconds at 60fps)
+    const isMouseIdle = mouseIdleFrames.current > 20
+    
     // Calculate current speed for rest detection
     const speed = Math.sqrt(vel.x * vel.x + vel.y * vel.y + vel.z * vel.z)
-    const REST_THRESHOLD = 0.1  // Threshold for stillness
-    const NOISE_THRESHOLD = 0.3  // Higher threshold - no noise when slow
-    const isAtRest = speed < REST_THRESHOLD
-    const isSlow = speed < NOISE_THRESHOLD
+    const forceScale = radius * visualScale
     
-    // Dynamic damping: strong damping when nearly at rest to prevent jitter
-    if (isAtRest) {
-      // Fully stop micro-movements and put body to sleep
-      body.setLinvel({ x: 0, y: 0, z: 0 }, true)
-      body.setAngvel({ x: 0, y: 0, z: 0 }, true)
-      // Don't apply any more forces this frame
-      return
-    } else if (isSlow) {
-      // Transitional damping for slow-moving orbs
-      body.setLinvel({ x: vel.x * 0.8, y: vel.y * 0.8, z: vel.z * 0.8 }, true)
-    }
-
-    // Perlin noise drift - ONLY when moving fast enough
-    if (!isSlow) {
-      const noiseX = Math.sin(t * 0.3 + seed) * 0.05
-      const noiseY = Math.cos(t * 0.2 + seed * 0.7) * 0.05
+    // When mouse is idle, put body to sleep to stop ALL physics (including collision jitter)
+    if (isMouseIdle) {
+      // First damp any remaining velocity more aggressively
+      if (speed > 0.02) {
+        body.setLinvel({ x: vel.x * 0.4, y: vel.y * 0.4, z: vel.z * 0.4 }, true)
+      } else {
+        // Zero velocity and SLEEP the body - this stops collision resolution jitter
+        body.setLinvel({ x: 0, y: 0, z: 0 }, true)
+        body.setAngvel({ x: 0, y: 0, z: 0 }, true)
+        if (!body.isSleeping()) {
+          body.sleep()
+        }
+      }
+      // Skip all other forces when mouse is idle
+    } else {
+      // MOUSE IS MOVING - wake up if sleeping
+      if (body.isSleeping()) {
+        body.wakeUp()
+      }
+      // MOUSE IS MOVING - apply normal physics
+      
+      // Perlin noise drift for organic motion
+      const noiseX = Math.sin(t * 0.3 + seed) * 0.04 * forceScale
+      const noiseY = Math.cos(t * 0.2 + seed * 0.7) * 0.04 * forceScale
       body.applyImpulse({ x: noiseX, y: noiseY, z: 0 }, true)
-    }
-
-    // CENTER ATTRACTION - Gentle pull toward origin when idle
-    // Keeps orbs from drifting too far and creates return-to-center behavior
-    const orbPos = new THREE.Vector3(pos.x, pos.y, pos.z)
-    const centerPos = new THREE.Vector3(0, 0, 0)
-    const toCenter = centerPos.clone().sub(orbPos)
-    const distanceToCenter = toCenter.length()
-    
-    // Only apply center attraction when moving fast enough
-    if (distanceToCenter > 3 && !isSlow) {
-      const centerStrength = 0.015 * Math.min(distanceToCenter / 10, 1)
-      const centerAttraction = toCenter.normalize().multiplyScalar(centerStrength)
-      body.applyImpulse(centerAttraction, true)
-    }
-
-    // Mouse interaction field (repulsion when too close, attraction when near)
-    // Only apply when moving fast enough to prevent jitter
-    if (!isSlow) {
+      
+      // CENTER ATTRACTION
+      const orbPos = new THREE.Vector3(pos.x, pos.y, pos.z)
+      const centerPos = new THREE.Vector3(0, 0, 0)
+      const toCenter = centerPos.clone().sub(orbPos)
+      const distanceToCenter = toCenter.length()
+      
+      if (distanceToCenter > 3) {
+        const centerStrength = 0.012 * forceScale * Math.min(distanceToCenter / 10, 1)
+        const centerAttraction = toCenter.normalize().multiplyScalar(centerStrength)
+        body.applyImpulse(centerAttraction, true)
+      }
+      
+      // Mouse interaction field (repulsion when too close, attraction when near)
       const mouse = new THREE.Vector3(
         state.pointer.x * 5,
         state.pointer.y * 3,
@@ -249,6 +266,38 @@ export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1
         const strength = 0.12 * (1 - distance / 6)
         const attraction = toCursor.normalize().multiplyScalar(strength)
         body.applyImpulse(attraction, true)
+      }
+      
+      // SOFT PROXIMITY CUSHION - prevents deep overlap and sticky behavior
+      // Always-on gentle repulsion between nearby orbs (independent of slider)
+      if (allBodiesRef?.current) {
+        const cushionDistance = colliderRadius * 2.5  // Start pushing before contact
+        const currentRepulsion = useOrbRepulsion.getState().repulsionStrength
+        
+        allBodiesRef.current.forEach(({ body: otherBody }, otherId) => {
+          if (otherId === album.id) return
+          
+          try {
+            const otherPos = otherBody.translation()
+            const toOther = new THREE.Vector3(
+              otherPos.x - pos.x,
+              otherPos.y - pos.y,
+              otherPos.z - pos.z
+            )
+            const dist = toOther.length()
+            
+            // Soft cushion: gentle push when close, before hard collision
+            if (dist < cushionDistance && dist > 0.1) {
+              const overlap = 1 - (dist / cushionDistance)
+              // Base cushion + extra from slider
+              const cushionStrength = 0.02 * overlap * overlap + currentRepulsion * 0.1 * overlap
+              const pushForce = toOther.normalize().multiplyScalar(-cushionStrength * forceScale)
+              body.applyImpulse(pushForce, true)
+            }
+          } catch (e) {
+            // Other body might be invalid
+          }
+        })
       }
     }
 
@@ -331,7 +380,7 @@ export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1
       }}
     >
       {/* Dynamic collider - grows with repulsion slider */}
-      <BallCollider args={[colliderRadius]} restitution={0.6} friction={0.15} />
+      <BallCollider args={[colliderRadius]} restitution={0.85} friction={0.03} />
       
       <group scale={visualScale}>
         {/* Inner glow */}

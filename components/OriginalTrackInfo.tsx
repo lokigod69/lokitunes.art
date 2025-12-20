@@ -74,6 +74,7 @@ export function OriginalTrackInfo({ albumSlug, original, albumPalette }: Origina
                   src={original.cover_url}
                   alt={original.label}
                   fill
+                  sizes="40px"
                   className="object-cover"
                 />
               </div>

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type MouseEvent as ReactMouseEvent } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useAudioStore } from '@/lib/audio-store'
+import { useMediaSession } from '@/hooks/useMediaSession'
 import { Play, Pause, Star, Volume2, Volume1, VolumeX, Download, SkipBack, SkipForward, Infinity as InfinityIcon } from 'lucide-react'
 import Image from 'next/image'
 import { RatingModal } from '@/components/RatingModal'
@@ -50,6 +51,9 @@ export function GlobalAudioPlayer() {
   const isHomePage = pathname === '/'
   const [isIOS, setIsIOS] = useState(false)
 
+  // Enable Media Session API for iOS/Android lock screen controls and background playback
+  useMediaSession()
+
   // Extract album info from extended version data (available from global queue)
   const extended = currentVersion as unknown as { albumSlug?: string; albumTitle?: string }
   const albumTitle = extended?.albumTitle
@@ -95,7 +99,7 @@ export function GlobalAudioPlayer() {
   const [ratingRefreshToken, setRatingRefreshToken] = useState(0)
   const versionId = currentVersion?.id
   const isOriginal = !!currentVersion?.is_original
-  const canSkip = queue.length > 1 && !isOriginal
+  const canSkip = !isOriginal && (autoplayMode === 'all' || queue.length > 1)
 
   useEffect(() => {
     if (!versionId || isOriginal) {
@@ -255,6 +259,7 @@ export function GlobalAudioPlayer() {
           style={{
             borderTopColor: `${accentColor}30`,
             background: `linear-gradient(to top, ${accentColor}18 0%, ${accentColor}08 50%, transparent 100%)`,
+            paddingBottom: 'env(safe-area-inset-bottom, 0px)',
           }}
         >
           <div className="max-w-screen-2xl mx-auto px-4 py-3">
@@ -269,6 +274,7 @@ export function GlobalAudioPlayer() {
                       src={currentVersion.cover_url}
                       alt={currentVersion.label}
                       fill
+                      sizes="36px"
                       className="object-cover"
                     />
                   </div>
@@ -409,6 +415,7 @@ export function GlobalAudioPlayer() {
                       src={currentVersion.cover_url}
                       alt={currentVersion.label}
                       fill
+                      sizes="48px"
                       className="object-cover"
                     />
                   </div>
@@ -431,16 +438,19 @@ export function GlobalAudioPlayer() {
                   
                   {/* Row 2: Ratings + Rate + Download */}
                   <div className="flex items-center gap-2 overflow-hidden">
-                    {!isOriginal && hasRatingStats && ratingStats && (
+                    {!isOriginal && !isRatingLoading && (ratingStats || userRating) && (
                       <div className="flex items-center gap-1 text-[10px] text-bone/70">
-                        <Star className="w-3 h-3" fill={accentColor} color={accentColor} />
-                        <span>{ratingStats.avg_rating.toFixed(1)}/10</span>
-                        <span className="text-bone/40">({ratingStats.rating_count})</span>
-                      </div>
-                    )}
-                    {!isOriginal && hasUserRating && userRating && (
-                      <div className="text-[10px] text-bone/60">
-                        You: <span style={{ color: accentColor }}>{userRating.rating}/10</span>
+                        {ratingStats && (
+                          <span className="text-bone/40">({ratingStats.rating_count})</span>
+                        )}
+                        {hasUserRating && userRating && (
+                          <>
+                            <span className="text-bone/40">u:</span>
+                            <span style={{ color: accentColor }}>
+                              {Number.isInteger(userRating.rating) ? userRating.rating.toFixed(0) : userRating.rating.toFixed(1)}
+                            </span>
+                          </>
+                        )}
                       </div>
                     )}
                     {!isOriginal && (

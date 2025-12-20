@@ -10,6 +10,7 @@ import type { DeviceTier } from '@/lib/device-detection'
 import { getQualitySettings } from '@/lib/device-detection'
 import { useSmartTexture } from '@/hooks/useSmartTexture'
 import { useAudioStore } from '@/lib/audio-store'
+import { devLog } from '@/lib/debug'
 
 /**
  * Extended version with song and album context for orb display
@@ -135,7 +136,7 @@ export function VersionOrb({
   useEffect(() => {
     // AUTO-DOCK: If this orb is idle but is the currently playing track (navigated back to page)
     if (animationState === 'idle' && isThisPlaying) {
-      console.log('🎯 Auto-docking: This track is playing, docking orb:', version.label)
+      devLog('🎯 Auto-docking: This track is playing, docking orb:', version.label)
       // Capture current position before docking
       if (ref.current) {
         const pos = ref.current.translation()
@@ -147,7 +148,7 @@ export function VersionOrb({
     
     // If this orb was docked/docking but is no longer playing (another orb took over)
     if ((animationState === 'docked' || animationState === 'docking') && !isThisPlaying) {
-      console.log('🔄 Another orb started playing, undocking:', version.label)
+      devLog('🔄 Another orb started playing, undocking:', version.label)
       // Reset originalPosition to initial spawn position (ensures orb returns to valid location)
       originalPosition.current = position
       setAnimationState('undocking')
@@ -155,7 +156,7 @@ export function VersionOrb({
     
     // Safety: If orb is undocking but somehow isThisPlaying becomes true, reset to docking
     if (animationState === 'undocking' && isThisPlaying) {
-      console.log('🔄 Orb clicked while undocking, re-docking:', version.label)
+      devLog('🔄 Orb clicked while undocking, re-docking:', version.label)
       setAnimationState('docking')
     }
   }, [isThisPlaying, animationState, version.label, position])
@@ -166,7 +167,7 @@ export function VersionOrb({
     if (animationState !== 'idle' && !isThisPlaying) {
       const safetyTimer = setTimeout(() => {
         // Force reset to idle - the closure captured animationState !== 'idle'
-        console.log('⚠️ Safety reset: Orb stuck, forcing idle:', version.label)
+        devLog('⚠️ Safety reset: Orb stuck, forcing idle:', version.label)
         setAnimationState('idle')
         animationProgress.current = 0
         currentScale.current = 1
@@ -183,22 +184,22 @@ export function VersionOrb({
   // Load texture - use version cover or fallback to album cover
   const coverUrl = version.cover_url || albumCoverUrl
   const possibleUrls = coverUrl ? [coverUrl] : []
-  console.log(`🔍 Loading texture for ${version.label}:`, coverUrl || 'no cover')
+  devLog(`🔍 Loading texture for ${version.label}:`, coverUrl || 'no cover')
   const texture = useSmartTexture(possibleUrls, version.label)
 
   // Configure texture for maximum sharpness
   useEffect(() => {
     if (texture) {
-      console.log(`✅ Texture loaded for ${version.label}:`, texture)
+      devLog(`✅ Texture loaded for ${version.label}:`, texture)
       texture.colorSpace = THREE.SRGBColorSpace
       texture.minFilter = THREE.LinearFilter
       texture.magFilter = THREE.LinearFilter
-      texture.anisotropy = 16
+      texture.anisotropy = deviceTier === 'high' ? 16 : deviceTier === 'medium' ? 4 : 2
       texture.needsUpdate = true
     } else {
-      console.log(`❌ NO texture for ${version.label} - using fallback color`)
+      devLog(`❌ NO texture for ${version.label} - using fallback color`)
     }
-  }, [texture, version.label])
+  }, [texture, version.label, deviceTier])
 
   const seed = version.id.charCodeAt(0) * 137.5
 
@@ -287,7 +288,7 @@ export function VersionOrb({
       // When animation complete, switch to docked state
       if (animationProgress.current >= 1) {
         setAnimationState('docked')
-        console.log('🎯 Orb docked:', version.label)
+        devLog('🎯 Orb docked:', version.label)
       }
     }
     
@@ -332,7 +333,7 @@ export function VersionOrb({
         if (groupRef.current) {
           groupRef.current.scale.setScalar(1)
         }
-        console.log('🎯 Orb undocked to spawn position:', version.label)
+        devLog('🎯 Orb undocked to spawn position:', version.label)
         
         // Give the orb a small impulse to start moving again
         body.applyImpulse({
@@ -457,13 +458,13 @@ export function VersionOrb({
     // PULSING GLOW - Enhanced when playing/docked
     if (glowRef.current) {
       if (animationState === 'docked' || animationState === 'docking') {
-        // DOCKED ORB: Faster, brighter pulse
-        const pulse = Math.sin(t * 2) * 0.5 + 1.5
-        glowRef.current.intensity = normalizedIntensity * pulse * 1.5
+        // DOCKED ORB: Faster, brighter pulse (but still subtle)
+        const pulse = Math.sin(t * 2) * 0.2 + 0.6
+        glowRef.current.intensity = normalizedIntensity * pulse * 0.4
       } else {
         // NORMAL ORB: Gentle pulse
-        const pulse = Math.sin(t * 1.5) * 0.5 + 1.5
-        glowRef.current.intensity = normalizedIntensity * pulse
+        const pulse = Math.sin(t * 1.5) * 0.15 + 0.4
+        glowRef.current.intensity = normalizedIntensity * pulse * 0.3
       }
     }
 
@@ -473,18 +474,17 @@ export function VersionOrb({
     }
   })
 
-  const handleClick = (e?: { stopPropagation?: () => void }) => {
-    e?.stopPropagation?.()
-
+  const handleClick = () => {
+    // Prevent double click
     const now = Date.now()
     if (now - lastClickRef.current < 400) return
     lastClickRef.current = now
 
-    console.log('🎮 Version orb clicked:', version.label)
-    console.log('   Animation state:', animationState)
-    console.log('   Version ID:', version.id)
-    console.log('   Song ID:', version.songId)
-    console.log('   Audio URL:', version.audio_url)
+    devLog('🎮 Version orb clicked:', version.label)
+    devLog('   Animation state:', animationState)
+    devLog('   Version ID:', version.id)
+    devLog('   Song ID:', version.songId)
+    devLog('   Audio URL:', version.audio_url)
     
     // ═══════════════════════════════════════════════════════════════════════════════
     // 🎯 DOCKING CLICK LOGIC
@@ -511,12 +511,12 @@ export function VersionOrb({
       } else {
         play(version, version.songId, albumPalette, true)
       }
-      console.log('🚀 Starting dock animation for:', version.label)
+      devLog('🚀 Starting dock animation for:', version.label)
     } 
     else if (animationState === 'docked') {
       // Clicking a docked (playing) orb restarts the track from beginning
       setCurrentTime(0)
-      console.log('🔄 Restarting track from beginning:', version.label)
+      devLog('🔄 Restarting track from beginning:', version.label)
     }
     // Ignore clicks during animation
   }

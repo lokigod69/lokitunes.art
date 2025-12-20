@@ -275,13 +275,63 @@ export const useAudioStore = create<AudioState>((set, get) => ({
   },
 
   next: () => {
-    const { queue, currentIndex, autoplayMode } = get()
+    const { queue, currentIndex, autoplayMode, currentVersion } = get()
+    if (!currentVersion) return
+
+    // In 'all' mode, ensure we have a global queue (so Next works immediately even
+    // if playback was started from a single-track context).
+    if (autoplayMode === 'all' && queue.length <= 1) {
+      const current = currentVersion as SongVersionWithMeta
+
+      fetch('/api/versions')
+        .then((res) => {
+          if (!res.ok) throw new Error('Failed to fetch versions')
+          return res.json()
+        })
+        .then((data: { versions?: SongVersionWithMeta[] }) => {
+          const allVersions = data.versions ?? []
+          if (allVersions.length === 0) return
+
+          const rest = allVersions.filter((v) => v.id !== current.id)
+          const shuffledRest = [...rest].sort(() => Math.random() - 0.5)
+          const nextQueue = [current, ...shuffledRest]
+
+          set({ queue: nextQueue, currentIndex: 0 })
+
+          // Immediately advance to the first shuffled item.
+          const candidate = nextQueue[1]
+          if (!candidate) return
+
+          const nextPalette = candidate.albumPalette || get().currentPalette
+          set({
+            currentIndex: 1,
+            currentVersion: candidate,
+            currentSongId: candidate.songId ?? candidate.song_id ?? null,
+            currentPalette: nextPalette ?? null,
+            isPlaying: true,
+            currentTime: 0,
+          })
+        })
+        .catch((error) => {
+          console.error('Failed to fetch versions for all-mode next():', error)
+        })
+      return
+    }
+
     if (queue.length === 0) return
 
-    const nextIndex = (currentIndex + 1) % queue.length
-    const nextVersion = queue[nextIndex]
+    let nextIndex = currentIndex + 1
+    if (nextIndex >= queue.length) {
+      if (autoplayMode === 'all') {
+        nextIndex = 0
+      } else {
+        return
+      }
+    }
 
-    // Update palette if the next track has album info (for global shuffle)
+    const nextVersion = queue[nextIndex]
+    if (!nextVersion) return
+
     const nextPalette = nextVersion.albumPalette || get().currentPalette
 
     set({
@@ -295,13 +345,21 @@ export const useAudioStore = create<AudioState>((set, get) => ({
   },
 
   previous: () => {
-    const { queue, currentIndex } = get()
+    const { queue, currentIndex, autoplayMode } = get()
     if (queue.length === 0) return
 
-    const prevIndex = currentIndex === 0 ? queue.length - 1 : currentIndex - 1
-    const prevVersion = queue[prevIndex]
+    let prevIndex = currentIndex - 1
+    if (prevIndex < 0) {
+      if (autoplayMode === 'all') {
+        prevIndex = queue.length - 1
+      } else {
+        return
+      }
+    }
 
-    // Update palette if the previous track has album info (for global shuffle)
+    const prevVersion = queue[prevIndex]
+    if (!prevVersion) return
+
     const prevPalette = prevVersion.albumPalette || get().currentPalette
 
     set({
@@ -365,12 +423,37 @@ export const useAudioStore = create<AudioState>((set, get) => ({
         // ignore storage errors
       }
     }
+
+    // If switching into 'all' mode while a track is already selected, eagerly
+    // populate a global queue without restarting the current track.
+    if (mode === 'all') {
+      const current = get().currentVersion as SongVersionWithMeta | null
+      if (!current) return
+
+      fetch('/api/versions')
+        .then((res) => {
+          if (!res.ok) throw new Error('Failed to fetch versions')
+          return res.json()
+        })
+        .then((data: { versions?: SongVersionWithMeta[] }) => {
+          const allVersions = data.versions ?? []
+          if (allVersions.length === 0) return
+
+          const rest = allVersions.filter((v) => v.id !== current.id)
+          const shuffledRest = [...rest].sort(() => Math.random() - 0.5)
+          const nextQueue = [current, ...shuffledRest]
+          set({ queue: nextQueue, currentIndex: 0 })
+        })
+        .catch((error) => {
+          console.error('Failed to prebuild global queue for all-mode:', error)
+        })
+    }
   },
 
   // Called by AudioEngine when a track finishes playback.
   // Respects autoplayMode: when 'off', simply stops; otherwise advances in the queue.
   handleTrackEnd: () => {
-    const { autoplayMode, queue } = get()
+    const { autoplayMode, queue, currentIndex } = get()
 
     if (queue.length === 0) {
       set({ isPlaying: false })
@@ -382,7 +465,11 @@ export const useAudioStore = create<AudioState>((set, get) => ({
       return
     }
 
-    // For 'album' and 'all' we just advance in the current queue.
+    if (autoplayMode === 'album' && currentIndex >= queue.length - 1) {
+      set({ isPlaying: false })
+      return
+    }
+
     get().next()
   },
 }))

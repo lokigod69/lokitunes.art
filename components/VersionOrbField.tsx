@@ -16,6 +16,7 @@ import { detectDeviceTier, getQualitySettings, type DeviceTier } from '@/lib/dev
 import { calculateOrbLayout, calculateCameraDistance } from '@/lib/orb-layout'
 import type { Album } from '@/lib/supabase'
 import { useAudioStore } from '@/lib/audio-store'
+import { devLog, devWarn } from '@/lib/debug'
 
 interface VersionOrbFieldProps {
   versions: ExtendedVersion[]
@@ -32,17 +33,17 @@ function PhysicsCleanup({ expectedCount }: { expectedCount: number }) {
     // Delay check to ensure all orbs have mounted
     const timer = setTimeout(() => {
       const actualCount = world.bodies.len()
-      console.log(`🧹 Physics World Health Check:`)
-      console.log(`   Expected: ${expectedCount} orbs`)
-      console.log(`   Actual: ${actualCount} rigid bodies`)
+      devLog(`🧹 Physics World Health Check:`)
+      devLog(`   Expected: ${expectedCount} orbs`)
+      devLog(`   Actual: ${actualCount} rigid bodies`)
       
       if (actualCount === expectedCount) {
-        console.log(`✅ PERFECT! Physics world is clean - no ghost orbs!`)
+        devLog(`✅ PERFECT! Physics world is clean - no ghost orbs!`)
       } else if (actualCount > expectedCount) {
-        console.log(`🚨 WARNING: ${actualCount - expectedCount} extra rigid bodies detected!`)
-        console.log(`   This suggests ghost orbs still exist - Physics key may not be working`)
+        devLog(`🚨 WARNING: ${actualCount - expectedCount} extra rigid bodies detected!`)
+        devLog(`   This suggests ghost orbs still exist - Physics key may not be working`)
       } else {
-        console.log(`⚠️ FEWER bodies than expected - orbs may still be mounting`)
+        devLog(`⚠️ FEWER bodies than expected - orbs may still be mounting`)
       }
     }, 1000) // Wait 1 second for orbs to mount
     
@@ -106,30 +107,32 @@ function OrbScene({
     if (!gridRef.current) return
     const material: any = (gridRef.current as any).material
 
+    const baseOpacity = isMobile ? 0.12 : 0.18
+
     if (Array.isArray(material)) {
       material.forEach((m: any) => {
         m.transparent = true
-        m.opacity = 0.18
+        m.opacity = baseOpacity
       })
     } else if (material) {
       material.transparent = true
-      material.opacity = 0.18
+      material.opacity = baseOpacity
     }
-  }, [])
+  }, [isMobile])
 
   // 🧹 NUCLEAR GHOST FIX: Force Physics world to remount when versions change
   // This clears ALL rigid bodies and prevents ghost orbs from deleted tracks
   const physicsKey = versions.map(v => v.id).sort().join('-')
   
-  console.log(`🎵 Rendering ${versions.length} version orbs with radius ${radius}`)
-  console.log(`🧹 Physics World Key: ${physicsKey.slice(0, 30)}... (forces remount on version changes)`)
+  devLog(`🎵 Rendering ${versions.length} version orbs with radius ${radius}`)
+  devLog(`🧹 Physics World Key: ${physicsKey.slice(0, 30)}... (forces remount on version changes)`)
   
   return (
     <Physics key={physicsKey} gravity={[0, 0, 0]}>
       <Suspense fallback={null}>
         <group>
           {versions.map((version, index) => {
-            console.log(`  Orb ${index + 1}: ${version.label}`)
+            devLog(`  Orb ${index + 1}: ${version.label}`)
             return (
               <VersionOrb
                 key={version.id}
@@ -171,16 +174,21 @@ function OrbScene({
       
       {/* ALBUM GRID - Matches home page grid structure for consistency */}
       {/* Uses album palette color instead of neon colors */}
+      {(() => {
+        const gridColor = (isMobile ? '#4F9EFF' : (albumPalette?.accent1 || '#4F9EFF')).slice(0, 7)
+        return (
       <gridHelper 
         ref={gridRef}
         args={[
-          isMobile ? 50 : 100,                      // Size: matches home page
-          isMobile ? 25 : 50,                       // Divisions: matches home page (was 8/10)
-          (albumPalette?.accent1 || '#4F9EFF').slice(0, 7),
-          (albumPalette?.accent1 || '#4F9EFF').slice(0, 7)
+          isMobile ? 50 : 80,                       // Size: slightly smaller to fit in view
+          isMobile ? 25 : 40,                       // Divisions: proportional
+          gridColor,
+          gridColor
         ]}
-        position={[0, -15, isMobile ? -15 : 0]}    // Matches home page position
+        position={[0, -13, isMobile ? -15 : -10]}  // Move grid back (Z=-10) so it starts within view
       />
+        )
+      })()}
       
       {/* VINYL ARTWORK DISPLAY - Standing at back of grid, shows on hover or when playing */}
       <AlbumArtworkDisplay
@@ -191,6 +199,7 @@ function OrbScene({
         albumTitle={hoveredVersion?.label || playingVersion?.label || 'Album'}
         onVinylClick={playingVersion ? onStopPlaying : undefined}
         isPlaying={!!playingVersion}
+        deviceTier={deviceTier}
       />
     </Physics>
   )
@@ -203,7 +212,7 @@ export function VersionOrbField({
   isMobile = false
 }: VersionOrbFieldProps) {
   // 🔥 DEBUG: Log palette received by VersionOrbField
-  console.log('🔥 VersionOrbField received palette:', {
+  devLog('🔥 VersionOrbField received palette:', {
     palette: albumPalette,
     dominant: albumPalette?.dominant,
     dominantLength: albumPalette?.dominant?.length,
@@ -213,6 +222,7 @@ export function VersionOrbField({
 
   const [deviceTier, setDeviceTier] = useState<DeviceTier>('high')
   const [dpr, setDpr] = useState(1.5)
+  const [canvasKey, setCanvasKey] = useState(0)
   const [hoveredVersion, setHoveredVersion] = useState<ExtendedVersion | null>(null)
 
   // Global audio store - currently playing version
@@ -252,7 +262,7 @@ export function VersionOrbField({
   // Calculate camera distance based on version count, mobile state, and aspect ratio
   const cameraDistance = calculateCameraDistance(versions.length, isMobile, aspectRatio)
   
-  console.log(`📷 Camera distance for ${versions.length} versions: ${cameraDistance} (mobile: ${isMobile}, aspect: ${aspectRatio.toFixed(2)})`)
+  devLog(`📷 Camera distance for ${versions.length} versions: ${cameraDistance} (mobile: ${isMobile}, aspect: ${aspectRatio.toFixed(2)})`)
 
   // Pointer event handlers to ensure touch events are captured for orb attraction
   const [isPointerActive, setIsPointerActive] = useState(false)
@@ -273,10 +283,11 @@ export function VersionOrbField({
     <>
       {/* 3D Canvas - Fullscreen */}
       <Canvas
+        key={canvasKey}
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerLeave}
-        dpr={dpr}
+        dpr={isMobile ? Math.min(dpr, 1) : dpr}
         camera={{ 
           position: [0, 0, cameraDistance],
           fov: 50,
@@ -285,8 +296,25 @@ export function VersionOrbField({
         }}
         gl={{ 
           alpha: false,
-          antialias: true,
-          powerPreference: 'high-performance'
+          antialias: !isMobile,
+          powerPreference: isMobile ? 'low-power' : 'high-performance',
+          failIfMajorPerformanceCaveat: false
+        }}
+        onCreated={({ gl }) => {
+          const canvas = gl.domElement
+
+          const onLost = (event: any) => {
+            event.preventDefault?.()
+            devWarn('WebGL context lost (VersionOrbField).')
+          }
+
+          const onRestored = () => {
+            devLog('WebGL context restored (VersionOrbField).')
+            setCanvasKey((k) => k + 1)
+          }
+
+          canvas.addEventListener('webglcontextlost', onLost)
+          canvas.addEventListener('webglcontextrestored', onRestored)
         }}
         style={{
           position: 'absolute',
@@ -326,21 +354,34 @@ export function VersionOrbField({
           isMobile={isMobile}
         />
         
-        {/* Post-processing effects */}
-        <EffectComposer multisampling={quality.multisampling}>
-          <Bloom
-            intensity={quality.bloomIntensity}
-            luminanceThreshold={0.9}
-            luminanceSmoothing={0.025}
-            mipmapBlur={true}
-            kernelSize={KernelSize.LARGE}
-          />
-          <ChromaticAberration
-            offset={deviceTier === 'low' ? [0, 0] : [0.002, 0.001]}
-            radialModulation={deviceTier !== 'low'}
-          />
-          <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
-        </EffectComposer>
+        {/* Post-processing effects - reduced on mobile to avoid GPU context loss */}
+        {!isMobile ? (
+          <EffectComposer multisampling={quality.multisampling}>
+            <Bloom
+              intensity={quality.bloomIntensity}
+              luminanceThreshold={0.9}
+              luminanceSmoothing={0.025}
+              mipmapBlur={true}
+              kernelSize={KernelSize.LARGE}
+            />
+            <ChromaticAberration
+              offset={deviceTier === 'low' ? [0, 0] : [0.002, 0.001]}
+              radialModulation={deviceTier !== 'low'}
+            />
+            <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
+          </EffectComposer>
+        ) : (
+          <EffectComposer multisampling={0}>
+            <Bloom
+              intensity={0.3}
+              luminanceThreshold={0.98}
+              luminanceSmoothing={0.1}
+              mipmapBlur={false}
+              kernelSize={KernelSize.SMALL}
+            />
+            <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
+          </EffectComposer>
+        )}
       </Canvas>
 
       {/* Fallback for no versions */}

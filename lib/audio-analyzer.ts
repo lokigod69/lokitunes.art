@@ -32,21 +32,33 @@ export function ensureConnected(audioEl: HTMLAudioElement): AnalyserNode {
     throw new Error('ensureConnected requires a valid HTMLAudioElement')
   }
 
-  if (sourceNode && connectedElement && connectedElement !== audioEl) {
-    throw new Error('Audio analyzer is already connected to a different <audio> element')
-  }
-
   const ctx = getOrCreateAudioContext()
   const analyser = getOrCreateAnalyser(ctx)
+
+  // If connected to a different element, disconnect and reconnect
+  if (sourceNode && connectedElement && connectedElement !== audioEl) {
+    try {
+      sourceNode.disconnect()
+    } catch {
+      // Already disconnected
+    }
+    sourceNode = null
+    connectedElement = null
+  }
 
   // Avoid creating a MediaElementAudioSourceNode while the context is suspended.
   // Some browsers require a user gesture to resume; creating the source too early
   // can have unpredictable routing behavior.
   if (!sourceNode && ctx.state === 'running') {
-    connectedElement = audioEl
-    sourceNode = ctx.createMediaElementSource(audioEl)
-    sourceNode.connect(analyser)
-    analyser.connect(ctx.destination)
+    try {
+      connectedElement = audioEl
+      sourceNode = ctx.createMediaElementSource(audioEl)
+      sourceNode.connect(analyser)
+      analyser.connect(ctx.destination)
+    } catch (e) {
+      // MediaElementAudioSourceNode already created for this element - reuse it
+      console.log('Audio analyzer: element already connected, reusing')
+    }
   }
 
   return analyser

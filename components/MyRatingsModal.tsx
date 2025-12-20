@@ -122,6 +122,7 @@ export function MyRatingsModal({ isOpen, onClose }: MyRatingsModalProps) {
                         src={rating.cover_url}
                         alt={rating.song_title}
                         fill
+                        sizes="48px"
                         className="object-cover"
                       />
                     ) : (

@@ -45,6 +45,7 @@ export function VersionRow({
               src={fallbackUrl}
               alt={version.label}
               fill
+              sizes="(max-width: 640px) 40px, (max-width: 768px) 48px, 56px"
               className="object-cover"
               onError={(e) => {
                 // Try album cover as fallback

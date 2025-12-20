@@ -1,10 +1,10 @@
 'use client'
 
-import { Attractor } from '@react-three/rapier-addons'
 import { useThree, useFrame } from '@react-three/fiber'
-import { useState, memo, useEffect, useRef } from 'react'
+import { memo, useEffect, useRef } from 'react'
 import { useRapier } from '@react-three/rapier'
 import * as THREE from 'three'
+import { applyAttractorForceOnRigidBody } from '@react-three/rapier-addons'
 
 /**
  * Mouse attraction component - INVISIBLE VERSION
@@ -17,7 +17,7 @@ import * as THREE from 'three'
 function MouseAttractionComponent({ albumCount }: { albumCount?: number }) {
   const { camera, pointer } = useThree()
   const { world } = useRapier()
-  const [attractorPos, setAttractorPos] = useState<[number, number, number]>([0, 0, 0])
+  const attractorObject = useRef<THREE.Object3D>(null)
   const frameCount = useRef(0)
   
   // Dynamic attraction settings based on album size
@@ -45,17 +45,26 @@ function MouseAttractionComponent({ albumCount }: { albumCount?: number }) {
     const dir = vector.sub(camera.position).normalize()
     const distance = 15
     const targetPos = camera.position.clone().add(dir.multiplyScalar(distance))
-    
-    setAttractorPos([targetPos.x, targetPos.y, targetPos.z])
+
+    if (!attractorObject.current) return
+    attractorObject.current.position.set(targetPos.x, targetPos.y, targetPos.z)
+
+    const object = attractorObject.current
+
+    world.bodies.forEach((body) => {
+      if (!body.isDynamic()) return
+      applyAttractorForceOnRigidBody(body, {
+        object,
+        strength: attractorStrength,
+        range: attractorRange,
+        type: 'linear',
+        gravitationalConstant: 6.673e-11,
+      })
+    })
   })
   
   return (
-    <Attractor 
-      position={attractorPos}
-      strength={attractorStrength}
-      range={attractorRange}
-      type="linear"
-    />
+    <object3D ref={attractorObject} />
   )
 }
 

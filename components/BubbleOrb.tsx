@@ -12,6 +12,7 @@ import { getAlbumCoverUrl } from '@/lib/supabase-images'
 import { useSmartTexture } from '@/hooks/useSmartTexture'
 import { usePlayMode } from '@/hooks/usePlayMode'
 import { useOrbRepulsion } from '@/hooks/useOrbRepulsion'
+import { devLog } from '@/lib/debug'
 
 /**
  * Normalize emissive intensity based on color brightness
@@ -63,7 +64,7 @@ export function BubbleOrb({
   orbIndex = 0,
   allBodiesRef
 }: BubbleOrbProps) {
-  console.log('🔵 BubbleOrb rendering:', album.title, '| roughness: 0.7 | emissive: 1.0/0.5 | pointLight: 0.2x')
+  devLog('🔵 BubbleOrb rendering:', album.title, '| roughness: 0.7 | emissive: 1.0/0.5 | pointLight: 0.2x')
   const ref = useRef<RapierRigidBody>(null)
   const glowRef = useRef<THREE.PointLight>(null)
   const innerMeshRef = useRef<THREE.Mesh>(null)
@@ -73,6 +74,8 @@ export function BubbleOrb({
   const [pendingBurst, setPendingBurst] = useState(false)
   const playModeInitialized = useRef(false)
   const lastPositionRef = useRef<[number, number, number]>([0, 0, 0])
+  const lastMouseRef = useRef<{ x: number, y: number }>({ x: 0, y: 0 })
+  const mouseIdleFrames = useRef(0)
   
   // Play mode state
   const { isActive: playModeActive, isPaused: playModePaused, loseOrb, orbsLost, triggerBurst } = usePlayMode()
@@ -105,16 +108,12 @@ export function BubbleOrb({
     }
   }, [pendingBurst, triggerBurst, loseOrb, orbIndex, album.palette])
   
-  // Reset burst state when play mode changes (start or stop)
-  const prevPlayModeRef = useRef(playModeActive)
+  // Restore orb when play mode ends
   useEffect(() => {
-    // Reset when game starts OR stops
-    if (playModeActive !== prevPlayModeRef.current) {
+    if (!playModeActive && pendingBurst) {
       setPendingBurst(false)
-      setIsLost(false)
     }
-    prevPlayModeRef.current = playModeActive
-  }, [playModeActive])
+  }, [playModeActive, pendingBurst])
   
   // Repulsion state - use hook for collider size (re-renders when changed)
   const { repulsionStrength } = useOrbRepulsion()
@@ -129,22 +128,22 @@ export function BubbleOrb({
   const possibleUrls = directCoverUrl
     ? [directCoverUrl, ...getAlbumCoverUrl(album.slug)]
     : getAlbumCoverUrl(album.slug)
-  console.log(`🔍 Attempting to load texture for ${album.title}:`, possibleUrls.slice(0, 3))
+  devLog(`🔍 Attempting to load texture for ${album.title}:`, possibleUrls.slice(0, 3))
   const texture = useSmartTexture(possibleUrls, album.title)
 
   // Configure texture for maximum sharpness
   useEffect(() => {
     if (texture) {
-      console.log(`✅ Texture loaded for ${album.title}:`, texture)
+      devLog(`✅ Texture loaded for ${album.title}:`, texture)
       texture.colorSpace = THREE.SRGBColorSpace
       texture.minFilter = THREE.LinearFilter  // Sharp when zoomed out
       texture.magFilter = THREE.LinearFilter  // Sharp when zoomed in
-      texture.anisotropy = 16  // Maximum sharpness
+      texture.anisotropy = deviceTier === 'high' ? 16 : deviceTier === 'medium' ? 4 : 2
       texture.needsUpdate = true
     } else {
-      console.log(`❌ NO texture for ${album.title} - using fallback color`)
+      devLog(`❌ NO texture for ${album.title} - using fallback color`)
     }
-  }, [texture, album.title])
+  }, [texture, album.title, deviceTier])
 
   const seed = album.id.charCodeAt(0) * 137.5
 
@@ -221,7 +220,7 @@ export function BubbleOrb({
     const body = ref.current
     const velBefore = body.linvel()
     
-    console.log('🟦 Pushing', album.title, 'backward')
+    devLog('🟦 Pushing', album.title, 'backward')
     
     // RESET timer on each push (allows extending settle time)
     lastPushTime.current = Date.now()
@@ -253,49 +252,67 @@ export function BubbleOrb({
     const t = state.clock.elapsedTime
     const body = ref.current
     
+    // MOUSE MOVEMENT DETECTION - only apply forces when cursor is moving
+    const currentMouse = { x: state.pointer.x, y: state.pointer.y }
+    const mouseDeltaX = currentMouse.x - lastMouseRef.current.x
+    const mouseDeltaY = currentMouse.y - lastMouseRef.current.y
+    const mouseSpeed = Math.sqrt(mouseDeltaX * mouseDeltaX + mouseDeltaY * mouseDeltaY)
+    lastMouseRef.current = currentMouse
+    
+    // Track how many frames mouse has been idle
+    const MOUSE_IDLE_THRESHOLD = 0.001  // Very small movement threshold
+    if (mouseSpeed < MOUSE_IDLE_THRESHOLD) {
+      mouseIdleFrames.current++
+    } else {
+      mouseIdleFrames.current = 0
+    }
+    
+    // Mouse is considered "at rest" after ~20 frames (~0.33 seconds at 60fps)
+    const isMouseIdle = mouseIdleFrames.current > 20
+    
     // Calculate current speed for rest detection
     const speed = Math.sqrt(vel.x * vel.x + vel.y * vel.y + vel.z * vel.z)
-    const REST_THRESHOLD = 0.1  // Threshold for stillness
-    const NOISE_THRESHOLD = 0.3  // Higher threshold - no noise when slow
-    const isAtRest = speed < REST_THRESHOLD
-    const isSlow = speed < NOISE_THRESHOLD
+    const forceScale = radius * visualScale
     
-    // Dynamic damping: strong damping when nearly at rest to prevent jitter
-    if (isAtRest) {
-      // Fully stop micro-movements and put body to sleep
-      body.setLinvel({ x: 0, y: 0, z: 0 }, true)
-      body.setAngvel({ x: 0, y: 0, z: 0 }, true)
-      // Don't apply any more forces this frame
-      return
-    } else if (isSlow) {
-      // Transitional damping for slow-moving orbs
-      body.setLinvel({ x: vel.x * 0.8, y: vel.y * 0.8, z: vel.z * 0.8 }, true)
-    }
-
-    // Perlin noise drift for organic motion - ONLY when moving fast enough
-    if (!isSlow) {
-      const noiseX = Math.sin(t * 0.3 + seed) * 0.05
-      const noiseY = Math.cos(t * 0.2 + seed * 0.7) * 0.05
+    // When mouse is idle, put body to sleep to stop ALL physics (including collision jitter)
+    if (isMouseIdle) {
+      // First damp any remaining velocity more aggressively
+      if (speed > 0.02) {
+        body.setLinvel({ x: vel.x * 0.4, y: vel.y * 0.4, z: vel.z * 0.4 }, true)
+      } else {
+        // Zero velocity and SLEEP the body - this stops collision resolution jitter
+        body.setLinvel({ x: 0, y: 0, z: 0 }, true)
+        body.setAngvel({ x: 0, y: 0, z: 0 }, true)
+        if (!body.isSleeping()) {
+          body.sleep()
+        }
+      }
+      // Skip all other forces when mouse is idle
+    } else {
+      // MOUSE IS MOVING - wake up if sleeping
+      if (body.isSleeping()) {
+        body.wakeUp()
+      }
+      // MOUSE IS MOVING - apply normal physics
+      
+      // Perlin noise drift for organic motion
+      const noiseX = Math.sin(t * 0.3 + seed) * 0.04 * forceScale
+      const noiseY = Math.cos(t * 0.2 + seed * 0.7) * 0.04 * forceScale
       body.applyImpulse({ x: noiseX, y: noiseY, z: 0 }, true)
-    }
-
-    // CENTER ATTRACTION - Gentle pull toward origin when idle
-    // Keeps orbs from drifting too far and creates return-to-center behavior
-    const centerPos = new THREE.Vector3(0, 0, 0)
-    const orbPos = new THREE.Vector3(pos.x, pos.y, pos.z)
-    const toCenter = centerPos.clone().sub(orbPos)
-    const distanceToCenter = toCenter.length()
-    
-    // Only apply center attraction when moving fast enough
-    if (distanceToCenter > 3 && !isSlow) {
-      const centerStrength = 0.015 * Math.min(distanceToCenter / 10, 1)
-      const centerAttraction = toCenter.normalize().multiplyScalar(centerStrength)
-      body.applyImpulse(centerAttraction, true)
-    }
-
-    // Mouse interaction field with proper 3D unprojection
-    // Only apply when moving fast enough to prevent jitter
-    if (!isSlow) {
+      
+      // CENTER ATTRACTION
+      const centerPos = new THREE.Vector3(0, 0, 0)
+      const orbPos = new THREE.Vector3(pos.x, pos.y, pos.z)
+      const toCenter = centerPos.clone().sub(orbPos)
+      const distanceToCenter = toCenter.length()
+      
+      if (distanceToCenter > 3) {
+        const centerStrength = 0.012 * forceScale * Math.min(distanceToCenter / 10, 1)
+        const centerAttraction = toCenter.normalize().multiplyScalar(centerStrength)
+        body.applyImpulse(centerAttraction, true)
+      }
+      
+      // Mouse interaction field with proper 3D unprojection
       const vector = new THREE.Vector3(state.pointer.x, state.pointer.y, 0.5)
       vector.unproject(state.camera)
       const dir = vector.sub(state.camera.position).normalize()
@@ -315,6 +332,38 @@ export function BubbleOrb({
         const strength = 0.15 * (1 - distance / 8)  // Increased from 0.12
         const attraction = toCursor.normalize().multiplyScalar(strength)
         body.applyImpulse(attraction, true)
+      }
+      
+      // SOFT PROXIMITY CUSHION - prevents deep overlap and sticky behavior
+      // Always-on gentle repulsion between nearby orbs (independent of slider)
+      if (allBodiesRef?.current) {
+        const cushionDistance = colliderRadius * 2.5  // Start pushing before contact
+        const currentRepulsion = useOrbRepulsion.getState().repulsionStrength
+        
+        allBodiesRef.current.forEach(({ body: otherBody }, otherId) => {
+          if (otherId === album.id) return
+          
+          try {
+            const otherPos = otherBody.translation()
+            const toOther = new THREE.Vector3(
+              otherPos.x - pos.x,
+              otherPos.y - pos.y,
+              otherPos.z - pos.z
+            )
+            const dist = toOther.length()
+            
+            // Soft cushion: gentle push when close, before hard collision
+            if (dist < cushionDistance && dist > 0.1) {
+              const overlap = 1 - (dist / cushionDistance)
+              // Base cushion + extra from slider
+              const cushionStrength = 0.02 * overlap * overlap + currentRepulsion * 0.1 * overlap
+              const pushForce = toOther.normalize().multiplyScalar(-cushionStrength * forceScale)
+              body.applyImpulse(pushForce, true)
+            }
+          } catch (e) {
+            // Other body might be invalid
+          }
+        })
       }
     }
 
@@ -398,7 +447,7 @@ export function BubbleOrb({
       }}
     >
       {/* Dynamic collider - grows with repulsion slider */}
-      <BallCollider args={[colliderRadius]} restitution={0.6} friction={0.15} />
+      <BallCollider args={[colliderRadius]} restitution={0.85} friction={0.03} />
       
       <group scale={visualScale}>
         <pointLight

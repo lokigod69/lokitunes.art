@@ -83,8 +83,8 @@ export function GridTextDisplay({ album, visible }: GridTextDisplayProps) {
   if (!album || !visible) return null
   
   // Color adaptation from album palette
-  const mainColor = album.palette?.dominant || '#4F9EFF'
-  const shadow1Color = album.palette?.accent1 || mainColor
+  const mainColor = album.palette?.accent1 || '#4F9EFF'
+  const shadow1Color = album.palette?.accent2 || mainColor
   const shadow2Color = album.palette?.accent2 || shadow1Color
   const shadow3Color = mainColor  // Use main color for third shadow
   

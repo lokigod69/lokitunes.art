@@ -1,9 +1,18 @@
 'use client'
 
 import { useState } from 'react'
+import dynamic from 'next/dynamic'
 import { ChevronDown, ChevronRight } from 'lucide-react'
-import { WaveformPlayer } from './WaveformPlayer'
 import type { SongWithVersions } from '@/lib/supabase'
+
+const WaveformPlayer = dynamic(() => import('./WaveformPlayer').then((m) => m.WaveformPlayer), {
+  ssr: false,
+  loading: () => (
+    <div className="h-[92px] rounded-lg bg-void/30 flex items-center justify-center">
+      <div className="animate-pulse text-bone/50 text-sm">Loading...</div>
+    </div>
+  ),
+})
 
 interface SongRowProps {
   song: SongWithVersions
@@ -75,11 +84,7 @@ export function SongRow({ song, accentColor }: SongRowProps) {
                   )}
                 </div>
               </div>
-              <WaveformPlayer
-                version={version}
-                songId={song.id}
-                accentColor={accentColor}
-              />
+              <WaveformPlayer version={version} songId={song.id} accentColor={accentColor} />
             </div>
           ))}
         </div>

@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react'
 import { useAudioStore } from '@/lib/audio-store'
 import { setAudioElement } from '@/lib/audio-element-registry'
+import { devLog } from '@/lib/debug'
 
 export default function AudioEngine() {
   const audioRef = useRef<HTMLAudioElement>(null)
@@ -42,7 +43,7 @@ export default function AudioEngine() {
     
     // Only load if URL actually changed (prevents restart on re-renders)
     if (newSrc && newSrc !== lastLoadedUrl.current) {
-      console.log('[AudioEngine] Loading new audio:', currentVersion?.label)
+      devLog('[AudioEngine] Loading new audio:', currentVersion?.label)
       isLoadingNewTrack.current = true
       lastLoadedUrl.current = newSrc
       audio.crossOrigin = 'anonymous'
@@ -117,19 +118,19 @@ export default function AudioEngine() {
       return
     }
 
-    console.log('[AudioEngine] Attaching event listeners')
+    devLog('[AudioEngine] Attaching event listeners')
 
     const handleTimeUpdate = () => {
       updateTime(audio.currentTime)
     }
 
     const handleLoadedMetadata = () => {
-      console.log('[AudioEngine] Metadata loaded, duration:', audio.duration)
+      devLog('[AudioEngine] Metadata loaded, duration:', audio.duration)
       setDuration(audio.duration)
     }
 
     const handleEnded = () => {
-      console.log('[AudioEngine] Track ended')
+      devLog('[AudioEngine] Track ended')
       handleTrackEnd()
     }
 
@@ -143,7 +144,7 @@ export default function AudioEngine() {
     audio.addEventListener('error', handleError)
 
     return () => {
-      console.log('[AudioEngine] Removing event listeners')
+      devLog('[AudioEngine] Removing event listeners')
       audio.removeEventListener('timeupdate', handleTimeUpdate)
       audio.removeEventListener('loadedmetadata', handleLoadedMetadata)
       audio.removeEventListener('ended', handleEnded)
@@ -159,6 +160,8 @@ export default function AudioEngine() {
       ref={audioRef}
       crossOrigin="anonymous"
       preload="metadata"
+      playsInline
+      webkit-playsinline="true"
       className="hidden"
     />
   )

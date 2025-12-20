@@ -6,6 +6,7 @@ import { Play, Pause, Volume2, VolumeX } from 'lucide-react'
 import { useAudioStore } from '@/lib/audio-store'
 import { formatTime, formatTimeRemaining } from '@/lib/utils'
 import type { SongVersion } from '@/lib/supabase'
+import { devLog } from '@/lib/debug'
 
 interface WaveformPlayerProps {
   version: SongVersion
@@ -41,8 +42,8 @@ export function WaveformPlayer({ version, songId, accentColor = '#4F9EFF' }: Wav
   useEffect(() => {
     if (!waveformRef.current) return
 
-    console.log('🎵 Initializing WaveSurfer for:', version.label)
-    console.log('📍 Audio URL:', version.audio_url)
+    devLog('🎵 Initializing WaveSurfer for:', version.label)
+    devLog('📍 Audio URL:', version.audio_url)
 
     const ws = WaveSurfer.create({
       container: waveformRef.current,
@@ -60,11 +61,11 @@ export function WaveformPlayer({ version, songId, accentColor = '#4F9EFF' }: Wav
     wavesurferRef.current = ws
 
     // Load audio
-    console.log('⏳ Loading audio...')
+    devLog('⏳ Loading audio...')
     ws.load(version.audio_url)
 
     ws.on('ready', () => {
-      console.log('✅ Audio ready, duration:', ws.getDuration())
+      devLog('✅ Audio ready, duration:', ws.getDuration())
       setIsLoading(false)
       const duration = ws.getDuration()
       setLocalDuration(duration)
@@ -120,22 +121,22 @@ export function WaveformPlayer({ version, songId, accentColor = '#4F9EFF' }: Wav
   }, [volume])
 
   const handlePlayPause = () => {
-    console.log('🎮 Play/Pause clicked')
-    console.log('   isActive:', isActive)
-    console.log('   isPlaying:', isPlaying)
-    console.log('   wavesurfer:', wavesurferRef.current)
+    devLog('🎮 Play/Pause clicked')
+    devLog('   isActive:', isActive)
+    devLog('   isPlaying:', isPlaying)
+    devLog('   wavesurfer:', wavesurferRef.current)
     
     if (isActive) {
       if (isPlaying) {
-        console.log('⏸️ Pausing')
+        devLog('⏸️ Pausing')
         pause()
       } else {
-        console.log('▶️ Playing (same version)')
+        devLog('▶️ Playing (same version)')
         play(version, songId)
       }
     } else {
       // Switch to this version with fade
-      console.log('▶️ Playing (new version)')
+      devLog('▶️ Playing (new version)')
       play(version, songId)
     }
   }

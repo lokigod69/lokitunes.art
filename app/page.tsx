@@ -1,18 +1,17 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import dynamic from 'next/dynamic'
 import { Logo3D } from '@/components/Logo3D'
-import { OrbField, OrbFieldFallback } from '@/components/OrbField'
+import { OrbFieldFallback } from '@/components/OrbFieldFallback'
 import { HeaderScanline } from '@/components/HeaderScanline'
 import { RatingProgressBadge } from '@/components/RatingProgressBadge'
 import { OnboardingModal } from '@/components/OnboardingModal'
-import { TutorialButton } from '@/components/TutorialButton'
-import { OrbitModeToggle, loadOrbitModePreference } from '@/components/OrbitModeToggle'
-import MonochromeToggle from '@/components/MonochromeToggle'
-import { RepulsionSlider } from '@/components/RepulsionSlider'
-import { AuthButton } from '@/components/AuthButton'
-import { PlayModeButton } from '@/components/PlayModeButton'
+import { loadOrbitModePreference } from '@/components/OrbitModeToggle'
+import { UnifiedMenu } from '@/components/UnifiedMenu'
 import { useOnboarding } from '@/hooks/useOnboarding'
+import { useOrbRepulsion } from '@/hooks/useOrbRepulsion'
+import { useStyleStore } from '@/hooks/useStyle'
 import { getAlbumsWithVersionCounts } from '@/lib/queries'
 import type { Album } from '@/lib/supabase'
 import { useMobileDetection } from '@/hooks/useMobileDetection'
@@ -29,6 +28,12 @@ export default function Home() {
   })
 
   const isMobile = useMobileDetection(768)
+
+  const style = useStyleStore((s) => s.style)
+  const setStyle = useStyleStore((s) => s.setStyle)
+
+  const repulsionStrength = useOrbRepulsion((s) => s.repulsionStrength)
+  const setRepulsionStrength = useOrbRepulsion((s) => s.setRepulsionStrength)
 
   const { shouldShow, hasLoaded, language, setLanguage, dismiss, show } = useOnboarding()
 
@@ -68,6 +73,17 @@ export default function Home() {
   const baseFallback = prefersReducedMotion || !hasWebGL
   const shouldUseFallback = baseFallback || (isMobile && !is3D)
 
+  const OrbField3D = useMemo(() => {
+    return dynamic(() => import('@/components/OrbField').then((m) => m.OrbField), {
+      ssr: false,
+      loading: () => (
+        <div className="w-full h-full overflow-y-auto">
+          <OrbFieldFallback albums={albums} />
+        </div>
+      ),
+    })
+  }, [albums])
+
   if (process.env.NODE_ENV === 'development') {
     console.log('Home orbit state', {
       isMobile,
@@ -99,12 +115,17 @@ export default function Home() {
 
   return (
     <div className={rootClassName}>
-      {isMobile && (
-        <OrbitModeToggle
-          is3D={is3D}
-          onToggle={handleOrbitToggle}
-        />
-      )}
+      <UnifiedMenu
+        is3D={is3D}
+        onToggle3D={() => handleOrbitToggle(!is3D)}
+        showViewToggle={isMobile}
+        currentStyle={style}
+        onStyleChange={setStyle}
+        onOpenTutorial={show}
+        showPlayMode={true}
+        repelStrength={Math.round(repulsionStrength * 100)}
+        onRepelChange={(value) => setRepulsionStrength(value / 100)}
+      />
 
 
       {hasLoaded && (
@@ -115,25 +136,6 @@ export default function Home() {
             onLanguageChange={setLanguage}
             onDismiss={dismiss}
           />
-          {/* Desktop header controls - consolidated container */}
-          <div className="fixed top-4 right-4 z-50 flex items-center gap-3">
-            {/* Repulsion Slider - Desktop only */}
-            {!isMobile && (
-              <div className="p-2 rounded-lg bg-black/80 border border-cyan-500/30 backdrop-blur">
-                <RepulsionSlider />
-              </div>
-            )}
-            {/* Play Mode Button - Desktop only */}
-            {!isMobile && <PlayModeButton />}
-            {/* Style toggle */}
-            <MonochromeToggle className="p-2 rounded-lg bg-black/80 border border-cyan-500/30 hover:border-cyan-500 transition-all backdrop-blur flex items-center justify-center group" />
-            {/* Tutorial button */}
-            <TutorialButton onClick={show} />
-          </div>
-          {/* Auth button - top left on desktop, below rating badge */}
-          <div className="fixed top-16 left-6 z-40">
-            <AuthButton />
-          </div>
         </>
       )}
 
@@ -152,11 +154,13 @@ export default function Home() {
             </div>
           )}
 
-          {/* Logo */}
           <Logo3D />
-          <div className="fixed top-6 left-6 z-40 pointer-events-none">
-            <RatingProgressBadge />
-          </div>
+
+          {!isMobile && (
+            <div className="fixed top-16 left-4 z-40 pointer-events-none">
+              <RatingProgressBadge />
+            </div>
+          )}
           <main className="container mx-auto px-4 pb-32 md:pb-24">
             <OrbFieldFallback key="2d-mode" albums={albums} />
           </main>
@@ -166,12 +170,14 @@ export default function Home() {
 
           {/* Fullscreen 3D Canvas - Background layer (z-0) */}
           <div className="fixed inset-0 w-full h-full z-0">
-            <OrbField key="3d-mode" albums={albums} isMobile={isMobile} />
+            <OrbField3D key="3d-mode" albums={albums} isMobile={isMobile} />
           </div>
 
-          <div className="fixed top-6 left-6 z-40 pointer-events-none">
-            <RatingProgressBadge />
-          </div>
+          {!isMobile && (
+            <div className="fixed top-16 left-4 z-40 pointer-events-none">
+              <RatingProgressBadge />
+            </div>
+          )}
           
           {/* Header - Now 3D in Canvas (NeonHeader component) */}
           {/* <div className="fixed top-8 left-1/2 -translate-x-1/2 z-50 pointer-events-none">

@@ -5,6 +5,8 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useSmartTexture } from '@/hooks/useSmartTexture'
 import type { Album } from '@/lib/supabase'
+import type { DeviceTier } from '@/lib/device-detection'
+import { devLog } from '@/lib/debug'
 
 interface AlbumArtworkDisplayProps {
   albumCoverUrl: string | null
@@ -14,6 +16,7 @@ interface AlbumArtworkDisplayProps {
   albumTitle?: string
   onVinylClick?: () => void  // NEW: Called when vinyl is clicked to release docked orb
   isPlaying?: boolean        // NEW: When playing, vinyl spins
+  deviceTier?: DeviceTier
 }
 
 export function AlbumArtworkDisplay({ 
@@ -23,7 +26,8 @@ export function AlbumArtworkDisplay({
   position = [0, -5, -45],
   albumTitle = 'Album',
   onVinylClick,
-  isPlaying = false
+  isPlaying = false,
+  deviceTier = 'high'
 }: AlbumArtworkDisplayProps) {
   const groupRef = useRef<THREE.Group>(null)
   const artworkMeshRef = useRef<THREE.Mesh>(null)
@@ -42,10 +46,10 @@ export function AlbumArtworkDisplay({
       texture.colorSpace = THREE.SRGBColorSpace
       texture.minFilter = THREE.LinearFilter
       texture.magFilter = THREE.LinearFilter
-      texture.anisotropy = 16
+      texture.anisotropy = deviceTier === 'high' ? 16 : deviceTier === 'medium' ? 4 : 2
       texture.needsUpdate = true
     }
-  }, [texture])
+  }, [texture, deviceTier])
 
   // Animate visibility, rotation, and glitch effects
   useFrame((state, delta) => {
@@ -98,7 +102,7 @@ export function AlbumArtworkDisplay({
   // Handle vinyl click - release docked orb
   const handleVinylClick = () => {
     if (onVinylClick) {
-      console.log('🎵 Vinyl clicked - releasing docked orb')
+      devLog('🎵 Vinyl clicked - releasing docked orb')
       onVinylClick()
     }
   }

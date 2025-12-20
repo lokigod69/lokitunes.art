@@ -15,14 +15,14 @@ export function calculateOrbLayout(albumCount: number, isMobile: boolean = false
                    albumCount <= 10 ? 2.5 : 
                    albumCount <= 15 ? 2.0 : 1.5
   
-  // Scale down for mobile - 85% of desktop size (was 75%, still too small for touch)
+  // Mobile sizing: keep orbs tap-friendly.
   if (isMobile) {
-    baseRadius *= 0.85
+    baseRadius *= 1.05
   }
   
   // Spread them out in a nice grid pattern
   const gridSize = Math.ceil(Math.sqrt(albumCount))
-  const spacing = baseRadius * 2.5
+  const spacing = baseRadius * (isMobile ? 2.2 : 2.5)
   
   const rawPositions: [number, number, number][] = []
   let index = 0

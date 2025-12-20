@@ -23,6 +23,7 @@ import type { Album } from '@/lib/supabase'
 import { detectDeviceTier, getQualitySettings, type DeviceTier } from '@/lib/device-detection'
 import { calculateOrbLayout, calculateCameraDistance, calculateOrbScale } from '@/lib/orb-layout'
 import type { RapierRigidBody } from '@react-three/rapier'
+import { devLog, devWarn } from '@/lib/debug'
 
 interface OrbFieldProps {
   albums: Album[]
@@ -46,8 +47,8 @@ function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGla
   const { isActive: playModeActive, bursts, removeBurst } = usePlayMode()
   
   // Calculate dynamic layout based on album count
-  const { positions, radius } = calculateOrbLayout(albums.length)
-  const orbRadius = radius * 0.8
+  const { positions, radius } = calculateOrbLayout(albums.length, isMobile)
+  const orbRadius = radius * (isMobile ? 0.95 : 0.8)
   
   return (
     <Physics gravity={[0, 0, 0]}>
@@ -77,7 +78,7 @@ function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGla
         
         {/* Invisible physics boundaries */}
         <InvisibleBounds size={25} />
-        
+
         {/* SOPHISTICATED NEON HEADER - 3D (Bigger, Higher, Forward) */}
         <NeonHeader />
       </Suspense>
@@ -166,6 +167,7 @@ export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
   const [hoveredAlbum, setHoveredAlbum] = useState<Album | null>(null)
   const [deviceTier, setDeviceTier] = useState<DeviceTier>('high')
   const [dpr, setDpr] = useState(1.5)
+  const [canvasKey, setCanvasKey] = useState(0)
   const [useGlassBubbles, setUseGlassBubbles] = useState(true)
   const [pushTrigger, setPushTrigger] = useState(0)
   const [resetTrigger, setResetTrigger] = useState(0)
@@ -174,14 +176,10 @@ export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
   // Play mode - set total orbs count
   const { setTotalOrbs, isActive: playModeActive, stopGame } = usePlayMode()
 
-  if (process.env.NODE_ENV === 'development') {
-    console.log('OrbField rendering with albums:', albums.length)
-  }
+  devLog('OrbField rendering with albums:', albums.length)
   
   useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[OrbField] useGlassBubbles changed:', useGlassBubbles)
-    }
+    devLog('[OrbField] useGlassBubbles changed:', useGlassBubbles)
   }, [useGlassBubbles])
   
   // Track rigid bodies and their initial positions
@@ -208,7 +206,7 @@ export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
   useEffect(() => {
     // Reset orbs when play mode ends
     if (prevPlayModeActive.current && !playModeActive) {
-      console.log('🎮 Play mode ended - resetting orbs')
+      devLog('🎮 Play mode ended - resetting orbs')
       rigidBodies.current.forEach(({ body, initialPos }, id) => {
         try {
           // Check if body is still valid before operating on it
@@ -220,7 +218,7 @@ export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
           body.wakeUp()
         } catch (e) {
           // Body no longer exists or is invalid, skip it
-          console.log(`⚠️ Skipping invalid body during reset: ${id}`)
+          devLog(`⚠️ Skipping invalid body during reset: ${id}`)
         }
       })
       setResetTrigger(prev => prev + 1)
@@ -238,8 +236,8 @@ export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
     const clickedAlbum = albums.find(a => a.slug === slug)
     const clickedId = clickedAlbum?.id
     
-    console.log('🎯 handleNavigate called:', slug, 'clickedId:', clickedId)
-    console.log('🎯 rigidBodies count:', rigidBodies.current.size)
+    devLog('🎯 handleNavigate called:', slug, 'clickedId:', clickedId)
+    devLog('🎯 rigidBodies count:', rigidBodies.current.size)
     
     // Scatter all OTHER orbs violently, freeze the clicked one
     rigidBodies.current.forEach(({ body }, id) => {
@@ -249,7 +247,7 @@ export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
         
         if (id === clickedId) {
           // FREEZE the clicked orb - stop all movement
-          console.log('❄️ Freezing clicked orb:', id)
+          devLog('❄️ Freezing clicked orb:', id)
           body.setLinvel({ x: 0, y: 0, z: 0 }, true)
           body.setAngvel({ x: 0, y: 0, z: 0 }, true)
         } else {
@@ -260,7 +258,7 @@ export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
             y: (Math.random() - 0.5) * speed * 2,
             z: (Math.random() - 0.5) * speed * 2,
           }
-          console.log('💥 Scattering orb:', id, velocity)
+          devLog('💥 Scattering orb:', id, velocity)
           body.wakeUp()
           body.setLinvel(velocity, true)
         }
@@ -290,7 +288,7 @@ export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
   }, [hoveredAlbum])
   
   const handleDepthPush = useCallback(() => {
-    console.log('🎯 Depth push triggered!')
+    devLog('🎯 Depth push triggered!')
     setPushTrigger(prev => prev + 1)
   }, [])
 
@@ -299,7 +297,7 @@ export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
   }, [])
 
   const handleReset = useCallback(() => {
-    console.log('🔄 Resetting all orbs to initial positions')
+    devLog('🔄 Resetting all orbs to initial positions')
     
     rigidBodies.current.forEach(({ body, initialPos }) => {
       // Reset position
@@ -359,11 +357,12 @@ export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
     <>
       {/* 3D Canvas - Fullscreen */}
       <Canvas
+        key={canvasKey}
         onPointerMissed={handleDepthPush}
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerLeave}
-        dpr={dpr}
+        dpr={isMobile ? Math.min(dpr, 1) : dpr}
         camera={{ 
           position: [0, 0, cameraDistance],
           fov: 50,
@@ -372,8 +371,25 @@ export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
         }}
         gl={{ 
           alpha: false,
-          antialias: true,
-          powerPreference: 'high-performance'
+          antialias: !isMobile,
+          powerPreference: isMobile ? 'low-power' : 'high-performance',
+          failIfMajorPerformanceCaveat: false
+        }}
+        onCreated={({ gl }) => {
+          const canvas = gl.domElement
+
+          const onLost = (event: any) => {
+            event.preventDefault?.()
+            devWarn('WebGL context lost (OrbField).')
+          }
+
+          const onRestored = () => {
+            devLog('WebGL context restored (OrbField).')
+            setCanvasKey((k) => k + 1)
+          }
+
+          canvas.addEventListener('webglcontextlost', onLost)
+          canvas.addEventListener('webglcontextrestored', onRestored)
         }}
         style={{
           position: 'fixed',
@@ -430,8 +446,8 @@ export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
               kernelSize={KernelSize.LARGE}
             />
             <ChromaticAberration
-              offset={deviceTier === 'low' ? [0, 0] : [0.0008, 0.0004]}
-              radialModulation={false}
+              offset={deviceTier === 'low' ? [0, 0] : [0.002, 0.001]}
+              radialModulation={deviceTier !== 'low'}
             />
             <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
           </EffectComposer>
@@ -504,9 +520,7 @@ export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
 export function OrbFieldFallback({ albums }: OrbFieldProps) {
   const router = useRouter()
 
-  if (process.env.NODE_ENV === 'development') {
-    console.log('OrbFieldFallback rendering with albums:', albums.length)
-  }
+  devLog('OrbFieldFallback rendering with albums:', albums.length)
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 p-8">
