@@ -110,7 +110,7 @@ export function UnifiedMenu({
               </button>
             </div>
 
-            <div className="p-4 space-y-2">
+            <div className="p-4 pb-20 space-y-2">
               <div className="px-2 text-xs uppercase tracking-wide text-bone/50 font-semibold">Account</div>
               <div className="pb-4 border-b border-bone/10">
                 {authLoading ? (
@@ -276,10 +276,9 @@ export function UnifiedMenu({
                     <span className="text-bone font-medium">Style</span>
                   </div>
 
-                  <div className="mt-3 flex items-center gap-2">
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
                     {([
                       { key: 'color', label: 'Color', dot: 'bg-voltage' },
-                      { key: 'chrome', label: 'Chrome', dot: 'bg-bone/70' },
                       { key: 'monochrome', label: 'Mono', dot: 'bg-emerald-400' },
                       { key: 'invert', label: 'Invert', dot: 'bg-fuchsia-400' },
                     ] as const).map((s) => (

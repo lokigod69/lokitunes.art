@@ -156,7 +156,7 @@ html.monochrome-green [class*="neon"] {
 }
 
 html.invert-mode {
-  filter: hue-rotate(90deg) saturate(1.2);
+  filter: hue-rotate(-90deg) saturate(1.2);
   transition: filter 0.3s ease;
 }
 
@@ -169,7 +169,7 @@ html.invert-mode a:hover {
 }
 
 html.invert-mode canvas {
-  filter: hue-rotate(90deg) saturate(1.25) !important;
+  filter: hue-rotate(-90deg) saturate(1.25) !important;
 }
 
 html.invert-mode img[class*="album"],
