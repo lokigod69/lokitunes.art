@@ -7,12 +7,13 @@
 import { useEffect } from 'react'
 import { useStyleStore } from '@/hooks/useStyle'
 
-const STYLE_CLASSES = ['monochrome-cyan', 'monochrome-pastel', 'monochrome-green']
+const STYLE_CLASSES = ['monochrome-cyan', 'monochrome-pastel', 'monochrome-green', 'invert-mode']
 
 const STYLE_TO_CLASS: Record<string, string | null> = {
   color: null,
   chrome: 'monochrome-pastel',
   monochrome: 'monochrome-cyan',
+  invert: 'invert-mode',
 }
 
 export function StyleManager() {

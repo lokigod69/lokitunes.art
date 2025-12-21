@@ -155,6 +155,28 @@ html.monochrome-green [class*="neon"] {
                0 0 4px rgba(100, 255, 150, 0.3);
 }
 
+html.invert-mode {
+  filter: hue-rotate(90deg) saturate(1.2);
+  transition: filter 0.3s ease;
+}
+
+html.invert-mode button,
+html.invert-mode .player,
+html.invert-mode [role="button"],
+html.invert-mode input,
+html.invert-mode a:hover {
+  filter: brightness(1.05) drop-shadow(0 0 8px rgba(255, 80, 220, 0.22));
+}
+
+html.invert-mode canvas {
+  filter: hue-rotate(90deg) saturate(1.25) !important;
+}
+
+html.invert-mode img[class*="album"],
+html.invert-mode img[class*="cover"] {
+  filter: none !important;
+}
+
 /* Note: .is-playing / .now-playing hooks can be added later per mode if desired */
 
 /* Onboarding screen enter animation */

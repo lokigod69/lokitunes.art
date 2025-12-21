@@ -5,7 +5,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-export type LokiTunesStyle = 'color' | 'chrome' | 'monochrome'
+export type LokiTunesStyle = 'color' | 'chrome' | 'monochrome' | 'invert'
 
 interface StyleState {
   style: LokiTunesStyle

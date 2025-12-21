@@ -25,6 +25,7 @@ import { signInWithGoogle, signOut } from '@/lib/auth'
 import { usePlayMode } from '@/hooks/usePlayMode'
 import { LikedSongsModal } from '@/components/LikedSongsModal'
 import { useLikes } from '@/hooks/useLikes'
+import type { LokiTunesStyle } from '@/hooks/useStyle'
 
 interface UnifiedMenuProps {
   isMobile: boolean
@@ -32,8 +33,8 @@ interface UnifiedMenuProps {
   onToggle3D: () => void
   showViewToggle?: boolean
 
-  currentStyle: 'color' | 'chrome' | 'monochrome'
-  onStyleChange: (style: 'color' | 'chrome' | 'monochrome') => void
+  currentStyle: LokiTunesStyle
+  onStyleChange: (style: LokiTunesStyle) => void
 
   onOpenTutorial: () => void
 
@@ -280,6 +281,7 @@ export function UnifiedMenu({
                       { key: 'color', label: 'Color', dot: 'bg-voltage' },
                       { key: 'chrome', label: 'Chrome', dot: 'bg-bone/70' },
                       { key: 'monochrome', label: 'Mono', dot: 'bg-emerald-400' },
+                      { key: 'invert', label: 'Invert', dot: 'bg-fuchsia-400' },
                     ] as const).map((s) => (
                       <button
                         key={s.key}
