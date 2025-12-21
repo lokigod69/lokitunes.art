@@ -98,7 +98,7 @@ export function UnifiedMenu({
 
           <div className="absolute top-0 right-0 w-80 max-w-[90vw] h-full bg-void/95 backdrop-blur-md border-l border-voltage/20 overflow-y-auto animate-in slide-in-from-right duration-200">
             <div className="flex items-center justify-between p-4 border-b border-bone/10">
-              <h2 className="text-lg font-bold text-bone">Menu</h2>
+              <h2 className="text-lg font-bold text-bone">Settings</h2>
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
@@ -110,6 +110,7 @@ export function UnifiedMenu({
             </div>
 
             <div className="p-4 space-y-2">
+              <div className="px-2 text-xs uppercase tracking-wide text-bone/50 font-semibold">Account</div>
               <div className="pb-4 border-b border-bone/10">
                 {authLoading ? (
                   <div className="px-4 py-3 text-bone/50 text-sm">Loading...</div>
@@ -180,6 +181,8 @@ export function UnifiedMenu({
               )}
 
               {!isMobile && showPlayMode && (
+                <>
+                  <div className="pt-2 px-2 text-xs uppercase tracking-wide text-bone/50 font-semibold">Experience</div>
                 <div className="py-2">
                   <div className="px-4 py-3 rounded-lg bg-bone/5 border border-bone/10">
                     <div className="flex items-center gap-3">
@@ -236,9 +239,12 @@ export function UnifiedMenu({
                     </div>
                   </div>
                 </div>
+                </>
               )}
 
               {!isMobile && (
+                <>
+                  <div className="pt-2 px-2 text-xs uppercase tracking-wide text-bone/50 font-semibold">Experience</div>
                 <div className="py-2">
                   <div className="px-4 py-3 rounded-lg bg-bone/5 border border-bone/10">
                     <div className="flex items-center gap-3">
@@ -258,8 +264,10 @@ export function UnifiedMenu({
                     </div>
                   </div>
                 </div>
+                </>
               )}
 
+              <div className="pt-2 px-2 text-xs uppercase tracking-wide text-bone/50 font-semibold">Display</div>
               <div className="py-2">
                 <div className="px-4 py-3 rounded-lg bg-bone/5 border border-bone/10">
                   <div className="flex items-center gap-3">
@@ -313,6 +321,7 @@ export function UnifiedMenu({
                 </button>
               )}
 
+              <div className="pt-2 px-2 text-xs uppercase tracking-wide text-bone/50 font-semibold">Help</div>
               <button
                 type="button"
                 onClick={() => {

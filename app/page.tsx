@@ -77,9 +77,7 @@ export default function Home() {
     return dynamic(() => import('@/components/OrbField').then((m) => m.OrbField), {
       ssr: false,
       loading: () => (
-        <div className="w-full h-full overflow-y-auto">
-          <OrbFieldFallback albums={albums} />
-        </div>
+        <div className="w-full h-full bg-void" />
       ),
     })
   }, [albums])

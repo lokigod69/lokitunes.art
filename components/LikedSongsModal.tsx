@@ -53,11 +53,35 @@ export function LikedSongsModal({ isOpen, onClose }: LikedSongsModalProps) {
                 const isCurrentlyPlaying = isCurrentTrack && isPlaying
                 const coverUrl = like.version_cover || like.album_cover
 
+                const handlePlay = () => {
+                  play(
+                    {
+                      id: like.version_id,
+                      song_id: like.song_id,
+                      label: like.version_label,
+                      audio_url: like.audio_url,
+                      cover_url: coverUrl,
+                      duration_sec: like.duration_sec,
+                      waveform_json: null,
+                      play_count: 0,
+                      created_at: like.liked_at,
+                      songId: like.song_id,
+                      songTitle: like.song_title,
+                      albumTitle: like.album_title,
+                      albumSlug: like.album_slug,
+                      albumPalette: like.album_palette,
+                    },
+                    like.song_id,
+                    like.album_palette ?? fallbackPalette
+                  )
+                }
+
                 return (
                   <div
                     key={like.like_id}
+                    onClick={handlePlay}
                     className={
-                      'w-full flex items-center gap-3 p-3 rounded-lg transition-colors text-left ' +
+                      'w-full flex items-center gap-3 p-3 rounded-lg transition-colors text-left cursor-pointer ' +
                       (isCurrentTrack ? 'bg-white/10 border border-bone/20' : 'bg-white/5 hover:bg-white/10')
                     }
                   >
@@ -79,29 +103,11 @@ export function LikedSongsModal({ isOpen, onClose }: LikedSongsModalProps) {
                     <div className="flex items-center gap-1 flex-shrink-0">
                       <button
                         type="button"
-                        onClick={() => {
-                          play(
-                            {
-                              id: like.version_id,
-                              song_id: like.song_id,
-                              label: like.version_label,
-                              audio_url: like.audio_url,
-                              cover_url: coverUrl,
-                              duration_sec: like.duration_sec,
-                              waveform_json: null,
-                              play_count: 0,
-                              created_at: like.liked_at,
-                              songId: like.song_id,
-                              songTitle: like.song_title,
-                              albumTitle: like.album_title,
-                              albumSlug: like.album_slug,
-                              albumPalette: like.album_palette,
-                            },
-                            like.song_id,
-                            like.album_palette ?? fallbackPalette
-                          )
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handlePlay()
                         }}
-                        className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+                        className="p-2 rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
                         aria-label="Play"
                         title="Play"
                       >
@@ -110,8 +116,11 @@ export function LikedSongsModal({ isOpen, onClose }: LikedSongsModalProps) {
 
                       <button
                         type="button"
-                        onClick={() => toggleLike(like.version_id)}
-                        className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          toggleLike(like.version_id)
+                        }}
+                        className="p-2 rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
                         aria-label="Unlike"
                         title="Unlike"
                       >

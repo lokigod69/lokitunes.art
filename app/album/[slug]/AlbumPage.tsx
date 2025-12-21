@@ -112,26 +112,50 @@ export function AlbumPage({ album }: AlbumPageProps) {
           radial-gradient(circle at bottom right, ${hexWithOpacity(palette.accent1, 0.06)} 0%, transparent 35%)`,
       }}
     >
-      <header className="fixed top-0 left-0 right-0 z-40 px-4 py-3 bg-void/90 backdrop-blur-md border-b border-bone/10">
-        <div className="flex items-center gap-4">
-          <Link
-            href="/"
-            className="p-2 rounded-lg hover:bg-bone/10 transition-colors"
-            aria-label="Back"
-            title="Back"
-          >
-            <ArrowLeft className="w-5 h-5 text-bone" />
-          </Link>
+      <div className="fixed top-4 left-4 z-40">
+        <Link
+          href="/"
+          className="flex items-center gap-2 px-3 py-2 rounded-lg bg-void/80 backdrop-blur-md border border-bone/10 hover:border-bone/30 transition-colors cursor-pointer"
+          aria-label="Back"
+          title="Back"
+        >
+          <ArrowLeft className="w-5 h-5 text-bone" />
+          <span className="text-bone text-sm">Back</span>
+        </Link>
+      </div>
+
+      <header
+        className="relative pt-20 pb-8 px-4 md:px-8"
+        style={{
+          background: `linear-gradient(to bottom, ${hexWithOpacity(palette.dominant, 0.25)} 0%, transparent 100%)`,
+        }}
+      >
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-start md:items-end gap-6">
+          <div className="w-40 h-40 md:w-48 md:h-48 rounded-xl overflow-hidden shadow-2xl flex-shrink-0 border border-bone/10">
+            {album.cover_url ? (
+              <img
+                src={album.cover_url}
+                alt={album.title}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div
+                className="w-full h-full flex items-center justify-center"
+                style={{ backgroundColor: palette.accent1 || '#333' }}
+              />
+            )}
+          </div>
+
           <div className="flex-1 min-w-0">
-            <h1 className="text-lg font-bold text-bone truncate">{album.title}</h1>
-            <p className="text-sm text-bone/60">
+            <h1 className="text-3xl md:text-4xl font-bold text-bone mb-2 truncate">{album.title}</h1>
+            <p className="text-bone/60">
               {orbVersions.length} {orbVersions.length === 1 ? 'version' : 'versions'}
             </p>
           </div>
         </div>
       </header>
 
-      <div className="pt-16">
+      <div>
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center gap-2 mb-4">
             {showOriginalInfo && originalVersion && (
