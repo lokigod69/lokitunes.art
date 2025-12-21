@@ -18,12 +18,16 @@ import {
   HelpCircle,
   Grid3x3,
   Circle,
+  Heart,
 } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { signInWithGoogle, signOut } from '@/lib/auth'
 import { usePlayMode } from '@/hooks/usePlayMode'
+import { LikedSongsModal } from '@/components/LikedSongsModal'
+import { useLikes } from '@/hooks/useLikes'
 
 interface UnifiedMenuProps {
+  isMobile: boolean
   is3D: boolean
   onToggle3D: () => void
   showViewToggle?: boolean
@@ -39,6 +43,7 @@ interface UnifiedMenuProps {
 }
 
 export function UnifiedMenu({
+  isMobile,
   is3D,
   onToggle3D,
   showViewToggle = true,
@@ -50,8 +55,10 @@ export function UnifiedMenu({
   onRepelChange,
 }: UnifiedMenuProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const [showLikedSongs, setShowLikedSongs] = useState(false)
 
   const { user, isAuthenticated, loading: authLoading } = useAuth()
+  const { likes } = useLikes()
   const {
     isActive: playModeActive,
     isPaused,
@@ -76,7 +83,7 @@ export function UnifiedMenu({
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="fixed top-4 right-4 z-[100] flex h-12 w-12 items-center justify-center rounded-lg bg-void/90 backdrop-blur-sm border border-voltage/30 transition-colors hover:bg-void/95 active:bg-voltage/20 cursor-pointer"
+        className="fixed top-4 right-4 z-[9999] flex h-12 w-12 items-center justify-center rounded-lg bg-void/90 backdrop-blur-sm border border-voltage/30 transition-colors hover:bg-void/95 active:bg-voltage/20 cursor-pointer"
         aria-label="Open menu"
       >
         <Menu className="w-5 h-5 text-bone" />
@@ -155,7 +162,24 @@ export function UnifiedMenu({
                 )}
               </div>
 
-              {showPlayMode && (
+              {isAuthenticated && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowLikedSongs(true)
+                    setIsOpen(false)
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-bone/5 rounded-lg transition-colors cursor-pointer"
+                >
+                  <Heart className="w-5 h-5 text-red-500" />
+                  <span className="text-bone">Liked Songs</span>
+                  {likes.length > 0 && (
+                    <span className="ml-auto text-xs text-bone/60">{likes.length}</span>
+                  )}
+                </button>
+              )}
+
+              {!isMobile && showPlayMode && (
                 <div className="py-2">
                   <div className="px-4 py-3 rounded-lg bg-bone/5 border border-bone/10">
                     <div className="flex items-center gap-3">
@@ -214,25 +238,27 @@ export function UnifiedMenu({
                 </div>
               )}
 
-              <div className="py-2">
-                <div className="px-4 py-3 rounded-lg bg-bone/5 border border-bone/10">
-                  <div className="flex items-center gap-3">
-                    <span className="text-bone font-medium">Repel</span>
-                    <span className="text-xs text-bone/60">{repelStrength}</span>
-                  </div>
-                  <div className="mt-2 space-y-2">
-                    <label className="text-sm text-bone/60">Repel Strength</label>
-                    <input
-                      type="range"
-                      min={0}
-                      max={100}
-                      value={repelStrength}
-                      onChange={(e) => onRepelChange?.(Number(e.target.value))}
-                      className="w-full h-2 bg-bone/10 rounded-lg appearance-none cursor-pointer accent-[var(--voltage)]"
-                    />
+              {!isMobile && (
+                <div className="py-2">
+                  <div className="px-4 py-3 rounded-lg bg-bone/5 border border-bone/10">
+                    <div className="flex items-center gap-3">
+                      <span className="text-bone font-medium">Repel</span>
+                      <span className="text-xs text-bone/60">{repelStrength}</span>
+                    </div>
+                    <div className="mt-2 space-y-2">
+                      <label className="text-sm text-bone/60">Repel Strength</label>
+                      <input
+                        type="range"
+                        min={0}
+                        max={100}
+                        value={repelStrength}
+                        onChange={(e) => onRepelChange?.(Number(e.target.value))}
+                        className="w-full h-2 bg-bone/10 rounded-lg appearance-none cursor-pointer accent-[var(--voltage)]"
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               <div className="py-2">
                 <div className="px-4 py-3 rounded-lg bg-bone/5 border border-bone/10">
@@ -267,7 +293,7 @@ export function UnifiedMenu({
                 </div>
               </div>
 
-              {showViewToggle && (
+              {isMobile && showViewToggle && (
                 <button
                   type="button"
                   onClick={() => {
@@ -302,6 +328,11 @@ export function UnifiedMenu({
           </div>
         </div>
       )}
+
+      <LikedSongsModal
+        isOpen={showLikedSongs}
+        onClose={() => setShowLikedSongs(false)}
+      />
     </>
   )
 }

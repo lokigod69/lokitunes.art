@@ -4,9 +4,11 @@ import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, ty
 import { usePathname, useRouter } from 'next/navigation'
 import { useAudioStore } from '@/lib/audio-store'
 import { useMediaSession } from '@/hooks/useMediaSession'
-import { Play, Pause, Star, Volume2, Volume1, VolumeX, Download, SkipBack, SkipForward, Infinity as InfinityIcon } from 'lucide-react'
+import { Play, Pause, Star, Volume2, Volume1, VolumeX, Download, SkipBack, SkipForward, Infinity as InfinityIcon, Heart } from 'lucide-react'
 import Image from 'next/image'
 import { RatingModal } from '@/components/RatingModal'
+import { useLikes } from '@/hooks/useLikes'
+import { useAuth } from '@/hooks/useAuth'
 
 function formatTime(seconds: number): string {
   if (!isFinite(seconds)) return '0:00'
@@ -100,6 +102,10 @@ export function GlobalAudioPlayer() {
   const versionId = currentVersion?.id
   const isOriginal = !!currentVersion?.is_original
   const canSkip = !isOriginal && (autoplayMode === 'all' || queue.length > 1)
+
+  const { isAuthenticated } = useAuth()
+  const { isLiked, toggleLike } = useLikes()
+  const liked = versionId ? isLiked(versionId) : false
 
   useEffect(() => {
     if (!versionId || isOriginal) {
@@ -280,6 +286,26 @@ export function GlobalAudioPlayer() {
                   </div>
                 )}
 
+                {/* Heart button */}
+                {isAuthenticated && versionId && (
+                  <button
+                    type="button"
+                    onClick={async (e) => {
+                      e.stopPropagation()
+                      await toggleLike(versionId)
+                    }}
+                    className="p-1.5 cursor-pointer"
+                    title={liked ? 'Unlike' : 'Like'}
+                  >
+                    <Heart
+                      className={
+                        'w-4 h-4 transition-colors ' +
+                        (liked ? 'fill-red-500 text-red-500' : 'text-bone/50 hover:text-red-400')
+                      }
+                    />
+                  </button>
+                )}
+
                 {/* Title + Time/Rating stacked */}
                 <div className="flex flex-col min-w-0 flex-1" onClick={handleTitleClick}>
                   <span className="text-xs font-medium text-bone truncate cursor-pointer hover:underline">
@@ -429,6 +455,25 @@ export function GlobalAudioPlayer() {
                     title="Go to album"
                   >
                     <span className="truncate max-w-[140px] md:max-w-none">{displayTitle}</span>
+                    {isAuthenticated && versionId && (
+                      <button
+                        type="button"
+                        onClick={async (e) => {
+                          e.stopPropagation()
+                          await toggleLike(versionId)
+                        }}
+                        className="p-1 hover:bg-white/10 rounded transition-colors cursor-pointer"
+                        title={liked ? 'Unlike' : 'Like'}
+                        aria-label={liked ? 'Unlike' : 'Like'}
+                      >
+                        <Heart
+                          className={
+                            'w-4 h-4 transition-colors ' +
+                            (liked ? 'fill-red-500 text-red-500' : 'text-bone/50 hover:text-red-400')
+                          }
+                        />
+                      </button>
+                    )}
                     {isOriginal && (
                       <span className="text-[10px] px-1.5 py-0.5 rounded border border-white/10 text-bone/60 flex-shrink-0">
                         Original

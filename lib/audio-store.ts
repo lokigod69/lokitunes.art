@@ -7,6 +7,10 @@ type SongVersionWithMeta = SongVersion & {
   songId?: string
   song_id?: string
   albumPalette?: Album['palette'] | null
+  songTitle?: string
+  albumTitle?: string
+  albumSlug?: string
+  trackNo?: number | null
 }
 
 function getInitialAutoplayMode(): AutoplayMode {

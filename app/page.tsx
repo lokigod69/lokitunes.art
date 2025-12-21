@@ -116,13 +116,14 @@ export default function Home() {
   return (
     <div className={rootClassName}>
       <UnifiedMenu
+        isMobile={isMobile}
         is3D={is3D}
         onToggle3D={() => handleOrbitToggle(!is3D)}
         showViewToggle={isMobile}
         currentStyle={style}
         onStyleChange={setStyle}
         onOpenTutorial={show}
-        showPlayMode={true}
+        showPlayMode={!isMobile}
         repelStrength={Math.round(repulsionStrength * 100)}
         onRepelChange={(value) => setRepulsionStrength(value / 100)}
       />
