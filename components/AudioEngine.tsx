@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react'
 import { useAudioStore } from '@/lib/audio-store'
 import { setAudioElement } from '@/lib/audio-element-registry'
+import { forceResumeAudioContext, isAudioRoutedThroughWebAudio } from '@/lib/audio-analyzer'
 import { useMediaSession } from '@/hooks/useMediaSession'
 import { devLog } from '@/lib/debug'
 
@@ -321,22 +322,96 @@ export default function AudioEngine() {
     }
   }, [])
 
-  // 🍎 iOS BACKGROUND PLAYBACK DEBUG
-  // Log visibility changes to help diagnose background playback issues
+  // 🍎 iOS BACKGROUND AUDIO FIX
+  // When audio is routed through Web Audio API (for visualizer), iOS suspends the
+  // AudioContext when the screen locks. We must actively resume it to keep audio playing.
   useEffect(() => {
-    const logBackgroundState = () => {
-      const audio = audioRef.current
+    const audio = audioRef.current
+    if (!audio) return
+
+    const handleVisibilityChange = async () => {
+      const isHidden = document.visibilityState === 'hidden'
+      const { isPlaying } = useAudioStore.getState()
+      
       devLog('[AudioEngine] Visibility changed:', {
         visibilityState: document.visibilityState,
-        audioSrc: audio?.src ? 'set' : 'empty',
-        audioPaused: audio?.paused,
-        storeIsPlaying: useAudioStore.getState().isPlaying,
-        mediaSessionState: 'mediaSession' in navigator ? navigator.mediaSession.playbackState : 'unsupported'
+        isPlaying,
+        audioRoutedThroughWebAudio: isAudioRoutedThroughWebAudio(),
+        audioPaused: audio.paused,
       })
+
+      // If we're playing and audio is routed through Web Audio, aggressively resume context
+      if (isPlaying && isAudioRoutedThroughWebAudio()) {
+        const resumed = await forceResumeAudioContext()
+        devLog('[AudioEngine] AudioContext resume attempt:', resumed)
+        
+        // If returning to app and audio got stuck, restart playback
+        if (!isHidden && audio.paused && isPlaying) {
+          devLog('[AudioEngine] Restarting audio after visibility return')
+          audio.play().catch(err => {
+            devLog('[AudioEngine] Failed to restart audio:', err)
+          })
+        }
+      }
     }
 
-    document.addEventListener('visibilitychange', logBackgroundState)
-    return () => document.removeEventListener('visibilitychange', logBackgroundState)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [])
+
+  // 🍎 iOS BACKGROUND AUDIO: Periodic AudioContext health check
+  // iOS can suspend AudioContext at any time during background playback
+  // This interval ensures we catch and fix suspensions quickly
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio) return
+
+    let intervalId: NodeJS.Timeout | null = null
+
+    const startHealthCheck = () => {
+      if (intervalId) return
+      
+      intervalId = setInterval(async () => {
+        const { isPlaying } = useAudioStore.getState()
+        
+        // Only check if we should be playing and audio is routed through Web Audio
+        if (isPlaying && isAudioRoutedThroughWebAudio()) {
+          const wasResumed = await forceResumeAudioContext()
+          
+          // If context was suspended and we resumed it, also ensure audio element is playing
+          if (wasResumed && audio.paused) {
+            devLog('[AudioEngine] Health check: restarting paused audio')
+            audio.play().catch(() => {})
+          }
+        }
+      }, 1000) // Check every second
+    }
+
+    const stopHealthCheck = () => {
+      if (intervalId) {
+        clearInterval(intervalId)
+        intervalId = null
+      }
+    }
+
+    // Start/stop based on playback state
+    const unsubscribe = useAudioStore.subscribe((state) => {
+      if (state.isPlaying) {
+        startHealthCheck()
+      } else {
+        stopHealthCheck()
+      }
+    })
+
+    // Initial check
+    if (useAudioStore.getState().isPlaying) {
+      startHealthCheck()
+    }
+
+    return () => {
+      stopHealthCheck()
+      unsubscribe()
+    }
   }, [])
 
   // ALWAYS render the audio element (even without src)

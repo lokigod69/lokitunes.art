@@ -70,6 +70,35 @@ export function resumeContextIfNeeded(): Promise<void> {
   return ctx.resume().then(() => undefined)
 }
 
+// 🍎 iOS BACKGROUND AUDIO: Get current AudioContext for external management
+export function getAudioContext(): AudioContext | null {
+  return audioContext
+}
+
+// 🍎 iOS BACKGROUND AUDIO: Check if audio is routed through Web Audio API
+export function isAudioRoutedThroughWebAudio(): boolean {
+  return sourceNode !== null && connectedElement !== null
+}
+
+// 🍎 iOS BACKGROUND AUDIO: Aggressively resume AudioContext
+// Call this when visibility changes or periodically during background playback
+export async function forceResumeAudioContext(): Promise<boolean> {
+  if (!audioContext) return false
+  
+  if (audioContext.state === 'suspended') {
+    try {
+      await audioContext.resume()
+      console.log('[AudioAnalyzer] 🔊 AudioContext resumed from suspended state')
+      return true
+    } catch (err) {
+      console.error('[AudioAnalyzer] Failed to resume AudioContext:', err)
+      return false
+    }
+  }
+  
+  return audioContext.state === 'running'
+}
+
 export function getFrequencyData(target?: Uint8Array): Uint8Array | null {
   if (!analyserNode) return null
 
