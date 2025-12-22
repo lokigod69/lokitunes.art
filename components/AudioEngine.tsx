@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react'
 import { useAudioStore } from '@/lib/audio-store'
 import { setAudioElement } from '@/lib/audio-element-registry'
+import { useMediaSession } from '@/hooks/useMediaSession'
 import { devLog } from '@/lib/debug'
 
 export default function AudioEngine() {
@@ -11,6 +12,7 @@ export default function AudioEngine() {
   const isLoadingNewTrack = useRef(false)    // Prevent play during load
   const lastPauseTime = useRef<number>(0)    // Debounce pause calls
   const pauseDebounceMs = 100                // Minimum ms between pause calls
+  const wasPlayingBeforeInterrupt = useRef(false)  // Track state for iOS interruption recovery
   
   const currentVersion = useAudioStore((state) => state.currentVersion)
   const isPlaying = useAudioStore((state) => state.isPlaying)
@@ -19,6 +21,10 @@ export default function AudioEngine() {
   const updateTime = useAudioStore((state) => state.updateTime)
   const handleTrackEnd = useAudioStore((state) => state.handleTrackEnd)
   const storeTime = useAudioStore((state) => state.currentTime)
+  
+  // 🍎 iOS BACKGROUND PLAYBACK: Enable Media Session API for lock screen controls
+  // This is CRITICAL for iOS Safari background audio
+  useMediaSession()
 
   // IMPORTANT: Always render the audio element, just don't set src if no URL
   // This ensures event listeners are always attached
@@ -165,6 +171,70 @@ export default function AudioEngine() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // Empty deps - only run once on mount, functions are stable Zustand selectors
+
+  // 🍎 iOS AUDIO INTERRUPTION HANDLING
+  // Handle phone calls, Siri, other apps taking audio focus
+  // iOS fires 'pause' event when interrupted - we need to resume when interruption ends
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio) return
+
+    // Track when audio was playing before an external pause (interruption)
+    const handleExternalPause = () => {
+      // Only track if our store thinks we should be playing
+      // This distinguishes user pause from iOS interruption
+      const storeState = useAudioStore.getState()
+      if (storeState.isPlaying && audio.paused) {
+        devLog('[AudioEngine] iOS interruption detected - audio paused externally')
+        wasPlayingBeforeInterrupt.current = true
+      }
+    }
+
+    // When audio can play again, resume if we were interrupted
+    const handleCanPlayThrough = () => {
+      if (wasPlayingBeforeInterrupt.current) {
+        devLog('[AudioEngine] Resuming after iOS interruption')
+        wasPlayingBeforeInterrupt.current = false
+        audio.play().catch((err) => {
+          devLog('[AudioEngine] Resume after interruption failed:', err)
+        })
+      }
+    }
+
+    // iOS-specific: Handle audio session interruption end
+    const handlePlay = () => {
+      // Reset interruption flag when playback successfully starts
+      wasPlayingBeforeInterrupt.current = false
+    }
+
+    audio.addEventListener('pause', handleExternalPause)
+    audio.addEventListener('canplaythrough', handleCanPlayThrough)
+    audio.addEventListener('play', handlePlay)
+
+    return () => {
+      audio.removeEventListener('pause', handleExternalPause)
+      audio.removeEventListener('canplaythrough', handleCanPlayThrough)
+      audio.removeEventListener('play', handlePlay)
+    }
+  }, [])
+
+  // 🍎 iOS BACKGROUND PLAYBACK DEBUG
+  // Log visibility changes to help diagnose background playback issues
+  useEffect(() => {
+    const logBackgroundState = () => {
+      const audio = audioRef.current
+      devLog('[AudioEngine] Visibility changed:', {
+        visibilityState: document.visibilityState,
+        audioSrc: audio?.src ? 'set' : 'empty',
+        audioPaused: audio?.paused,
+        storeIsPlaying: useAudioStore.getState().isPlaying,
+        mediaSessionState: 'mediaSession' in navigator ? navigator.mediaSession.playbackState : 'unsupported'
+      })
+    }
+
+    document.addEventListener('visibilitychange', logBackgroundState)
+    return () => document.removeEventListener('visibilitychange', logBackgroundState)
+  }, [])
 
   // ALWAYS render the audio element (even without src)
   // This ensures the ref exists for event listeners
