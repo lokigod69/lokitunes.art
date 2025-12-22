@@ -101,7 +101,9 @@ export function GlobalAudioPlayer() {
   const [ratingRefreshToken, setRatingRefreshToken] = useState(0)
   const versionId = currentVersion?.id
   const isOriginal = !!currentVersion?.is_original
-  const canSkip = !isOriginal && (autoplayMode === 'all' || queue.length > 1)
+  // Always allow skip when: not original AND (has queue OR autoplay enabled)
+  // This ensures prev/next are always visible for version tracks
+  const canSkip = !isOriginal && (queue.length > 0 || autoplayMode !== 'off')
 
   const { isAuthenticated } = useAuth()
   const { isLiked, toggleLike } = useLikes()

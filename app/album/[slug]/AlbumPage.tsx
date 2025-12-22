@@ -29,7 +29,7 @@ interface AlbumPageProps {
 export function AlbumPage({ album }: AlbumPageProps) {
   const isMobile = useMobileDetection(768)
 
-  const { currentVersion, isPlaying, playStandalone, pause, startAlbumQueue } = useAudioStore()
+  const { currentVersion, isPlaying, playStandalone, pause, startAlbumQueue, setAutoplayMode, startGlobalQueue } = useAudioStore()
 
   // 🔥🔥🔥 DEBUG: Log exact palette received on CLIENT
   devLog('🔥🔥🔥 CLIENT (AlbumPage): Received album:', album.slug, {
@@ -97,8 +97,8 @@ export function AlbumPage({ album }: AlbumPageProps) {
   // Check if currently playing something from this album
   const isAlbumPlaying = orbVersions.some(v => v.id === currentVersion?.id) && isPlaying
 
-  // Play All shuffle - picks random first track and shuffles rest
-  const handlePlayAllShuffle = () => {
+  // Play All shuffle - picks random track from THIS album, then sets autoplay to 'all' (infinity shuffle)
+  const handlePlayAllShuffle = async () => {
     if (orbVersions.length === 0) return
     
     if (isAlbumPlaying) {
@@ -106,10 +106,15 @@ export function AlbumPage({ album }: AlbumPageProps) {
       return
     }
     
-    // Pick a random starting track
+    // Pick a random starting track from this album
     const randomIndex = Math.floor(Math.random() * orbVersions.length)
     const startVersion = orbVersions[randomIndex]
-    startAlbumQueue(orbVersions, startVersion.id, palette)
+    
+    // Set autoplay to 'all' (infinity shuffle across ALL albums)
+    setAutoplayMode('all')
+    
+    // Start with this track, queue will be built from ALL versions globally
+    await startGlobalQueue(startVersion, palette)
   }
 
   // Inject album palette into CSS variables

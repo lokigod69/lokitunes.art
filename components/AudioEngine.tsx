@@ -218,6 +218,109 @@ export default function AudioEngine() {
     }
   }, [])
 
+  // 🍎 iOS AUDIO UNLOCK
+  // iOS requires a user gesture to "unlock" audio playback
+  // This one-time handler unlocks audio on first touch/click
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio) return
+
+    let unlocked = false
+
+    const unlockAudio = async () => {
+      if (unlocked) return
+      unlocked = true
+
+      devLog('[AudioEngine] 🔓 Attempting iOS audio unlock on first interaction')
+
+      try {
+        // Create a silent audio context and resume it
+        const AudioContext = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof window.AudioContext }).webkitAudioContext
+        if (AudioContext) {
+          const ctx = new AudioContext()
+          if (ctx.state === 'suspended') {
+            await ctx.resume()
+            devLog('[AudioEngine] AudioContext resumed')
+          }
+          // Don't close - let it be reused by analyzer if needed
+        }
+
+        // Also "prime" the audio element with a silent play
+        // This helps iOS recognize this element can produce audio
+        const originalSrc = audio.src
+        const originalTime = audio.currentTime
+        const wasPlaying = !audio.paused
+
+        // Only do silent prime if not already playing something
+        if (!originalSrc) {
+          // Create a tiny silent audio data URL
+          audio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA'
+          audio.volume = 0
+          await audio.play().catch(() => {})
+          audio.pause()
+          audio.src = ''
+          audio.volume = useAudioStore.getState().volume
+        }
+
+        devLog('[AudioEngine] ✅ iOS audio unlocked successfully')
+      } catch (err) {
+        devLog('[AudioEngine] iOS audio unlock error (non-fatal):', err)
+      }
+
+      // Remove listeners after first unlock
+      document.removeEventListener('touchstart', unlockAudio)
+      document.removeEventListener('touchend', unlockAudio)
+      document.removeEventListener('click', unlockAudio)
+    }
+
+    // Listen for first user interaction
+    document.addEventListener('touchstart', unlockAudio, { once: true, passive: true })
+    document.addEventListener('touchend', unlockAudio, { once: true, passive: true })
+    document.addEventListener('click', unlockAudio, { once: true })
+
+    return () => {
+      document.removeEventListener('touchstart', unlockAudio)
+      document.removeEventListener('touchend', unlockAudio)
+      document.removeEventListener('click', unlockAudio)
+    }
+  }, [])
+
+  // 🍎 iOS AUDIO DEBUG
+  // Log audio state on various events to help diagnose output issues
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio) return
+
+    const logAudioState = (event: string) => {
+      devLog(`[AudioEngine] ${event}:`, {
+        src: audio.src?.substring(0, 50),
+        paused: audio.paused,
+        volume: audio.volume,
+        muted: audio.muted,
+        readyState: audio.readyState,
+        currentTime: audio.currentTime,
+        duration: audio.duration,
+      })
+    }
+
+    const onPlay = () => logAudioState('play')
+    const onPlaying = () => logAudioState('playing')
+    const onPause = () => logAudioState('pause')
+    const onVolumeChange = () => logAudioState('volumechange')
+
+    audio.addEventListener('play', onPlay)
+    audio.addEventListener('playing', onPlaying)
+    audio.addEventListener('pause', onPause)
+    audio.addEventListener('volumechange', onVolumeChange)
+
+    return () => {
+      audio.removeEventListener('play', onPlay)
+      audio.removeEventListener('playing', onPlaying)
+      audio.removeEventListener('pause', onPause)
+      audio.removeEventListener('volumechange', onVolumeChange)
+    }
+  }, [])
+
   // 🍎 iOS BACKGROUND PLAYBACK DEBUG
   // Log visibility changes to help diagnose background playback issues
   useEffect(() => {

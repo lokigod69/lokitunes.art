@@ -326,11 +326,8 @@ export const useAudioStore = create<AudioState>((set, get) => ({
 
     let nextIndex = currentIndex + 1
     if (nextIndex >= queue.length) {
-      if (autoplayMode === 'all') {
-        nextIndex = 0
-      } else {
-        return
-      }
+      // Always allow looping for manual next() - user explicitly clicked
+      nextIndex = 0
     }
 
     const nextVersion = queue[nextIndex]
@@ -349,16 +346,13 @@ export const useAudioStore = create<AudioState>((set, get) => ({
   },
 
   previous: () => {
-    const { queue, currentIndex, autoplayMode } = get()
+    const { queue, currentIndex } = get()
     if (queue.length === 0) return
 
     let prevIndex = currentIndex - 1
     if (prevIndex < 0) {
-      if (autoplayMode === 'all') {
-        prevIndex = queue.length - 1
-      } else {
-        return
-      }
+      // Always allow looping for manual previous() - user explicitly clicked
+      prevIndex = queue.length - 1
     }
 
     const prevVersion = queue[prevIndex]
