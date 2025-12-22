@@ -191,7 +191,8 @@ export function SpectrumAnalyzer() {
     [currentVersion, isPlaying, mode]
   )
 
-  useSpectrumAnalyzer(isPlaying, draw)
+  // Pass isMobile to skip Web Audio connection on mobile (prevents iOS background audio issues)
+  useSpectrumAnalyzer(isPlaying, draw, isMobile)
 
   useEffect(() => {
     if (!isPlaying) {

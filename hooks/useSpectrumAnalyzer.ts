@@ -8,12 +8,21 @@ import { ensureConnected, getFrequencyData, resumeContextIfNeeded } from '@/lib/
 
 export function useSpectrumAnalyzer(
   isPlaying: boolean,
-  onFrame?: (data: Uint8Array) => void
+  onFrame?: (data: Uint8Array) => void,
+  /** Skip Web Audio connection on mobile to prevent iOS background audio issues */
+  isMobile: boolean = false
 ) {
   const rafRef = useRef<number | null>(null)
   const dataRef = useRef<Uint8Array | null>(null)
 
   useEffect(() => {
+    // 🍎 CRITICAL: Skip Web Audio entirely on mobile
+    // createMediaElementSource() routes ALL audio through Web Audio API
+    // iOS suspends AudioContext when screen locks, causing silence
+    if (isMobile) {
+      return
+    }
+
     if (!isPlaying) {
       if (rafRef.current !== null) {
         cancelAnimationFrame(rafRef.current)
@@ -54,7 +63,7 @@ export function useSpectrumAnalyzer(
         rafRef.current = null
       }
     }
-  }, [isPlaying, onFrame])
+  }, [isPlaying, onFrame, isMobile])
 
   return dataRef
 }
