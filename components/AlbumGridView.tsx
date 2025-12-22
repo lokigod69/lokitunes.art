@@ -92,11 +92,11 @@ export function AlbumGridView({ versions, albumPalette }: AlbumGridViewProps) {
 
               {/* Overlay with info */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-3">
-                <span className="text-white font-medium text-sm truncate">
+                <span className="text-white font-semibold text-base truncate drop-shadow-lg">
                   {version.label}
                 </span>
                 {version.songTitle && (
-                  <span className="text-white/60 text-xs truncate">
+                  <span className="text-white/70 text-sm truncate">
                     {version.songTitle}
                   </span>
                 )}

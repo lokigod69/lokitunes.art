@@ -85,10 +85,10 @@ export function calculateCameraDistance(
     distance = distance / aspectRatio
   }
   
-  // Mobile needs extra padding due to UI elements and smaller orbs needing more context
-  const padding = isMobile ? 1.4 : 1.2
+  // Mobile needs less padding - bring orbs closer for better visibility
+  const padding = isMobile ? 1.1 : 1.2
   
   // Enforce minimum camera distance for consistent grid appearance across all albums
-  // Higher minimum ensures grid always appears at same relative position in viewport
-  return Math.max(distance * padding, isMobile ? 25 : 25)
+  // Mobile uses lower minimum to bring scene closer for better tap targets and visibility
+  return Math.max(distance * padding, isMobile ? 18 : 25)
 }

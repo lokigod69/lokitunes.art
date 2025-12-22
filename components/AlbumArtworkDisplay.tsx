@@ -131,7 +131,7 @@ export function AlbumArtworkDisplay({
       </mesh>
 
       {/* Vinyl grooves (darker concentric rings effect) */}
-      <mesh ref={groovesMeshRef} position={[0, 0, 0.01]}>
+      <mesh ref={groovesMeshRef} position={[0, 0, 0.02]} renderOrder={1}>
         <ringGeometry args={[3.5, 7.8, 64]} />
         <meshStandardMaterial 
           color="#050505"
@@ -139,6 +139,7 @@ export function AlbumArtworkDisplay({
           opacity={0.4}
           roughness={0.2}
           metalness={0.8}
+          depthWrite={false}
         />
       </mesh>
 
@@ -146,7 +147,8 @@ export function AlbumArtworkDisplay({
       {texture && (
         <mesh 
           ref={artworkMeshRef} 
-          position={[0, 0, 0.02]}
+          position={[0, 0, 0.05]}
+          renderOrder={2}
           onClick={handleVinylClick}
           onPointerEnter={() => { if (onVinylClick) document.body.style.cursor = 'pointer' }}
           onPointerLeave={() => { document.body.style.cursor = 'default' }}
@@ -158,6 +160,7 @@ export function AlbumArtworkDisplay({
             opacity={0.85}
             side={THREE.DoubleSide}
             toneMapped={false}
+            depthWrite={false}
           />
         </mesh>
       )}
@@ -166,7 +169,8 @@ export function AlbumArtworkDisplay({
       {!texture && (
         <mesh 
           ref={artworkMeshRef} 
-          position={[0, 0, 0.02]}
+          position={[0, 0, 0.05]}
+          renderOrder={2}
           onClick={handleVinylClick}
           onPointerEnter={() => { if (onVinylClick) document.body.style.cursor = 'pointer' }}
           onPointerLeave={() => { document.body.style.cursor = 'default' }}
@@ -177,18 +181,19 @@ export function AlbumArtworkDisplay({
             transparent
             opacity={0.7}
             side={THREE.DoubleSide}
+            depthWrite={false}
           />
         </mesh>
       )}
 
       {/* Center label hole */}
-      <mesh position={[0, 0, 0.03]}>
+      <mesh position={[0, 0, 0.08]} renderOrder={3}>
         <ringGeometry args={[0.3, 0.5, 32]} />
         <meshBasicMaterial color="#1a1a1a" />
       </mesh>
 
       {/* Center spindle hole (darker) */}
-      <mesh position={[0, 0, 0.04]}>
+      <mesh position={[0, 0, 0.1]} renderOrder={4}>
         <circleGeometry args={[0.3, 32]} />
         <meshBasicMaterial color="#000000" />
       </mesh>

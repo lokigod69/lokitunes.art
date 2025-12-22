@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
-import { ArrowLeft, Pause, Play } from 'lucide-react'
+import { ArrowLeft, Pause, Play, Shuffle } from 'lucide-react'
 import { AlbumGridView } from '@/components/AlbumGridView'
 import { OriginalTrackInfo } from '@/components/OriginalTrackInfo'
 import { SpectrumAnalyzer } from '@/components/SpectrumAnalyzer'
@@ -29,7 +29,7 @@ interface AlbumPageProps {
 export function AlbumPage({ album }: AlbumPageProps) {
   const isMobile = useMobileDetection(768)
 
-  const { currentVersion, isPlaying, playStandalone, pause } = useAudioStore()
+  const { currentVersion, isPlaying, playStandalone, pause, startAlbumQueue } = useAudioStore()
 
   // 🔥🔥🔥 DEBUG: Log exact palette received on CLIENT
   devLog('🔥🔥🔥 CLIENT (AlbumPage): Received album:', album.slug, {
@@ -93,6 +93,24 @@ export function AlbumPage({ album }: AlbumPageProps) {
 
   const isDemoActive = !!originalVersion && currentVersion?.id === originalVersion.id
   const isDemoPlaying = isDemoActive && isPlaying
+
+  // Check if currently playing something from this album
+  const isAlbumPlaying = orbVersions.some(v => v.id === currentVersion?.id) && isPlaying
+
+  // Play All shuffle - picks random first track and shuffles rest
+  const handlePlayAllShuffle = () => {
+    if (orbVersions.length === 0) return
+    
+    if (isAlbumPlaying) {
+      pause()
+      return
+    }
+    
+    // Pick a random starting track
+    const randomIndex = Math.floor(Math.random() * orbVersions.length)
+    const startVersion = orbVersions[randomIndex]
+    startAlbumQueue(orbVersions, startVersion.id, palette)
+  }
 
   // Inject album palette into CSS variables
   useEffect(() => {
@@ -166,26 +184,20 @@ export function AlbumPage({ album }: AlbumPageProps) {
               )}
             </div>
 
-            {originalVersion && (
+            {orbVersions.length > 0 && (
               <div className="mt-4">
                 <button
                   type="button"
-                  onClick={() => {
-                    if (isDemoPlaying) {
-                      pause()
-                      return
-                    }
-                    playStandalone(originalVersion, originalVersion.song_id, album.palette || undefined)
-                  }}
+                  onClick={handlePlayAllShuffle}
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-bone/10 hover:border-[var(--album-accent1)] transition-colors text-bone/80 hover:text-bone cursor-pointer"
-                  title="Play demo"
+                  title="Shuffle play all versions"
                 >
-                  {isDemoPlaying ? (
+                  {isAlbumPlaying ? (
                     <Pause className="w-4 h-4" fill="currentColor" />
                   ) : (
-                    <Play className="w-4 h-4" fill="currentColor" />
+                    <Shuffle className="w-4 h-4" />
                   )}
-                  <span>{isDemoPlaying ? 'Pause Demo' : 'Play Demo'}</span>
+                  <span>{isAlbumPlaying ? 'Pause' : 'Play All'}</span>
                 </button>
               </div>
             )}

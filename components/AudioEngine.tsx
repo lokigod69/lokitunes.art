@@ -9,6 +9,8 @@ export default function AudioEngine() {
   const audioRef = useRef<HTMLAudioElement>(null)
   const lastLoadedUrl = useRef<string>('')  // Track last loaded URL to prevent double-load
   const isLoadingNewTrack = useRef(false)    // Prevent play during load
+  const lastPauseTime = useRef<number>(0)    // Debounce pause calls
+  const pauseDebounceMs = 100                // Minimum ms between pause calls
   
   const currentVersion = useAudioStore((state) => state.currentVersion)
   const isPlaying = useAudioStore((state) => state.isPlaying)
@@ -82,6 +84,17 @@ export default function AudioEngine() {
         })
       }
     } else {
+      // Guard: skip if already paused
+      if (audio.paused) return
+      
+      // Debounce: skip if we just paused recently (prevents stutter on mobile)
+      const now = Date.now()
+      if (now - lastPauseTime.current < pauseDebounceMs) {
+        devLog('[AudioEngine] Skipping pause (debounced)')
+        return
+      }
+      
+      lastPauseTime.current = now
       audio.pause()
     }
   }, [isPlaying])  // Remove currentVersion - we don't want to re-trigger on track change

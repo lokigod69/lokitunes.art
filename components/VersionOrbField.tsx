@@ -141,12 +141,14 @@ function OrbScene({
                 position={positions[index]}
                 radius={radius}
                 orbCount={versions.length}
+                orbIndex={index}
                 deviceTier={deviceTier}
                 albumPalette={albumPalette}
                 albumCoverUrl={albumCoverUrl}
                 onHover={onHover}
                 vinylCenterPosition={VINYL_CENTER_POSITION}
                 isVinylVisible={!!(hoveredVersion || playingVersion)}
+                isMobile={isMobile}
               />
             )
           })}

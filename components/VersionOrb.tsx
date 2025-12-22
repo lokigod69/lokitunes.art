@@ -75,6 +75,7 @@ interface VersionOrbProps {
   position: [number, number, number]
   radius: number
   orbCount?: number
+  orbIndex?: number  // Index for orbit animation positioning
   deviceTier: DeviceTier
   albumPalette: {
     dominant: string
@@ -87,6 +88,7 @@ interface VersionOrbProps {
   vinylCenterPosition?: [number, number, number]
   onVinylRelease?: () => void
   isVinylVisible?: boolean
+  isMobile?: boolean  // Enable smooth orbit animation instead of physics
 }
 
 export function VersionOrb({ 
@@ -95,13 +97,15 @@ export function VersionOrb({
   position,
   radius,
   orbCount,
+  orbIndex = 0,
   deviceTier,
   albumPalette,
   albumCoverUrl,
   onHover,
   vinylCenterPosition = [0, 0, -35],
   onVinylRelease,
-  isVinylVisible = false
+  isVinylVisible = false,
+  isMobile = false
 }: VersionOrbProps) {
   const ref = useRef<RapierRigidBody>(null)
   const glowRef = useRef<THREE.PointLight>(null)
@@ -203,8 +207,8 @@ export function VersionOrb({
 
   const seed = version.id.charCodeAt(0) * 137.5
 
-  // Detect mobile for enhanced visuals
-  const isMobile = deviceTier === 'low' || deviceTier === 'medium'
+  // Detect low-tier device for enhanced visuals (separate from isMobile prop for orbit)
+  const isLowTierDevice = deviceTier === 'low' || deviceTier === 'medium'
 
   // Use album's dominant color for glow, fallback to voltage blue
   // Palette colors are now cleaned at the source (queries.ts)
@@ -213,7 +217,7 @@ export function VersionOrb({
   const normalizedIntensity = normalizeEmissiveIntensity(glowColor)
   
   // Mobile gets brighter glow for better visibility
-  const mobileIntensityBoost = isMobile ? 1.2 : 1.0
+  const mobileIntensityBoost = isLowTierDevice ? 1.2 : 1.0
 
   // Count-based physics tweak: small albums (≤5 orbs) get reduced damping for more lively motion
   const effectiveOrbCount = orbCount ?? 10
@@ -358,80 +362,106 @@ export function VersionOrb({
     }
     
     else if (animationState === 'idle') {
-      // Normal physics behavior - ONLY when idle
-      // Perlin noise drift for organic motion
-      const noiseX = Math.sin(t * 0.3 + seed) * 0.05
-      const noiseY = Math.cos(t * 0.2 + seed * 0.7) * 0.05
-      body.applyImpulse({ x: noiseX, y: noiseY, z: 0 }, true)
-
       // ═══════════════════════════════════════════════════════════════════════════════
-      // CENTER ATTRACTION - Gentle pull toward origin when idle
-      // Keeps orbs from drifting too far and creates a cohesive group
+      // 🌀 MOBILE ORBIT ANIMATION - Smooth counterclockwise orbit instead of physics
       // ═══════════════════════════════════════════════════════════════════════════════
-      const centerPos = new THREE.Vector3(0, 0, 0)
-      const orbPos = new THREE.Vector3(pos.x, pos.y, pos.z)
-      const toCenter = centerPos.clone().sub(orbPos)
-      const distanceToCenter = toCenter.length()
-      
-      // Apply gentle center attraction (stronger when further away)
-      if (distanceToCenter > 3) {
-        const centerStrength = 0.02 * Math.min(distanceToCenter / 10, 1)
-        const centerAttraction = toCenter.normalize().multiplyScalar(centerStrength)
-        body.applyImpulse(centerAttraction, true)
-      }
-
-      // Mouse interaction field with proper 3D unprojection
-      const vector = new THREE.Vector3(state.pointer.x, state.pointer.y, 0.5)
-      vector.unproject(state.camera)
-      const dir = vector.sub(state.camera.position).normalize()
-      const mousePos = state.camera.position.clone().add(dir.multiplyScalar(20))
-      
-      const distance = mousePos.distanceTo(orbPos)
-      const toCursor = mousePos.clone().sub(orbPos)
-
-      // Stronger attraction with larger range
-      const tooClose = 2
-      if (distance < tooClose) {
-        // Repel when too close
-        const repulsion = toCursor.clone().normalize().multiplyScalar(-0.2)
-        body.applyImpulse(repulsion, true)
-      } else if (distance < 8) {
-        // Attract when in range
-        const strength = 0.15 * (1 - distance / 8)
-        const attraction = toCursor.normalize().multiplyScalar(strength)
-        body.applyImpulse(attraction, true)
-      }
-      
-      // ═══════════════════════════════════════════════════════════════════════════════
-      // 🎵 VINYL REPULSION - Push orbs away from vinyl center when visible
-      // Allows orbs to pass above/below but not in front of the vinyl
-      // ═══════════════════════════════════════════════════════════════════════════════
-      if (isVinylVisible) {
-        const vinylPos = new THREE.Vector3(
-          vinylCenterPosition[0],
-          vinylCenterPosition[1],
-          vinylCenterPosition[2]
-        )
+      if (isMobile) {
+        // Calculate orbital position based on time and orb index
+        const totalOrbs = effectiveOrbCount
+        const angleOffset = (orbIndex / totalOrbs) * Math.PI * 2  // Distribute evenly around circle
+        const orbitSpeed = 0.15  // Counterclockwise rotation speed
+        const currentAngle = angleOffset - t * orbitSpeed  // Negative for counterclockwise
         
-        // Calculate 2D distance (X and Y only) - orbs can pass in Z
-        const dx = pos.x - vinylPos.x
-        const dy = pos.y - vinylPos.y
-        const distance2D = Math.sqrt(dx * dx + dy * dy)
+        // Orbit radius based on orb count - smaller albums get tighter orbit
+        const baseOrbitRadius = totalOrbs <= 5 ? 6 : totalOrbs <= 10 ? 8 : 10
         
-        // Repulsion zone radius - vinyl is scale 10 with radius 8 = 80 visual units
-        const VINYL_REPULSION_RADIUS = 85  // Larger than vinyl visual (80) to keep orbs on outer rim
-        const VINYL_REPULSION_STRENGTH = 1.2
+        // Add subtle vertical wave for visual interest
+        const verticalWave = Math.sin(t * 0.5 + orbIndex * 0.7) * 1.5
         
-        if (distance2D < VINYL_REPULSION_RADIUS) {
-          // Calculate repulsion strength (stronger when closer)
-          const repulsionFactor = 1 - (distance2D / VINYL_REPULSION_RADIUS)
-          const repulsionStrength = VINYL_REPULSION_STRENGTH * repulsionFactor * repulsionFactor // Quadratic falloff
+        // Calculate orbital position
+        const orbitX = Math.cos(currentAngle) * baseOrbitRadius
+        const orbitY = Math.sin(currentAngle) * baseOrbitRadius * 0.6 + verticalWave  // Elliptical, slightly flattened
+        const orbitZ = Math.sin(currentAngle * 0.5) * 2  // Subtle depth variation
+        
+        // Set position directly (kinematic-style, smooth)
+        body.setTranslation({ x: orbitX, y: orbitY, z: orbitZ }, true)
+        body.setLinvel({ x: 0, y: 0, z: 0 }, true)  // Clear velocity for smooth motion
+      } else {
+        // Normal physics behavior - ONLY when idle (desktop)
+        // Perlin noise drift for organic motion
+        const noiseX = Math.sin(t * 0.3 + seed) * 0.05
+        const noiseY = Math.cos(t * 0.2 + seed * 0.7) * 0.05
+        body.applyImpulse({ x: noiseX, y: noiseY, z: 0 }, true)
+
+        // ═══════════════════════════════════════════════════════════════════════════════
+        // CENTER ATTRACTION - Gentle pull toward origin when idle
+        // Keeps orbs from drifting too far and creates a cohesive group
+        // ═══════════════════════════════════════════════════════════════════════════════
+        const centerPos = new THREE.Vector3(0, 0, 0)
+        const orbPos = new THREE.Vector3(pos.x, pos.y, pos.z)
+        const toCenter = centerPos.clone().sub(orbPos)
+        const distanceToCenter = toCenter.length()
+        
+        // Apply gentle center attraction (stronger when further away)
+        if (distanceToCenter > 3) {
+          const centerStrength = 0.02 * Math.min(distanceToCenter / 10, 1)
+          const centerAttraction = toCenter.normalize().multiplyScalar(centerStrength)
+          body.applyImpulse(centerAttraction, true)
+        }
+
+        // Mouse interaction field with proper 3D unprojection
+        const vector = new THREE.Vector3(state.pointer.x, state.pointer.y, 0.5)
+        vector.unproject(state.camera)
+        const dir = vector.sub(state.camera.position).normalize()
+        const mousePos = state.camera.position.clone().add(dir.multiplyScalar(20))
+        
+        const distance = mousePos.distanceTo(orbPos)
+        const toCursor = mousePos.clone().sub(orbPos)
+
+        // Stronger attraction with larger range
+        const tooClose = 2
+        if (distance < tooClose) {
+          // Repel when too close
+          const repulsion = toCursor.clone().normalize().multiplyScalar(-0.2)
+          body.applyImpulse(repulsion, true)
+        } else if (distance < 8) {
+          // Attract when in range
+          const strength = 0.15 * (1 - distance / 8)
+          const attraction = toCursor.normalize().multiplyScalar(strength)
+          body.applyImpulse(attraction, true)
+        }
+        
+        // ═══════════════════════════════════════════════════════════════════════════════
+        // 🎵 VINYL REPULSION - Push orbs away from vinyl center when visible
+        // Allows orbs to pass above/below but not in front of the vinyl
+        // ═══════════════════════════════════════════════════════════════════════════════
+        if (isVinylVisible) {
+          const vinylPos = new THREE.Vector3(
+            vinylCenterPosition[0],
+            vinylCenterPosition[1],
+            vinylCenterPosition[2]
+          )
           
-          // Direction to push (away from vinyl center, only X and Y)
-          const pushX = distance2D > 0.1 ? (dx / distance2D) * repulsionStrength : (Math.random() - 0.5) * repulsionStrength
-          const pushY = distance2D > 0.1 ? (dy / distance2D) * repulsionStrength : (Math.random() - 0.5) * repulsionStrength
+          // Calculate 2D distance (X and Y only) - orbs can pass in Z
+          const dx = pos.x - vinylPos.x
+          const dy = pos.y - vinylPos.y
+          const distance2D = Math.sqrt(dx * dx + dy * dy)
           
-          body.applyImpulse({ x: pushX, y: pushY, z: 0 }, true)
+          // Repulsion zone radius - vinyl is scale 10 with radius 8 = 80 visual units
+          const VINYL_REPULSION_RADIUS = 85  // Larger than vinyl visual (80) to keep orbs on outer rim
+          const VINYL_REPULSION_STRENGTH = 1.2
+          
+          if (distance2D < VINYL_REPULSION_RADIUS) {
+            // Calculate repulsion strength (stronger when closer)
+            const repulsionFactor = 1 - (distance2D / VINYL_REPULSION_RADIUS)
+            const repulsionStrength = VINYL_REPULSION_STRENGTH * repulsionFactor * repulsionFactor // Quadratic falloff
+            
+            // Direction to push (away from vinyl center, only X and Y)
+            const pushX = distance2D > 0.1 ? (dx / distance2D) * repulsionStrength : (Math.random() - 0.5) * repulsionStrength
+            const pushY = distance2D > 0.1 ? (dy / distance2D) * repulsionStrength : (Math.random() - 0.5) * repulsionStrength
+            
+            body.applyImpulse({ x: pushX, y: pushY, z: 0 }, true)
+          }
         }
       }
       
