@@ -337,7 +337,7 @@ export function VersionOrbField({
           width: '100%',
           height: '100%',
           zIndex: 0,
-          touchAction: 'manipulation'  // Allow scroll but capture touch for orb physics
+          touchAction: 'none'  // Capture all touch events for orb physics attraction
         }}
       >
         <PerformanceMonitor

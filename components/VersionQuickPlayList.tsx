@@ -6,7 +6,8 @@
  */
 
 import { useState } from 'react'
-import { Play, Pause, Heart, Star } from 'lucide-react'
+import { createPortal } from 'react-dom'
+import { Play, Pause, Heart, Star, Check } from 'lucide-react'
 import type { ExtendedVersion } from '@/components/VersionOrb'
 import { useLikes } from '@/hooks/useLikes'
 import { useAuth } from '@/hooks/useAuth'
@@ -24,7 +25,7 @@ interface VersionQuickPlayListProps {
 
 // Format time from seconds to M:SS
 function formatTime(seconds: number | null | undefined): string {
-  if (!seconds || isNaN(seconds)) return '0:00'
+  if (seconds === null || seconds === undefined || isNaN(seconds) || seconds === 0) return '--:--'
   const mins = Math.floor(seconds / 60)
   const secs = Math.floor(seconds % 60)
   return `${mins}:${secs.toString().padStart(2, '0')}`
@@ -42,13 +43,16 @@ export function VersionQuickPlayList({
   const { isLiked, toggleLike } = useLikes()
   const { isAuthenticated } = useAuth()
   const { currentTime, duration } = useAudioStore()
-  const [toastMessage, setToastMessage] = useState<string | null>(null)
+  const [toastMessage, setToastMessage] = useState<{ text: string; isAdd: boolean } | null>(null)
 
   // Handle like with toast notification
   const handleLikeClick = async (versionId: string, currentlyLiked: boolean) => {
     const success = await toggleLike(versionId)
     if (success) {
-      setToastMessage(currentlyLiked ? 'Removed from liked songs' : 'Added to liked songs')
+      setToastMessage({ 
+        text: currentlyLiked ? 'Removed from liked songs' : 'Added to liked songs',
+        isAdd: !currentlyLiked
+      })
       setTimeout(() => setToastMessage(null), 2000)
     }
   }
@@ -57,11 +61,17 @@ export function VersionQuickPlayList({
 
   return (
     <div className="flex flex-col gap-1 w-full max-w-[320px] md:max-w-[400px] relative">
-      {/* Toast notification */}
-      {toastMessage && (
-        <div className="absolute -top-10 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-lg bg-void/95 border border-white/20 text-bone text-xs whitespace-nowrap z-50 animate-fade-in">
-          {toastMessage}
-        </div>
+      {/* Toast notification - rendered via portal above bottom player */}
+      {toastMessage && typeof document !== 'undefined' && createPortal(
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 px-4 py-2 rounded-lg bg-void/95 border border-white/20 text-bone text-sm whitespace-nowrap z-[100] animate-fade-in flex items-center gap-2 shadow-lg">
+          {toastMessage.isAdd ? (
+            <Heart className="w-4 h-4 text-red-500" fill="currentColor" />
+          ) : (
+            <Check className="w-4 h-4 text-green-500" />
+          )}
+          {toastMessage.text}
+        </div>,
+        document.body
       )}
 
       {/* Header label */}
@@ -82,20 +92,22 @@ export function VersionQuickPlayList({
           return (
             <div
               key={version.id}
+              onClick={() => onVersionClick(version)}
               className={`
-                group flex items-center gap-2 px-2 py-1.5 rounded-lg
+                group flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer
                 transition-all duration-150
                 ${isCurrentVersion 
                   ? 'bg-white/10 border border-white/20' 
                   : 'hover:bg-white/5 border border-transparent'
                 }
               `}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => e.key === 'Enter' && onVersionClick(version)}
             >
               {/* Cover Art Thumbnail with Play/Pause Overlay */}
-              <button
-                type="button"
-                onClick={() => onVersionClick(version)}
-                className="relative flex-shrink-0 w-10 h-10 rounded-lg overflow-hidden cursor-pointer"
+              <div
+                className="relative flex-shrink-0 w-10 h-10 rounded-lg overflow-hidden"
                 title={isThisPlaying ? 'Pause' : 'Play'}
               >
                 {coverUrl ? (
@@ -128,7 +140,7 @@ export function VersionQuickPlayList({
                     <Play className="w-4 h-4 text-white ml-0.5" fill="currentColor" />
                   )}
                 </div>
-              </button>
+              </div>
 
               {/* Version Info */}
               <div className="flex-1 min-w-0 flex flex-col">
