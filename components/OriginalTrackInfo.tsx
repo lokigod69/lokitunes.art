@@ -64,7 +64,7 @@ export function OriginalTrackInfo({ albumSlug, original, albumPalette }: Origina
 
       {isOpen && (
         <div
-          className="absolute left-full top-full mt-2 ml-2 w-[260px] rounded-lg border border-white/10 bg-void/95 backdrop-blur-lg shadow-xl p-3 z-20"
+          className="absolute top-full mt-2 right-0 md:left-1/2 md:-translate-x-1/2 w-[260px] max-w-[85vw] rounded-lg border border-white/10 bg-void/95 backdrop-blur-lg shadow-xl p-3 z-50"
           style={{ boxShadow: `0 12px 40px ${accentColor}22` }}
         >
           <div className="flex items-start gap-3">

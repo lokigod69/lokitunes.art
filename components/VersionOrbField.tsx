@@ -53,8 +53,15 @@ function PhysicsCleanup({ expectedCount }: { expectedCount: number }) {
   return null
 }
 
-// Vinyl center position constant - where orbs dock to
-const VINYL_CENTER_POSITION: [number, number, number] = [0, 0, -35]
+// Vinyl position - moved to TOP of scene, above the orbs
+// This prevents orbs from overlapping/going inside the vinyl
+const VINYL_CONFIG = {
+  positionY: 5,       // High up - in the black space above orbs
+  positionZ: -8,      // Slightly back but visible
+  scale: 0.6,         // Smaller since it's now its own element, not a backdrop
+} as const
+
+const VINYL_CENTER_POSITION: [number, number, number] = [0, VINYL_CONFIG.positionY, VINYL_CONFIG.positionZ]
 
 // FIXED GRID CONFIG - Consistent across ALL albums regardless of orb count
 // This ensures visual consistency: ~10% black space at front, text in front of grid
@@ -69,25 +76,8 @@ const GRID_CONFIG = {
   // These are now defined in AlbumGridTextDisplay.tsx
 } as const
 
-// Invisible physics barrier that orbs bounce off when vinyl is visible
-// Creates a "ghost sphere" in front of the vinyl that orbs collide with
-function VinylPhysicsBarrier({ visible }: { visible: boolean }) {
-  if (!visible) return null
-  
-  // Barrier radius - larger = orbs stay further from vinyl visual
-  const BARRIER_RADIUS = 4.5  // Sweet spot between 3.5 (too close) and 5.5 (too far)
-  
-  return (
-    <RigidBody
-      type="fixed"
-      position={[0, 0, 0]}  // At center where docked orb appears
-      colliders={false}
-    >
-      {/* Invisible sphere that orbs bounce off of */}
-      <BallCollider args={[BARRIER_RADIUS]} restitution={1.0} friction={0.0} />
-    </RigidBody>
-  )
-}
+// No longer need center barrier - vinyl is now above the orbs, not in front
+// Orbs have the center space to themselves
 
 function OrbScene({ 
   versions, 
@@ -173,11 +163,8 @@ function OrbScene({
         {/* Mouse attraction - Dynamic range for large albums */}
         <MouseAttraction albumCount={versions.length} />
         
-        {/* Invisible physics boundaries - stricter front wall when vinyl is playing */}
-        <InvisibleBounds size={25} isPlaying={!!playingVersion} />
-        
-        {/* 🎵 VINYL PHYSICS BARRIER - Invisible collider at center that orbs bounce off */}
-        <VinylPhysicsBarrier visible={!!playingVersion} />
+        {/* Invisible physics boundaries */}
+        <InvisibleBounds size={25} />
       </Suspense>
       
       {/* CENTERED GRID TEXT - Shows hovered or playing version label on album grid */}
@@ -205,12 +192,13 @@ function OrbScene({
         )
       })()}
       
-      {/* VINYL ARTWORK DISPLAY - Standing at back of grid, shows on hover or when playing */}
+      {/* VINYL ARTWORK DISPLAY - Now at TOP of scene, above orbs */}
       <AlbumArtworkDisplay
         albumCoverUrl={hoveredVersion?.cover_url || playingVersion?.cover_url || albumCoverUrl}
         albumPalette={albumPalette}
         visible={!!(hoveredVersion || playingVersion)}
         position={VINYL_CENTER_POSITION}
+        scale={VINYL_CONFIG.scale}
         albumTitle={hoveredVersion?.label || playingVersion?.label || 'Album'}
         onVinylClick={playingVersion ? onStopPlaying : undefined}
         isPlaying={!!playingVersion}

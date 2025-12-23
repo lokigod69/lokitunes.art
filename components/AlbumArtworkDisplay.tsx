@@ -13,9 +13,10 @@ interface AlbumArtworkDisplayProps {
   albumPalette: Album['palette']
   visible: boolean
   position?: [number, number, number]
+  scale?: number
   albumTitle?: string
-  onVinylClick?: () => void  // NEW: Called when vinyl is clicked to release docked orb
-  isPlaying?: boolean        // NEW: When playing, vinyl spins
+  onVinylClick?: () => void
+  isPlaying?: boolean
   deviceTier?: DeviceTier
 }
 
@@ -24,6 +25,7 @@ export function AlbumArtworkDisplay({
   albumPalette,
   visible,
   position = [0, -5, -45],
+  scale = 10.0,
   albumTitle = 'Album',
   onVinylClick,
   isPlaying = false,
@@ -112,7 +114,7 @@ export function AlbumArtworkDisplay({
       ref={groupRef} 
       position={position}
       visible={false}
-      scale={10.0}  // Much larger vinyl - prominent in background
+      scale={scale}  // Configurable vinyl size
     >
       {/* Outer vinyl disc (black with slight sheen) - CLICKABLE */}
       <mesh 

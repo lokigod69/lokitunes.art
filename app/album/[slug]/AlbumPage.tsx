@@ -235,6 +235,7 @@ export function AlbumPage({ album }: AlbumPageProps) {
               isPlaying={isPlaying}
               onVersionClick={handleVersionClick}
               accentColor={palette.accent1}
+              albumCoverUrl={album.cover_url || undefined}
             />
           </div>
         </div>
