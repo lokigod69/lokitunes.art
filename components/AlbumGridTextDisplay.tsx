@@ -7,29 +7,42 @@ import * as THREE from 'three'
 import type { Album } from '@/lib/supabase'
 import type { ExtendedVersion } from './VersionOrb'
 
+// FIXED TEXT POSITIONS - Consistent across ALL albums regardless of orb count
+// Text should be IN FRONT of grid but WITHIN the black container bounds
+// Grid is at Z=-10 (desktop) or Z=-15 (mobile), so text at Z=5-8 is in front
+// Maximum safe Z is ~8 to stay within container's ~10% black space at front
+const TEXT_CONFIG = {
+  // Y position: slightly above grid plane for visibility
+  positionY: -11,
+  // Z position: in front of grid, within container bounds
+  // FIXED - never changes based on orb count or camera distance
+  frontCenterZ: 6,  // Playing version - prominent but not too far forward
+  hoverSpotsZ: { min: 3, max: 5 },  // Hovered versions - slightly behind front center
+  maxSafeZ: 8,  // Never exceed this to stay within container
+} as const
+
 // Front center position - for playing version (prominent, always visible)
-// Y=-11 sits on grid plane, Z=8 is in front of orbs for mobile visibility
-const FRONT_CENTER_POSITION: [number, number, number] = [0, -11, 8]
+const FRONT_CENTER_POSITION: [number, number, number] = [0, TEXT_CONFIG.positionY, TEXT_CONFIG.frontCenterZ]
 
 // Outer-edge text spots - for hovered versions
-// Y=-11 sits on grid plane, Z=3-5 keeps text slightly in front
+// All Z values clamped to safe range to prevent text from extending beyond container
 const ALBUM_TEXT_SPOTS: [number, number, number][] = [
   // Left edge
-  [-10, -11, 4],
-  [-8, -11, 3],
-  [-12, -11, 3],
+  [-10, TEXT_CONFIG.positionY, 4],
+  [-8, TEXT_CONFIG.positionY, 3],
+  [-12, TEXT_CONFIG.positionY, 3],
   // Right edge
-  [10, -11, 4],
-  [8, -11, 3],
-  [12, -11, 3],
+  [10, TEXT_CONFIG.positionY, 4],
+  [8, TEXT_CONFIG.positionY, 3],
+  [12, TEXT_CONFIG.positionY, 3],
   // Center variations
-  [-4, -11, 4],
-  [0, -11, 3],
-  [4, -11, 4],
-  // Additional positions
-  [-6, -11, 5],
-  [0, -11, 5],
-  [6, -11, 5],
+  [-4, TEXT_CONFIG.positionY, 4],
+  [0, TEXT_CONFIG.positionY, 3],
+  [4, TEXT_CONFIG.positionY, 4],
+  // Additional positions - kept within safe bounds
+  [-6, TEXT_CONFIG.positionY, 5],
+  [0, TEXT_CONFIG.positionY, 5],
+  [6, TEXT_CONFIG.positionY, 5],
 ]
 
 interface AlbumGridTextDisplayProps {

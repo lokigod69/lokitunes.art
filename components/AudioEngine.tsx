@@ -322,7 +322,7 @@ export default function AudioEngine() {
     }
   }, [])
 
-  // 🍎 iOS BACKGROUND AUDIO FIX
+  // 🍎 iOS BACKGROUND AUDIO FIX - ENHANCED
   // When audio is routed through Web Audio API (for visualizer), iOS suspends the
   // AudioContext when the screen locks. We must actively resume it to keep audio playing.
   useEffect(() => {
@@ -340,28 +340,50 @@ export default function AudioEngine() {
         audioPaused: audio.paused,
       })
 
-      // If we're playing and audio is routed through Web Audio, aggressively resume context
-      if (isPlaying && isAudioRoutedThroughWebAudio()) {
-        const resumed = await forceResumeAudioContext()
-        devLog('[AudioEngine] AudioContext resume attempt:', resumed)
+      // Always try to resume AudioContext on visibility return
+      if (!isHidden) {
+        if (isAudioRoutedThroughWebAudio()) {
+          const resumed = await forceResumeAudioContext()
+          devLog('[AudioEngine] AudioContext resume on visibility:', resumed)
+        }
         
-        // If returning to app and audio got stuck, restart playback
-        if (!isHidden && audio.paused && isPlaying) {
-          devLog('[AudioEngine] Restarting audio after visibility return')
-          audio.play().catch(err => {
-            devLog('[AudioEngine] Failed to restart audio:', err)
-          })
+        // If should be playing but isn't, recover with small delay to let iOS settle
+        if (isPlaying && audio.paused) {
+          devLog('[AudioEngine] Attempting delayed recovery after visibility return')
+          setTimeout(() => {
+            const currentState = useAudioStore.getState()
+            if (currentState.isPlaying && audio.paused) {
+              devLog('[AudioEngine] Executing delayed recovery')
+              audio.play().catch(err => {
+                devLog('[AudioEngine] Delayed recovery failed:', err)
+              })
+            }
+          }, 100)
         }
       }
     }
 
+    // Handle page show (back/forward cache restoration)
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        devLog('[AudioEngine] Page restored from bfcache')
+        handleVisibilityChange()
+      }
+    }
+
     document.addEventListener('visibilitychange', handleVisibilityChange)
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('pageshow', handlePageShow)
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('pageshow', handlePageShow)
+    }
   }, [])
 
-  // 🍎 iOS BACKGROUND AUDIO: Periodic AudioContext health check
+  // 🍎 iOS BACKGROUND AUDIO: Periodic AudioContext health check - ENHANCED
   // iOS can suspend AudioContext at any time during background playback
   // This interval ensures we catch and fix suspensions quickly
+  // Check every 5 seconds for efficiency while still catching issues
   useEffect(() => {
     const audio = audioRef.current
     if (!audio) return
@@ -372,19 +394,31 @@ export default function AudioEngine() {
       if (intervalId) return
       
       intervalId = setInterval(async () => {
-        const { isPlaying } = useAudioStore.getState()
+        const { isPlaying, currentVersion } = useAudioStore.getState()
         
-        // Only check if we should be playing and audio is routed through Web Audio
-        if (isPlaying && isAudioRoutedThroughWebAudio()) {
+        // Only check if we should be playing
+        if (!isPlaying || !currentVersion) return
+        
+        // Check if audio is actually playing
+        if (audio.paused && !audio.ended) {
+          devLog('[AudioEngine] Health check: Audio paused unexpectedly, attempting recovery')
+          audio.play().catch((error) => {
+            devLog('[AudioEngine] Health check recovery failed:', error)
+          })
+        }
+        
+        // Check if audio context is suspended (for Web Audio)
+        if (isAudioRoutedThroughWebAudio()) {
           const wasResumed = await forceResumeAudioContext()
-          
-          // If context was suspended and we resumed it, also ensure audio element is playing
-          if (wasResumed && audio.paused) {
-            devLog('[AudioEngine] Health check: restarting paused audio')
-            audio.play().catch(() => {})
+          if (wasResumed) {
+            devLog('[AudioEngine] Health check: AudioContext was suspended, resumed')
+            // Also ensure audio element is playing after context resume
+            if (audio.paused) {
+              audio.play().catch(() => {})
+            }
           }
         }
-      }, 1000) // Check every second
+      }, 5000) // Check every 5 seconds
     }
 
     const stopHealthCheck = () => {
@@ -411,6 +445,41 @@ export default function AudioEngine() {
     return () => {
       stopHealthCheck()
       unsubscribe()
+    }
+  }, [])
+
+  // 🍎 NETWORK ERROR RECOVERY
+  // Handle stalled/waiting events for network issues
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio) return
+
+    const handleStalled = () => {
+      devLog('[AudioEngine] Audio stalled, attempting recovery')
+      const currentTime = audio.currentTime
+      
+      // Try to recover by seeking slightly (forces buffer reload)
+      if (Number.isFinite(currentTime)) {
+        audio.currentTime = currentTime
+        const { isPlaying } = useAudioStore.getState()
+        if (isPlaying) {
+          audio.play().catch((err) => {
+            devLog('[AudioEngine] Stall recovery play failed:', err)
+          })
+        }
+      }
+    }
+
+    const handleWaiting = () => {
+      devLog('[AudioEngine] Audio waiting for data (buffering)')
+    }
+
+    audio.addEventListener('stalled', handleStalled)
+    audio.addEventListener('waiting', handleWaiting)
+
+    return () => {
+      audio.removeEventListener('stalled', handleStalled)
+      audio.removeEventListener('waiting', handleWaiting)
     }
   }, [])
 

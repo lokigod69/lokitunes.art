@@ -56,6 +56,19 @@ function PhysicsCleanup({ expectedCount }: { expectedCount: number }) {
 // Vinyl center position constant - where orbs dock to
 const VINYL_CENTER_POSITION: [number, number, number] = [0, 0, -35]
 
+// FIXED GRID CONFIG - Consistent across ALL albums regardless of orb count
+// This ensures visual consistency: ~10% black space at front, text in front of grid
+const GRID_CONFIG = {
+  // Grid settings - FIXED for all albums
+  size: { mobile: 50, desktop: 80 },
+  divisions: { mobile: 25, desktop: 40 },
+  positionY: -13,
+  positionZ: { mobile: -15, desktop: -10 },  // Grid pushed back
+  
+  // Text should be in FRONT of grid but within container bounds
+  // These are now defined in AlbumGridTextDisplay.tsx
+} as const
+
 // Invisible physics barrier that orbs bounce off when vinyl is visible
 // Creates a "ghost sphere" in front of the vinyl that orbs collide with
 function VinylPhysicsBarrier({ visible }: { visible: boolean }) {
@@ -174,7 +187,7 @@ function OrbScene({
         albumPalette={albumPalette}
       />
       
-      {/* ALBUM GRID - Matches home page grid structure for consistency */}
+      {/* ALBUM GRID - FIXED position for consistency across all albums */}
       {/* Uses album palette color instead of neon colors */}
       {(() => {
         const gridColor = (isMobile ? '#4F9EFF' : (albumPalette?.accent1 || '#4F9EFF')).slice(0, 7)
@@ -182,12 +195,12 @@ function OrbScene({
       <gridHelper 
         ref={gridRef}
         args={[
-          isMobile ? 50 : 80,                       // Size: slightly smaller to fit in view
-          isMobile ? 25 : 40,                       // Divisions: proportional
+          GRID_CONFIG.size[isMobile ? 'mobile' : 'desktop'],
+          GRID_CONFIG.divisions[isMobile ? 'mobile' : 'desktop'],
           gridColor,
           gridColor
         ]}
-        position={[0, -13, isMobile ? -15 : -10]}  // Move grid back (Z=-10) so it starts within view
+        position={[0, GRID_CONFIG.positionY, GRID_CONFIG.positionZ[isMobile ? 'mobile' : 'desktop']]}
       />
         )
       })()}

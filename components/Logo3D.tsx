@@ -33,7 +33,7 @@ export function Logo3D() {
     <>
       <div 
         ref={textRef}
-        className="relative text-center py-8"
+        className="relative text-center py-8 px-4 pr-16 md:pr-4"
         style={{
           fontSize,
           fontWeight: 900,
@@ -47,6 +47,8 @@ export function Logo3D() {
           transition: 'transform 0.3s ease',
           animation: 'flicker-text 8s infinite alternate',
           opacity: 0.9,
+          maxWidth: '100%',
+          boxSizing: 'border-box',
         }}
       >
         LOKI TUNES
