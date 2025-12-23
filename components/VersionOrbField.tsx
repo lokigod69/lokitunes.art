@@ -173,8 +173,8 @@ function OrbScene({
         {/* Mouse attraction - Dynamic range for large albums */}
         <MouseAttraction albumCount={versions.length} />
         
-        {/* Invisible physics boundaries */}
-        <InvisibleBounds size={25} />
+        {/* Invisible physics boundaries - stricter front wall when vinyl is playing */}
+        <InvisibleBounds size={25} isPlaying={!!playingVersion} />
         
         {/* 🎵 VINYL PHYSICS BARRIER - Invisible collider at center that orbs bounce off */}
         <VinylPhysicsBarrier visible={!!playingVersion} />

@@ -7,6 +7,7 @@ import { ArrowLeft, Pause, Play, Shuffle } from 'lucide-react'
 import { AlbumGridView } from '@/components/AlbumGridView'
 import { OriginalTrackInfo } from '@/components/OriginalTrackInfo'
 import { SpectrumAnalyzer } from '@/components/SpectrumAnalyzer'
+import { VersionQuickPlayList } from '@/components/VersionQuickPlayList'
 import { useMobileDetection } from '@/hooks/useMobileDetection'
 import type { ExtendedVersion } from '@/components/VersionOrb'
 import type { AlbumWithSongs } from '@/lib/supabase'
@@ -29,7 +30,22 @@ interface AlbumPageProps {
 export function AlbumPage({ album }: AlbumPageProps) {
   const isMobile = useMobileDetection(768)
 
-  const { currentVersion, isPlaying, playStandalone, pause, startAlbumQueue, setAutoplayMode, startGlobalQueue } = useAudioStore()
+  const { currentVersion, isPlaying, playStandalone, pause, play, startAlbumQueue, setAutoplayMode, startGlobalQueue } = useAudioStore()
+
+  // Handle version click from quick-play list - same as orb click behavior
+  const handleVersionClick = (version: ExtendedVersion) => {
+    if (currentVersion?.id === version.id) {
+      // Same version - toggle play/pause
+      if (isPlaying) {
+        pause()
+      } else {
+        play(version, version.songId, palette)
+      }
+    } else {
+      // Different version - start playing with album queue
+      startAlbumQueue(orbVersions, version.id, palette)
+    }
+  }
 
   // 🔥🔥🔥 DEBUG: Log exact palette received on CLIENT
   devLog('🔥🔥🔥 CLIENT (AlbumPage): Received album:', album.slug, {
@@ -158,7 +174,9 @@ export function AlbumPage({ album }: AlbumPageProps) {
         }}
       >
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-start md:items-end gap-6">
-          <div className="w-32 h-32 md:w-56 md:h-56 lg:w-64 lg:h-64 rounded-xl overflow-hidden shadow-2xl flex-shrink-0 border border-bone/10">
+          {/* LEFT SIDE: Cover + Info */}
+          <div className="flex items-start gap-4 md:gap-6 flex-1">
+          <div className="w-32 h-32 md:w-48 md:h-48 lg:w-56 lg:h-56 rounded-xl overflow-hidden shadow-2xl flex-shrink-0 border border-bone/10">
             {album.cover_url ? (
               <img
                 src={album.cover_url}
@@ -206,6 +224,18 @@ export function AlbumPage({ album }: AlbumPageProps) {
                 </button>
               </div>
             )}
+          </div>
+          </div>
+
+          {/* RIGHT SIDE: Version Quick-Play List */}
+          <div className="w-full md:w-auto md:flex-shrink-0">
+            <VersionQuickPlayList
+              versions={orbVersions}
+              currentVersionId={currentVersion?.id}
+              isPlaying={isPlaying}
+              onVersionClick={handleVersionClick}
+              accentColor={palette.accent1}
+            />
           </div>
         </div>
       </header>
