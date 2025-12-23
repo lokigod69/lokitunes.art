@@ -52,7 +52,7 @@ export async function getAlbumsWithVersionCounts(): Promise<Album[]> {
   }
 
   // Calculate total versions per album
-  return (data || []).map((album: any) => {
+  const albums = (data || []).map((album: any) => {
     const total_versions = album.songs?.reduce((sum: number, song: any) => {
       return sum + (song.song_versions?.length || 0)
     }, 0) || 0
@@ -67,6 +67,21 @@ export async function getAlbumsWithVersionCounts(): Promise<Album[]> {
       created_at: album.created_at,
       total_versions,
     }
+  })
+
+  // Custom sort: Mind Palace first, then alphabetical by title
+  const priorityOrder = ['mind-palace'] // slugs that should appear first
+  return albums.sort((a, b) => {
+    const aIndex = priorityOrder.indexOf(a.slug)
+    const bIndex = priorityOrder.indexOf(b.slug)
+    
+    // If both are in priority list, sort by priority order
+    if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex
+    // Priority items come first
+    if (aIndex !== -1) return -1
+    if (bIndex !== -1) return 1
+    // Otherwise sort alphabetically by title
+    return a.title.localeCompare(b.title)
   })
 }
 
