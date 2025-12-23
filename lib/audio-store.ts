@@ -60,6 +60,7 @@ interface AudioState {
   updateTime: (time: number) => void
   setAutoplayMode: (mode: AutoplayMode) => void
   handleTrackEnd: () => void
+  updateCurrentVersionDuration: (duration: number) => void
 }
 
 export const useAudioStore = create<AudioState>((set, get) => ({
@@ -469,5 +470,18 @@ export const useAudioStore = create<AudioState>((set, get) => ({
     }
 
     get().next()
+  },
+
+  // Update the current version's duration in memory (after saving to database)
+  updateCurrentVersionDuration: (duration: number) => {
+    const { currentVersion } = get()
+    if (currentVersion) {
+      set({
+        currentVersion: {
+          ...currentVersion,
+          duration_sec: duration
+        }
+      })
+    }
   },
 }))

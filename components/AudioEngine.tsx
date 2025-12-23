@@ -144,9 +144,39 @@ export default function AudioEngine() {
       updateTime(audio.currentTime)
     }
 
-    const handleLoadedMetadata = () => {
+    const handleLoadedMetadata = async () => {
       devLog('[AudioEngine] Metadata loaded, duration:', audio.duration)
       setDuration(audio.duration)
+      
+      // Auto-save duration to database if missing
+      const duration = audio.duration
+      const currentVer = useAudioStore.getState().currentVersion
+      
+      // Only save if we have valid data and duration is missing
+      if (duration && currentVer?.id && !isNaN(duration) && duration > 0) {
+        if (!currentVer.duration_sec || currentVer.duration_sec <= 0) {
+          try {
+            const response = await fetch('/api/versions/update-duration', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                versionId: currentVer.id,
+                duration: Math.round(duration)
+              })
+            })
+            
+            if (response.ok) {
+              const result = await response.json()
+              devLog(`[AudioEngine] Duration saved: ${result.duration}s`)
+              // Update in-memory duration
+              useAudioStore.getState().updateCurrentVersionDuration(Math.round(duration))
+            }
+          } catch (error) {
+            // Silently fail - background optimization, not critical
+            devLog('[AudioEngine] Failed to save duration:', error)
+          }
+        }
+      }
     }
 
     const handleEnded = () => {

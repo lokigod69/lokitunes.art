@@ -63,7 +63,7 @@ export function VersionQuickPlayList({
     <div className="flex flex-col gap-1 w-full max-w-[320px] md:max-w-[400px] relative">
       {/* Toast notification - rendered via portal above bottom player */}
       {toastMessage && typeof document !== 'undefined' && createPortal(
-        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 px-4 py-2 rounded-lg bg-void/95 border border-white/20 text-bone text-sm whitespace-nowrap z-[100] animate-fade-in flex items-center gap-2 shadow-lg">
+        <div className="fixed bottom-28 left-1/2 -translate-x-1/2 px-4 py-2 rounded-lg bg-void/95 border border-white/20 text-bone text-sm whitespace-nowrap z-[100] animate-fade-in flex items-center gap-2 shadow-lg">
           {toastMessage.isAdd ? (
             <Heart className="w-4 h-4 text-red-500" fill="currentColor" />
           ) : (

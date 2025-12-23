@@ -186,20 +186,35 @@ function OrbScene({
       />
       
       {/* ALBUM GRID - FIXED position for consistency across all albums */}
-      {/* Uses album palette color instead of neon colors */}
+      {/* Mobile: perspective road effect starting from bottom corners */}
+      {/* Desktop: flat horizontal grid */}
       {(() => {
         const gridColor = (isMobile ? '#4F9EFF' : (albumPalette?.accent1 || '#4F9EFF')).slice(0, 7)
+        
+        if (isMobile) {
+          // Mobile: tilted grid for road/perspective effect
+          return (
+            <gridHelper 
+              ref={gridRef}
+              args={[80, 40, gridColor, gridColor]}
+              position={[0, -6, 8]}
+              rotation={[Math.PI * 0.4, 0, 0]}  // ~72° tilt for road perspective
+            />
+          )
+        }
+        
+        // Desktop: flat horizontal grid
         return (
-      <gridHelper 
-        ref={gridRef}
-        args={[
-          GRID_CONFIG.size[isMobile ? 'mobile' : 'desktop'],
-          GRID_CONFIG.divisions[isMobile ? 'mobile' : 'desktop'],
-          gridColor,
-          gridColor
-        ]}
-        position={[0, GRID_CONFIG.positionY, GRID_CONFIG.positionZ[isMobile ? 'mobile' : 'desktop']]}
-      />
+          <gridHelper 
+            ref={gridRef}
+            args={[
+              GRID_CONFIG.size.desktop,
+              GRID_CONFIG.divisions.desktop,
+              gridColor,
+              gridColor
+            ]}
+            position={[0, GRID_CONFIG.positionY, GRID_CONFIG.positionZ.desktop]}
+          />
         )
       })()}
       
@@ -337,7 +352,7 @@ export function VersionOrbField({
           width: '100%',
           height: '100%',
           zIndex: 0,
-          touchAction: 'none'  // Capture all touch events for orb physics attraction
+          touchAction: 'pan-y'  // Allow vertical scroll, capture horizontal/drag for orb physics
         }}
       >
         <PerformanceMonitor
