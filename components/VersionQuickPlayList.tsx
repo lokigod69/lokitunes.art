@@ -5,6 +5,7 @@
  * Shows version name, duration, like button, and play control.
  */
 
+import { useState } from 'react'
 import { Play, Pause, Heart, Star } from 'lucide-react'
 import type { ExtendedVersion } from '@/components/VersionOrb'
 import { useLikes } from '@/hooks/useLikes'
@@ -41,11 +42,28 @@ export function VersionQuickPlayList({
   const { isLiked, toggleLike } = useLikes()
   const { isAuthenticated } = useAuth()
   const { currentTime, duration } = useAudioStore()
+  const [toastMessage, setToastMessage] = useState<string | null>(null)
+
+  // Handle like with toast notification
+  const handleLikeClick = async (versionId: string, currentlyLiked: boolean) => {
+    const success = await toggleLike(versionId)
+    if (success) {
+      setToastMessage(currentlyLiked ? 'Removed from liked songs' : 'Added to liked songs')
+      setTimeout(() => setToastMessage(null), 2000)
+    }
+  }
 
   if (versions.length === 0) return null
 
   return (
-    <div className="flex flex-col gap-1 w-full max-w-[320px] md:max-w-[400px]">
+    <div className="flex flex-col gap-1 w-full max-w-[320px] md:max-w-[400px] relative">
+      {/* Toast notification */}
+      {toastMessage && (
+        <div className="absolute -top-10 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-lg bg-void/95 border border-white/20 text-bone text-xs whitespace-nowrap z-50 animate-fade-in">
+          {toastMessage}
+        </div>
+      )}
+
       {/* Header label */}
       <div className="text-xs text-bone/40 uppercase tracking-wide px-2 mb-1">
         Versions
@@ -140,23 +158,23 @@ export function VersionQuickPlayList({
                 )}
               </span>
 
-              {/* Like Button */}
+              {/* Like Button - Always visible */}
               {isAuthenticated && (
                 <button
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation()
-                    toggleLike(version.id)
+                    handleLikeClick(version.id, liked)
                   }}
                   className={`
-                    flex-shrink-0 p-1 rounded-full
+                    flex-shrink-0 p-1.5 rounded-full
                     transition-all duration-150 cursor-pointer
                     ${liked 
                       ? 'text-red-500' 
-                      : 'text-bone/30 hover:text-bone/60 opacity-0 group-hover:opacity-100'
+                      : 'text-bone/50 hover:text-red-400'
                     }
                   `}
-                  title={liked ? 'Unlike' : 'Like'}
+                  title={liked ? 'Remove from liked songs' : 'Add to liked songs'}
                 >
                   <Heart 
                     className="w-4 h-4" 

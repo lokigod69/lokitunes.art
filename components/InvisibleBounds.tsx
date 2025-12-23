@@ -21,9 +21,10 @@ export function InvisibleBounds({ size = 25, isPlaying = false }: InvisibleBound
   const frontBarrierZ = isPlaying ? FRONT_BARRIER_PLAYING_Z : FRONT_BARRIER_DEFAULT_Z
   return (
     <>
-      {/* Top wall - Higher to allow orbs to reach near vinyl area */}
-      <RigidBody type="fixed" position={[0, 8, 0]}>
-        <CuboidCollider args={[size, 0.5, 30]} />
+      {/* Top wall - Lower when vinyl is visible to keep orbs below vinyl */}
+      {/* Vinyl is at Y=5, so top barrier at Y=3 keeps orbs in the center area */}
+      <RigidBody type="fixed" position={[0, isPlaying ? 3 : 8, 0]} key={`top-${isPlaying ? 3 : 8}`}>
+        <CuboidCollider args={[size, 0.5, 30]} restitution={0.7} friction={0.1} />
       </RigidBody>
 
       {/* Bottom wall - Match container edge */}

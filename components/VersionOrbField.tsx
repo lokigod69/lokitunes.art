@@ -54,12 +54,19 @@ function PhysicsCleanup({ expectedCount }: { expectedCount: number }) {
 }
 
 // Vinyl position - moved to TOP of scene, above the orbs
-// This prevents orbs from overlapping/going inside the vinyl
+// Scale is calculated dynamically based on camera distance for consistent visual size
 const VINYL_CONFIG = {
   positionY: 5,       // High up - in the black space above orbs
   positionZ: -8,      // Slightly back but visible
-  scale: 0.6,         // Smaller since it's now its own element, not a backdrop
+  baseScale: 0.5,     // Base scale at reference camera distance
+  referenceDistance: 25, // Reference camera distance for scale calculation
 } as const
+
+// Calculate vinyl scale to maintain consistent visual size regardless of camera distance
+function calculateVinylScale(cameraDistance: number): number {
+  // Scale proportionally to camera distance so vinyl appears same size on screen
+  return VINYL_CONFIG.baseScale * (cameraDistance / VINYL_CONFIG.referenceDistance)
+}
 
 const VINYL_CENTER_POSITION: [number, number, number] = [0, VINYL_CONFIG.positionY, VINYL_CONFIG.positionZ]
 
@@ -88,7 +95,8 @@ function OrbScene({
   onHover, 
   deviceTier,
   onStopPlaying,
-  isMobile = false
+  isMobile = false,
+  cameraDistance = 25
 }: {
   versions: ExtendedVersion[]
   albumCoverUrl: string
@@ -99,7 +107,10 @@ function OrbScene({
   deviceTier: DeviceTier
   onStopPlaying: () => void
   isMobile?: boolean
+  cameraDistance?: number
 }) {
+  // Calculate vinyl scale based on camera distance for consistent appearance
+  const vinylScale = calculateVinylScale(cameraDistance)
   // Calculate dynamic layout based on version count (with mobile scaling)
   const { positions, radius } = calculateOrbLayout(versions.length, isMobile)
 
@@ -163,8 +174,8 @@ function OrbScene({
         {/* Mouse attraction - Dynamic range for large albums */}
         <MouseAttraction albumCount={versions.length} />
         
-        {/* Invisible physics boundaries */}
-        <InvisibleBounds size={25} />
+        {/* Invisible physics boundaries - adjusts when vinyl is visible */}
+        <InvisibleBounds size={25} isPlaying={!!(hoveredVersion || playingVersion)} />
       </Suspense>
       
       {/* CENTERED GRID TEXT - Shows hovered or playing version label on album grid */}
@@ -198,7 +209,7 @@ function OrbScene({
         albumPalette={albumPalette}
         visible={!!(hoveredVersion || playingVersion)}
         position={VINYL_CENTER_POSITION}
-        scale={VINYL_CONFIG.scale}
+        scale={vinylScale}
         albumTitle={hoveredVersion?.label || playingVersion?.label || 'Album'}
         onVinylClick={playingVersion ? onStopPlaying : undefined}
         isPlaying={!!playingVersion}
@@ -355,6 +366,7 @@ export function VersionOrbField({
           deviceTier={deviceTier}
           onStopPlaying={stop}
           isMobile={isMobile}
+          cameraDistance={cameraDistance}
         />
         
         {/* Post-processing effects - reduced on mobile to avoid GPU context loss */}

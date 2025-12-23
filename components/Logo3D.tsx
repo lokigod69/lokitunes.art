@@ -33,7 +33,7 @@ export function Logo3D() {
     <>
       <div 
         ref={textRef}
-        className="relative text-center py-8 px-4 pr-16 md:pr-4"
+        className="relative text-center pt-14 pb-8 px-4 pr-16 md:pt-8 md:pr-4"
         style={{
           fontSize,
           fontWeight: 900,
