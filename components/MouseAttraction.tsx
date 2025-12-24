@@ -1,4 +1,4 @@
-// Changes: Smooth mouse attraction ramp (speed+accel smoothing) and keep a gentle baseline pull so orbs cluster around the cursor even when stationary (2025-12-24)
+// Changes: Smooth mouse attraction ramp (speed+accel smoothing) and keep a gentle baseline pull; allow optionally locking the attractor to a Z-plane to prevent camera-zoom drift in other scenes (2025-12-24)
 'use client'
 
 import { useThree, useFrame } from '@react-three/fiber'
@@ -13,9 +13,10 @@ import { applyAttractorForceOnRigidBody } from '@react-three/rapier-addons'
  * No visual elements - just pure attraction physics
  * 
  * @param albumCount - Number of orbs/versions (used to scale attraction for large albums)
+ * @param targetPlaneZ - Optional Z plane to project pointer ray onto for attractor position
  */
 // Wrap in React.memo to prevent infinite re-renders!
-function MouseAttractionComponent({ albumCount }: { albumCount?: number }) {
+function MouseAttractionComponent({ albumCount, targetPlaneZ }: { albumCount?: number; targetPlaneZ?: number }) {
   const { camera, pointer } = useThree()
   const { world } = useRapier()
   const attractorObject = useRef<THREE.Object3D>(null)
@@ -59,8 +60,23 @@ function MouseAttractionComponent({ albumCount }: { albumCount?: number }) {
     const vector = new THREE.Vector3(pointer.x, pointer.y, 0.5)
     vector.unproject(camera)
     const dir = vector.sub(camera.position).normalize()
-    const distance = 15
-    const targetPos = camera.position.clone().add(dir.multiplyScalar(distance))
+
+    let targetPos: THREE.Vector3
+    if (typeof targetPlaneZ === 'number') {
+      const dz = dir.z
+      if (Math.abs(dz) > 1e-4) {
+        const tPlane = (targetPlaneZ - camera.position.z) / dz
+        const tClamped = Math.min(Math.max(tPlane, 0), 200)
+        targetPos = camera.position.clone().add(dir.clone().multiplyScalar(tClamped))
+      } else {
+        const distance = 15
+        targetPos = camera.position.clone().add(dir.clone().multiplyScalar(distance))
+        targetPos.z = targetPlaneZ
+      }
+    } else {
+      const distance = 15
+      targetPos = camera.position.clone().add(dir.clone().multiplyScalar(distance))
+    }
 
     if (!attractorObject.current) return
     attractorObject.current.position.set(targetPos.x, targetPos.y, targetPos.z)

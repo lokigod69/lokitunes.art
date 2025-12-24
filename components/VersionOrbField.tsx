@@ -1,3 +1,4 @@
+// Changes: Constrain MouseAttraction to Z=0 on desktop versions scene to prevent orbs drifting toward camera (zoom/clipping) (2025-12-24)
 'use client'
 
 import { Suspense, useState, useEffect, useRef, useCallback } from 'react'
@@ -173,7 +174,11 @@ function OrbScene({
         <PhysicsCleanup expectedCount={versions.length} />
         
         {/* Mouse attraction - Dynamic range for large albums */}
-        <MouseAttraction albumCount={versions.length} />
+        {isMobile ? (
+          <MouseAttraction albumCount={versions.length} />
+        ) : (
+          <MouseAttraction albumCount={versions.length} targetPlaneZ={0} />
+        )}
         
         {/* Invisible physics boundaries - adjusts when vinyl is visible */}
         <InvisibleBounds size={25} isPlaying={!!(hoveredVersion || playingVersion)} />

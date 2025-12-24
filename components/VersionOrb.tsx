@@ -1,3 +1,4 @@
+// Changes: Reduce desktop versions zoom/clipping by avoiding Z drift (remove per-orb mouse attraction; no random Z impulse) (2025-12-24)
 'use client'
 
 import { useRef, useState, useEffect } from 'react'
@@ -235,7 +236,7 @@ export function VersionOrb({
       const randomImpulse = {
         x: (Math.random() - 0.5) * 0.8,
         y: (Math.random() - 0.5) * 0.8,
-        z: (Math.random() - 0.5) * 0.3,
+        z: 0,
       }
       
       ref.current.applyImpulse(randomImpulse, true)
@@ -409,28 +410,6 @@ export function VersionOrb({
           body.applyImpulse(centerAttraction, true)
         }
 
-        // Mouse interaction field with proper 3D unprojection
-        const vector = new THREE.Vector3(state.pointer.x, state.pointer.y, 0.5)
-        vector.unproject(state.camera)
-        const dir = vector.sub(state.camera.position).normalize()
-        const mousePos = state.camera.position.clone().add(dir.multiplyScalar(20))
-        
-        const distance = mousePos.distanceTo(orbPos)
-        const toCursor = mousePos.clone().sub(orbPos)
-
-        // Stronger attraction with larger range
-        const tooClose = 2
-        if (distance < tooClose) {
-          // Repel when too close
-          const repulsion = toCursor.clone().normalize().multiplyScalar(-0.2)
-          body.applyImpulse(repulsion, true)
-        } else if (distance < 8) {
-          // Attract when in range
-          const strength = 0.15 * (1 - distance / 8)
-          const attraction = toCursor.normalize().multiplyScalar(strength)
-          body.applyImpulse(attraction, true)
-        }
-        
         // ═══════════════════════════════════════════════════════════════════════════════
         // 🎵 VINYL REPULSION - Push orbs away from vinyl center when visible
         // Allows orbs to pass above/below but not in front of the vinyl
