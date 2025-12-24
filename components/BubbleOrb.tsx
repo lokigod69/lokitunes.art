@@ -1,4 +1,4 @@
-// Changes: Remove sleep-on-idle so orbs keep clustering to center; rely on global MouseAttraction for cursor following; reduce idle jitter with gentle damping and softer drift/cushion (2025-12-24)
+// Changes: Remove world-origin centering so orbs cluster around the cursor (MouseAttraction baseline); keep subtle drift and reduce idle jitter with damping and softer cushion (2025-12-24)
 'use client'
 
 import { useRef, useState, useEffect } from 'react'
@@ -292,19 +292,6 @@ export function BubbleOrb({
     const noiseX = Math.sin(t * 0.3 + seed) * 0.04 * forceScale * noiseScale
     const noiseY = Math.cos(t * 0.2 + seed * 0.7) * 0.04 * forceScale * noiseScale
     body.applyImpulse({ x: noiseX, y: noiseY, z: 0 }, true)
-
-    // CENTER ATTRACTION (always on; slightly stronger while idle to re-cluster).
-    const centerPos = new THREE.Vector3(0, 0, 0)
-    const orbPos = new THREE.Vector3(pos.x, pos.y, pos.z)
-    const toCenter = centerPos.clone().sub(orbPos)
-    const distanceToCenter = toCenter.length()
-
-    if (distanceToCenter > 3) {
-      const baseCenterStrength = isMouseIdle ? 0.018 : 0.012
-      const centerStrength = baseCenterStrength * forceScale * Math.min(distanceToCenter / 10, 1)
-      const centerAttraction = toCenter.normalize().multiplyScalar(centerStrength)
-      body.applyImpulse(centerAttraction, true)
-    }
 
     // SOFT PROXIMITY CUSHION - prevents deep overlap and sticky behavior
     // Always-on gentle repulsion between nearby orbs (independent of slider)

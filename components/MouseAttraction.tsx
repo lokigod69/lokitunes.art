@@ -1,4 +1,4 @@
-// Changes: Smooth mouse attraction strength ramp (speed+accel smoothing) to avoid orb chaos and reduce idle jitter (2025-12-24)
+// Changes: Smooth mouse attraction ramp (speed+accel smoothing) and keep a gentle baseline pull so orbs cluster around the cursor even when stationary (2025-12-24)
 'use client'
 
 import { useThree, useFrame } from '@react-three/fiber'
@@ -66,21 +66,14 @@ function MouseAttractionComponent({ albumCount }: { albumCount?: number }) {
     attractorObject.current.position.set(targetPos.x, targetPos.y, targetPos.z)
 
     const dt = Math.max(delta, 1 / 120)
-    const speed = movementDelta / dt
-    const accel = (speed - lastSpeed.current) / dt
-    lastSpeed.current = speed
+    const isActiveMove = movementDelta >= MOVEMENT_THRESHOLD
+    const speed = isActiveMove ? (movementDelta / dt) : 0
+    const accel = isActiveMove ? ((speed - lastSpeed.current) / dt) : 0
+    lastSpeed.current = isActiveMove ? speed : 0
 
     const smoothing = 1 - Math.exp(-dt * 12)
     smoothedSpeed.current = smoothedSpeed.current + (speed - smoothedSpeed.current) * smoothing
     smoothedAccel.current = smoothedAccel.current + (Math.abs(accel) - smoothedAccel.current) * smoothing
-
-    // Skip force application if mouse barely moved (keeps orbs calm)
-    if (movementDelta < MOVEMENT_THRESHOLD) {
-      // Decay smoothed metrics so the next motion ramps in gently.
-      smoothedSpeed.current *= 0.92
-      smoothedAccel.current *= 0.92
-      return
-    }
 
     // Speed- and acceleration-driven scaling.
     // This makes orbs follow smoothly at slow movement, and only ramp strongly when the cursor accelerates.
@@ -90,8 +83,10 @@ function MouseAttractionComponent({ albumCount }: { albumCount?: number }) {
     const accelScale = Math.min(smoothedAccel.current / ACCEL_FULL, 1)
     const movementScale = Math.min(1, speedScale * 0.7 + accelScale * 0.3)
 
-    // Baseline strength once moving, then ramp up with speed/accel.
-    const scaledStrength = attractorStrength * (0.2 + 0.8 * movementScale)
+    // Keep a stable baseline pull at rest so orbs stay clustered around the cursor.
+    // Ramp up with speed/accel so fast swipes still feel more energetic.
+    const BASELINE = 0.12
+    const scaledStrength = attractorStrength * (BASELINE + (1 - BASELINE) * movementScale)
 
     const object = attractorObject.current
 
