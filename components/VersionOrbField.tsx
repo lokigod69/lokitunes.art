@@ -1,4 +1,4 @@
-// Changes: Constrain MouseAttraction to Z=0 on desktop versions scene to prevent orbs drifting toward camera (zoom/clipping) (2025-12-24)
+// Changes: Constrain MouseAttraction to Z=0 on desktop versions scene to prevent orbs drifting toward camera; tune camera distance for 1–2 orbs (avoid clipping) and 3–4 orbs (slightly larger) + push grid back for 1–2 orbs (2025-12-24)
 'use client'
 
 import { Suspense, useState, useEffect, useRef, useCallback } from 'react'
@@ -116,6 +116,10 @@ function OrbScene({
   // Calculate dynamic layout based on version count (with mobile scaling)
   const { positions, radius } = calculateOrbLayout(versions.length, isMobile)
 
+  const gridZ = isMobile
+    ? (versions.length <= 2 ? -20 : GRID_CONFIG.positionZ.mobile)
+    : (versions.length <= 2 ? -30 : GRID_CONFIG.positionZ.desktop)
+
   // Normalize grid opacity across albums
   const gridRef = useRef<any>(null)
 
@@ -204,7 +208,7 @@ function OrbScene({
           gridColor,
           gridColor
         ]}
-        position={[0, GRID_CONFIG.positionY, GRID_CONFIG.positionZ[isMobile ? 'mobile' : 'desktop']]}
+        position={[0, GRID_CONFIG.positionY, gridZ]}
       />
         )
       })()}
@@ -280,7 +284,20 @@ export function VersionOrbField({
   }, [])
   
   // Calculate camera distance based on version count, mobile state, and aspect ratio
-  const cameraDistance = calculateCameraDistance(versions.length, isMobile, aspectRatio)
+  // Extra minimum for 1–2 orbs so the fixed grid/text (y≈-11) stays within the vertical frustum.
+  const baseCameraDistance = calculateCameraDistance(versions.length, isMobile, aspectRatio)
+  const minSmallCountDistance = versions.length === 1
+    ? (isMobile ? 54 : 56)
+    : (isMobile ? 44 : 44)
+
+  let cameraDistance = versions.length <= 2
+    ? Math.max(baseCameraDistance, minSmallCountDistance)
+    : baseCameraDistance
+
+  // Minor desktop-only zoom for 3–4 orbs (keep larger counts unchanged).
+  if (!isMobile && (versions.length === 3 || versions.length === 4)) {
+    cameraDistance = cameraDistance * 0.92
+  }
   
   devLog(`📷 Camera distance for ${versions.length} versions: ${cameraDistance} (mobile: ${isMobile}, aspect: ${aspectRatio.toFixed(2)})`)
 
