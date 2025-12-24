@@ -1,3 +1,4 @@
+// Changes: Increase minimum mobile camera distance for single-orb scenes to prevent grid/text clipping (2025-12-24)
 /**
  * Calculate dynamic orb layout based on album count
  * Fewer albums = bigger orbs, more spread out
@@ -90,5 +91,6 @@ export function calculateCameraDistance(
   
   // Enforce minimum camera distance for consistent grid appearance across all albums
   // Mobile uses lower minimum to bring scene closer for better tap targets and visibility
-  return Math.max(distance * padding, isMobile ? 18 : 25)
+  const minDistance = isMobile ? (albumCount === 1 ? 26 : 18) : 25
+  return Math.max(distance * padding, minDistance)
 }

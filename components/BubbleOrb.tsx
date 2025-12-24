@@ -1,3 +1,4 @@
+// Changes: Remove sleep-on-idle so orbs keep clustering to center; rely on global MouseAttraction for cursor following; reduce idle jitter with gentle damping and softer drift/cushion (2025-12-24)
 'use client'
 
 import { useRef, useState, useEffect } from 'react'
@@ -260,7 +261,7 @@ export function BubbleOrb({
     lastMouseRef.current = currentMouse
     
     // Track how many frames mouse has been idle
-    const MOUSE_IDLE_THRESHOLD = 0.001  // Very small movement threshold
+    const MOUSE_IDLE_THRESHOLD = 0.0035  // Very small movement threshold
     if (mouseSpeed < MOUSE_IDLE_THRESHOLD) {
       mouseIdleFrames.current++
     } else {
@@ -273,98 +274,68 @@ export function BubbleOrb({
     // Calculate current speed for rest detection
     const speed = Math.sqrt(vel.x * vel.x + vel.y * vel.y + vel.z * vel.z)
     const forceScale = radius * visualScale
-    
-    // When mouse is idle, put body to sleep to stop ALL physics (including collision jitter)
-    if (isMouseIdle) {
-      // First damp any remaining velocity more aggressively
-      if (speed > 0.02) {
-        body.setLinvel({ x: vel.x * 0.4, y: vel.y * 0.4, z: vel.z * 0.4 }, true)
-      } else {
-        // Zero velocity and SLEEP the body - this stops collision resolution jitter
-        body.setLinvel({ x: 0, y: 0, z: 0 }, true)
-        body.setAngvel({ x: 0, y: 0, z: 0 }, true)
-        if (!body.isSleeping()) {
-          body.sleep()
-        }
-      }
-      // Skip all other forces when mouse is idle
-    } else {
-      // MOUSE IS MOVING - wake up if sleeping
-      if (body.isSleeping()) {
-        body.wakeUp()
-      }
-      // MOUSE IS MOVING - apply normal physics
-      
-      // Perlin noise drift for organic motion
-      const noiseX = Math.sin(t * 0.3 + seed) * 0.04 * forceScale
-      const noiseY = Math.cos(t * 0.2 + seed * 0.7) * 0.04 * forceScale
-      body.applyImpulse({ x: noiseX, y: noiseY, z: 0 }, true)
-      
-      // CENTER ATTRACTION
-      const centerPos = new THREE.Vector3(0, 0, 0)
-      const orbPos = new THREE.Vector3(pos.x, pos.y, pos.z)
-      const toCenter = centerPos.clone().sub(orbPos)
-      const distanceToCenter = toCenter.length()
-      
-      if (distanceToCenter > 3) {
-        const centerStrength = 0.012 * forceScale * Math.min(distanceToCenter / 10, 1)
-        const centerAttraction = toCenter.normalize().multiplyScalar(centerStrength)
-        body.applyImpulse(centerAttraction, true)
-      }
-      
-      // Mouse interaction field with proper 3D unprojection
-      const vector = new THREE.Vector3(state.pointer.x, state.pointer.y, 0.5)
-      vector.unproject(state.camera)
-      const dir = vector.sub(state.camera.position).normalize()
-      const mousePos = state.camera.position.clone().add(dir.multiplyScalar(20))
-      
-      const distance = mousePos.distanceTo(orbPos)
-      const toCursor = mousePos.clone().sub(orbPos)
 
-      // Stronger attraction with larger range
-      const tooClose = 2
-      if (distance < tooClose) {
-        // Repel when too close
-        const repulsion = toCursor.clone().normalize().multiplyScalar(-0.2)
-        body.applyImpulse(repulsion, true)
-      } else if (distance < 8) {
-        // Attract when in range (increased from 6 to 8)
-        const strength = 0.15 * (1 - distance / 8)  // Increased from 0.12
-        const attraction = toCursor.normalize().multiplyScalar(strength)
-        body.applyImpulse(attraction, true)
-      }
-      
-      // SOFT PROXIMITY CUSHION - prevents deep overlap and sticky behavior
-      // Always-on gentle repulsion between nearby orbs (independent of slider)
-      if (allBodiesRef?.current) {
-        const cushionDistance = colliderRadius * 2.5  // Start pushing before contact
-        const currentRepulsion = useOrbRepulsion.getState().repulsionStrength
-        
-        allBodiesRef.current.forEach(({ body: otherBody }, otherId) => {
-          if (otherId === album.id) return
-          
-          try {
-            const otherPos = otherBody.translation()
-            const toOther = new THREE.Vector3(
-              otherPos.x - pos.x,
-              otherPos.y - pos.y,
-              otherPos.z - pos.z
-            )
-            const dist = toOther.length()
-            
-            // Soft cushion: gentle push when close, before hard collision
-            if (dist < cushionDistance && dist > 0.1) {
-              const overlap = 1 - (dist / cushionDistance)
-              // Base cushion + extra from slider
-              const cushionStrength = 0.02 * overlap * overlap + currentRepulsion * 0.1 * overlap
-              const pushForce = toOther.normalize().multiplyScalar(-cushionStrength * forceScale)
-              body.applyImpulse(pushForce, true)
-            }
-          } catch (e) {
-            // Other body might be invalid
+    // Ensure bodies don't remain sleeping after previous idle logic.
+    if (body.isSleeping()) {
+      body.wakeUp()
+    }
+
+    // When mouse is idle, gently damp velocity to reduce jitter but keep physics active.
+    if (isMouseIdle && speed > 0.02) {
+      body.setLinvel({ x: vel.x * 0.92, y: vel.y * 0.92, z: vel.z * 0.92 }, true)
+    } else if (isMouseIdle && speed < 0.008) {
+      body.setLinvel({ x: 0, y: 0, z: 0 }, true)
+    }
+
+    // Perlin noise drift for organic motion (reduced while idle).
+    const noiseScale = isMouseIdle ? 0.25 : 1
+    const noiseX = Math.sin(t * 0.3 + seed) * 0.04 * forceScale * noiseScale
+    const noiseY = Math.cos(t * 0.2 + seed * 0.7) * 0.04 * forceScale * noiseScale
+    body.applyImpulse({ x: noiseX, y: noiseY, z: 0 }, true)
+
+    // CENTER ATTRACTION (always on; slightly stronger while idle to re-cluster).
+    const centerPos = new THREE.Vector3(0, 0, 0)
+    const orbPos = new THREE.Vector3(pos.x, pos.y, pos.z)
+    const toCenter = centerPos.clone().sub(orbPos)
+    const distanceToCenter = toCenter.length()
+
+    if (distanceToCenter > 3) {
+      const baseCenterStrength = isMouseIdle ? 0.018 : 0.012
+      const centerStrength = baseCenterStrength * forceScale * Math.min(distanceToCenter / 10, 1)
+      const centerAttraction = toCenter.normalize().multiplyScalar(centerStrength)
+      body.applyImpulse(centerAttraction, true)
+    }
+
+    // SOFT PROXIMITY CUSHION - prevents deep overlap and sticky behavior
+    // Always-on gentle repulsion between nearby orbs (independent of slider)
+    if (allBodiesRef?.current) {
+      const cushionDistance = colliderRadius * 2.1  // Start pushing before contact
+      const currentRepulsion = useOrbRepulsion.getState().repulsionStrength
+
+      allBodiesRef.current.forEach(({ body: otherBody }, otherId) => {
+        if (otherId === album.id) return
+
+        try {
+          const otherPos = otherBody.translation()
+          const toOther = new THREE.Vector3(
+            otherPos.x - pos.x,
+            otherPos.y - pos.y,
+            otherPos.z - pos.z
+          )
+          const dist = toOther.length()
+
+          // Soft cushion: gentle push when close, before hard collision
+          if (dist < cushionDistance && dist > 0.1) {
+            const overlap = 1 - (dist / cushionDistance)
+            // Base cushion + extra from slider
+            const cushionStrength = 0.015 * overlap * overlap + currentRepulsion * 0.08 * overlap
+            const pushForce = toOther.normalize().multiplyScalar(-cushionStrength * forceScale)
+            body.applyImpulse(pushForce, true)
           }
-        })
-      }
+        } catch (e) {
+          // Other body might be invalid
+        }
+      })
     }
 
     // Gentle rotation for inner sphere
