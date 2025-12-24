@@ -71,13 +71,14 @@ function calculateVinylScale(cameraDistance: number): number {
 const VINYL_CENTER_POSITION: [number, number, number] = [0, VINYL_CONFIG.positionY, VINYL_CONFIG.positionZ]
 
 // FIXED GRID CONFIG - Consistent across ALL albums regardless of orb count
-// This ensures visual consistency: ~10% black space at front, text in front of grid
+// Mobile: Grid starts at front and extends back toward orbs/vinyl
+// Desktop: Centered grid pushed slightly back
 const GRID_CONFIG = {
   // Grid settings - FIXED for all albums
-  size: { mobile: 50, desktop: 80 },
-  divisions: { mobile: 25, desktop: 40 },
+  size: { mobile: 60, desktop: 80 },  // Mobile slightly larger to extend further back
+  divisions: { mobile: 30, desktop: 40 },
   positionY: -13,
-  positionZ: { mobile: -15, desktop: -10 },  // Grid pushed back
+  positionZ: { mobile: 5, desktop: -10 },  // Mobile: front edge near viewer, extends back
   
   // Text should be in FRONT of grid but within container bounds
   // These are now defined in AlbumGridTextDisplay.tsx

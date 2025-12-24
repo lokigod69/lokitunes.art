@@ -19,6 +19,11 @@ function MouseAttractionComponent({ albumCount }: { albumCount?: number }) {
   const { world } = useRapier()
   const attractorObject = useRef<THREE.Object3D>(null)
   const frameCount = useRef(0)
+  const lastPointer = useRef({ x: 0, y: 0 })
+  
+  // Movement threshold - ignore tiny mouse movements to keep orbs calmer
+  const MOVEMENT_THRESHOLD = 0.008  // Minimum pointer delta to trigger force
+  const MOVEMENT_SCALE_MAX = 0.08   // Movement delta that gives full force
   
   // Dynamic attraction settings based on album size
   // Range scales with album size (larger albums need longer reach)
@@ -39,6 +44,14 @@ function MouseAttractionComponent({ albumCount }: { albumCount?: number }) {
   useFrame(() => {
     frameCount.current++
     
+    // Calculate mouse movement delta
+    const deltaX = pointer.x - lastPointer.current.x
+    const deltaY = pointer.y - lastPointer.current.y
+    const movementDelta = Math.sqrt(deltaX * deltaX + deltaY * deltaY)
+    
+    // Update last position
+    lastPointer.current = { x: pointer.x, y: pointer.y }
+    
     // Convert 2D mouse pointer to 3D world position
     const vector = new THREE.Vector3(pointer.x, pointer.y, 0.5)
     vector.unproject(camera)
@@ -48,6 +61,13 @@ function MouseAttractionComponent({ albumCount }: { albumCount?: number }) {
 
     if (!attractorObject.current) return
     attractorObject.current.position.set(targetPos.x, targetPos.y, targetPos.z)
+    
+    // Skip force application if mouse barely moved (keeps orbs calm)
+    if (movementDelta < MOVEMENT_THRESHOLD) return
+    
+    // Scale force by movement speed: gentle for slow moves, full strength for fast swipes
+    const movementScale = Math.min(movementDelta / MOVEMENT_SCALE_MAX, 1)
+    const scaledStrength = attractorStrength * movementScale
 
     const object = attractorObject.current
 
@@ -55,7 +75,7 @@ function MouseAttractionComponent({ albumCount }: { albumCount?: number }) {
       if (!body.isDynamic()) return
       applyAttractorForceOnRigidBody(body, {
         object,
-        strength: attractorStrength,
+        strength: scaledStrength,
         range: attractorRange,
         type: 'linear',
         gravitationalConstant: 6.673e-11,
