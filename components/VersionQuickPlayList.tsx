@@ -45,7 +45,9 @@ export function VersionQuickPlayList({
   const { currentTime, duration } = useAudioStore()
   const [toastMessage, setToastMessage] = useState<{ text: string; isAdd: boolean } | null>(null)
 
-  const useGridOnDesktop = versions.length > 3
+  const useTwoColumnsOnDesktop = versions.length > 3
+  const leftColumn = useTwoColumnsOnDesktop ? versions.slice(0, 3) : versions
+  const rightColumn = useTwoColumnsOnDesktop ? versions.slice(3) : []
 
   // Handle like with toast notification
   const handleLikeClick = async (versionId: string, currentlyLiked: boolean) => {
@@ -61,8 +63,158 @@ export function VersionQuickPlayList({
 
   if (versions.length === 0) return null
 
+  const renderRow = (version: ExtendedVersion) => {
+    const isCurrentVersion = version.id === currentVersionId
+    const isThisPlaying = isCurrentVersion && isPlaying
+    const liked = isLiked(version.id)
+
+    const coverUrl = version.cover_url || albumCoverUrl || null
+
+    return (
+      <div
+        key={version.id}
+        onClick={() => onVersionClick(version)}
+        className={`
+                group flex items-center md:items-start gap-2 px-2 py-1.5 rounded-lg cursor-pointer
+                transition-all duration-150
+                ${isCurrentVersion 
+                  ? 'bg-white/10 border border-white/20' 
+                  : 'hover:bg-white/5 border border-transparent'
+                }
+              `}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => e.key === 'Enter' && onVersionClick(version)}
+      >
+        <div
+          className="relative flex-shrink-0 w-10 h-10 rounded-lg overflow-hidden"
+          title={isThisPlaying ? 'Pause' : 'Play'}
+        >
+          {coverUrl ? (
+            <img 
+              src={coverUrl}
+              alt={version.label}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div 
+              className="w-full h-full flex items-center justify-center bg-white/10"
+              style={{ backgroundColor: accentColor + '30' }}
+            >
+              <span className="text-sm">🎵</span>
+            </div>
+          )}
+          
+          <div className={`
+                  absolute inset-0 flex items-center justify-center
+                  transition-all duration-150
+                  ${isCurrentVersion 
+                    ? 'bg-black/40' 
+                    : 'bg-black/0 group-hover:bg-black/50 opacity-0 group-hover:opacity-100'
+                  }
+                `}>
+            {isThisPlaying ? (
+              <Pause className="w-4 h-4 text-white" fill="currentColor" />
+            ) : (
+              <Play className="w-4 h-4 text-white ml-0.5" fill="currentColor" />
+            )}
+          </div>
+        </div>
+
+        <div className="flex-1 min-w-0 flex flex-col">
+          <span className={`
+                  text-sm truncate md:whitespace-normal md:overflow-visible md:text-clip md:break-words
+                  ${isCurrentVersion ? 'text-bone font-medium' : 'text-bone/80'}
+                `}>
+            {version.label}
+          </span>
+          {version.songTitle && version.songTitle !== version.label && (
+            <span className="text-xs text-bone/50 truncate md:whitespace-normal md:overflow-visible md:text-clip md:break-words">
+              {version.songTitle}
+            </span>
+          )}
+        </div>
+
+        <span className="flex-shrink-0 text-xs text-bone/50 tabular-nums min-w-[70px] text-right">
+          {isCurrentVersion ? (
+            <>{formatTime(currentTime)} / {formatTime(duration || version.duration_sec)}</>
+          ) : (
+            formatTime(version.duration_sec)
+          )}
+        </span>
+
+        {isAuthenticated && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              handleLikeClick(version.id, liked)
+            }}
+            className={`
+                    flex-shrink-0 p-1.5 rounded-full
+                    transition-all duration-150 cursor-pointer
+                    ${liked 
+                      ? 'text-red-500' 
+                      : 'text-bone/50 hover:text-red-400'
+                    }
+                  `}
+            title={liked ? 'Remove from liked songs' : 'Add to liked songs'}
+          >
+            <Heart 
+              className="w-4 h-4" 
+              fill={liked ? 'currentColor' : 'none'} 
+            />
+          </button>
+        )}
+
+        {onRateClick && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              onRateClick(version)
+            }}
+            className="flex-shrink-0 p-1 rounded-full text-bone/30 hover:text-yellow-400 transition-all duration-150 cursor-pointer opacity-0 group-hover:opacity-100"
+            title="Rate this version"
+          >
+            <Star className="w-4 h-4" />
+          </button>
+        )}
+
+        {isThisPlaying && (
+          <div className="flex-shrink-0 flex items-end gap-0.5 h-4">
+            <span 
+              className="w-0.5 bg-current animate-pulse rounded-full"
+              style={{ 
+                height: '60%', 
+                animationDelay: '0ms',
+                color: accentColor 
+              }} 
+            />
+            <span 
+              className="w-0.5 bg-current animate-pulse rounded-full"
+              style={{ 
+                height: '100%', 
+                animationDelay: '150ms',
+                color: accentColor 
+              }} 
+            />
+            <span 
+              className="w-0.5 bg-current animate-pulse rounded-full"
+              style={{ 
+                height: '40%', 
+                animationDelay: '300ms',
+                color: accentColor 
+              }} 
+            />
+          </div>
+        )}
+      </div>
+    )
+  }
+
   return (
-    <div className="flex flex-col gap-1 w-full max-w-[320px] md:max-w-[400px] relative">
+    <div className="flex flex-col gap-1 w-full max-w-[320px] md:max-w-[520px] relative">
       {/* Toast notification - rendered via portal above bottom player */}
       {toastMessage && typeof document !== 'undefined' && createPortal(
         <div className="fixed bottom-28 left-1/2 -translate-x-1/2 px-4 py-2 rounded-lg bg-void/95 border border-white/20 text-bone text-sm whitespace-nowrap z-[100] animate-fade-in flex items-center gap-2 shadow-lg">
@@ -82,174 +234,21 @@ export function VersionQuickPlayList({
       </div>
       
       {/* Version list */}
-      <div
-        className={`
-          flex flex-col gap-0.5 scrollbar-hide
-          ${useGridOnDesktop ? 'md:grid md:grid-cols-2 md:gap-1 md:max-h-none md:overflow-visible' : ''}
-          max-h-[200px] overflow-y-auto
-        `}
-      >
-        {versions.map((version) => {
-          const isCurrentVersion = version.id === currentVersionId
-          const isThisPlaying = isCurrentVersion && isPlaying
-          const liked = isLiked(version.id)
-
-          // Get cover URL - prefer version cover, fallback to album cover
-          const coverUrl = version.cover_url || albumCoverUrl || null
-
-          return (
-            <div
-              key={version.id}
-              onClick={() => onVersionClick(version)}
-              className={`
-                group flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer
-                transition-all duration-150
-                ${isCurrentVersion 
-                  ? 'bg-white/10 border border-white/20' 
-                  : 'hover:bg-white/5 border border-transparent'
-                }
-              `}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => e.key === 'Enter' && onVersionClick(version)}
-            >
-              {/* Cover Art Thumbnail with Play/Pause Overlay */}
-              <div
-                className="relative flex-shrink-0 w-10 h-10 rounded-lg overflow-hidden"
-                title={isThisPlaying ? 'Pause' : 'Play'}
-              >
-                {coverUrl ? (
-                  <img 
-                    src={coverUrl}
-                    alt={version.label}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div 
-                    className="w-full h-full flex items-center justify-center bg-white/10"
-                    style={{ backgroundColor: accentColor + '30' }}
-                  >
-                    <span className="text-sm">🎵</span>
-                  </div>
-                )}
-                
-                {/* Play/Pause Overlay */}
-                <div className={`
-                  absolute inset-0 flex items-center justify-center
-                  transition-all duration-150
-                  ${isCurrentVersion 
-                    ? 'bg-black/40' 
-                    : 'bg-black/0 group-hover:bg-black/50 opacity-0 group-hover:opacity-100'
-                  }
-                `}>
-                  {isThisPlaying ? (
-                    <Pause className="w-4 h-4 text-white" fill="currentColor" />
-                  ) : (
-                    <Play className="w-4 h-4 text-white ml-0.5" fill="currentColor" />
-                  )}
-                </div>
-              </div>
-
-              {/* Version Info */}
-              <div className="flex-1 min-w-0 flex flex-col">
-                {/* Version Label */}
-                <span className={`
-                  text-sm truncate
-                  ${isCurrentVersion ? 'text-bone font-medium' : 'text-bone/80'}
-                `}>
-                  {version.label}
-                </span>
-                {/* Song Title (if different from label) */}
-                {version.songTitle && version.songTitle !== version.label && (
-                  <span className="text-xs text-bone/50 truncate">
-                    {version.songTitle}
-                  </span>
-                )}
-              </div>
-
-              {/* Time Display */}
-              <span className="flex-shrink-0 text-xs text-bone/50 tabular-nums min-w-[70px] text-right">
-                {isCurrentVersion ? (
-                  // Show current time / total duration for playing track
-                  <>{formatTime(currentTime)} / {formatTime(duration || version.duration_sec)}</>
-                ) : (
-                  // Show total duration for other tracks
-                  formatTime(version.duration_sec)
-                )}
-              </span>
-
-              {/* Like Button - Always visible */}
-              {isAuthenticated && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleLikeClick(version.id, liked)
-                  }}
-                  className={`
-                    flex-shrink-0 p-1.5 rounded-full
-                    transition-all duration-150 cursor-pointer
-                    ${liked 
-                      ? 'text-red-500' 
-                      : 'text-bone/50 hover:text-red-400'
-                    }
-                  `}
-                  title={liked ? 'Remove from liked songs' : 'Add to liked songs'}
-                >
-                  <Heart 
-                    className="w-4 h-4" 
-                    fill={liked ? 'currentColor' : 'none'} 
-                  />
-                </button>
-              )}
-
-              {/* Rate Button */}
-              {onRateClick && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onRateClick(version)
-                  }}
-                  className="flex-shrink-0 p-1 rounded-full text-bone/30 hover:text-yellow-400 transition-all duration-150 cursor-pointer opacity-0 group-hover:opacity-100"
-                  title="Rate this version"
-                >
-                  <Star className="w-4 h-4" />
-                </button>
-              )}
-
-              {/* Playing Indicator Animation */}
-              {isThisPlaying && (
-                <div className="flex-shrink-0 flex items-end gap-0.5 h-4">
-                  <span 
-                    className="w-0.5 bg-current animate-pulse rounded-full"
-                    style={{ 
-                      height: '60%', 
-                      animationDelay: '0ms',
-                      color: accentColor 
-                    }} 
-                  />
-                  <span 
-                    className="w-0.5 bg-current animate-pulse rounded-full"
-                    style={{ 
-                      height: '100%', 
-                      animationDelay: '150ms',
-                      color: accentColor 
-                    }} 
-                  />
-                  <span 
-                    className="w-0.5 bg-current animate-pulse rounded-full"
-                    style={{ 
-                      height: '40%', 
-                      animationDelay: '300ms',
-                      color: accentColor 
-                    }} 
-                  />
-                </div>
-              )}
+      <div className="scrollbar-hide max-h-[200px] overflow-y-auto md:max-h-none md:overflow-visible">
+        {useTwoColumnsOnDesktop ? (
+          <div className="flex flex-col gap-0.5 md:grid md:grid-cols-2 md:gap-2">
+            <div className="flex flex-col gap-0.5">
+              {leftColumn.map(renderRow)}
             </div>
-          )
-        })}
+            <div className="flex flex-col gap-0.5">
+              {rightColumn.map(renderRow)}
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-0.5">
+            {versions.map(renderRow)}
+          </div>
+        )}
       </div>
     </div>
   )

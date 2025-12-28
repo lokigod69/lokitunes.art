@@ -8,10 +8,18 @@ export async function signInWithGoogle() {
     process.env.NEXT_PUBLIC_SITE_URL ||
     (typeof window !== 'undefined' ? window.location.origin : '')
 
+  const nextPath = typeof window !== 'undefined'
+    ? `${window.location.pathname}${window.location.search}`
+    : ''
+
+  const redirectTo = nextPath
+    ? `${siteUrl}/auth/callback?next=${encodeURIComponent(nextPath)}`
+    : `${siteUrl}/auth/callback`
+
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `${siteUrl}/auth/callback`
+      redirectTo
     }
   })
   return { data, error }

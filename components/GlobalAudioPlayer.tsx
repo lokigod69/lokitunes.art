@@ -1,10 +1,11 @@
 'use client'
 
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type MouseEvent as ReactMouseEvent } from 'react'
+import { createPortal } from 'react-dom'
 import { usePathname, useRouter } from 'next/navigation'
 import { useAudioStore } from '@/lib/audio-store'
 import { useMediaSession } from '@/hooks/useMediaSession'
-import { Play, Pause, Star, Volume2, Volume1, VolumeX, Download, SkipBack, SkipForward, Infinity as InfinityIcon, Heart } from 'lucide-react'
+import { Play, Pause, Star, Volume2, Volume1, VolumeX, Download, SkipBack, SkipForward, Infinity as InfinityIcon, Heart, Check } from 'lucide-react'
 import Image from 'next/image'
 import { RatingModal } from '@/components/RatingModal'
 import { useLikes } from '@/hooks/useLikes'
@@ -108,6 +109,31 @@ export function GlobalAudioPlayer() {
   const { isAuthenticated } = useAuth()
   const { isLiked, toggleLike } = useLikes()
   const liked = versionId ? isLiked(versionId) : false
+  const [toastMessage, setToastMessage] = useState<{ text: string; isAdd: boolean } | null>(null)
+  const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const handleLikeClick = async (targetVersionId: string, currentlyLiked: boolean) => {
+    const success = await toggleLike(targetVersionId)
+    if (!success) return
+
+    setToastMessage({
+      text: currentlyLiked ? 'Removed from liked songs' : 'Added to liked songs',
+      isAdd: !currentlyLiked,
+    })
+
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current)
+    }
+    toastTimeoutRef.current = setTimeout(() => setToastMessage(null), 2000)
+  }
+
+  useEffect(() => {
+    return () => {
+      if (toastTimeoutRef.current) {
+        clearTimeout(toastTimeoutRef.current)
+      }
+    }
+  }, [])
 
   useEffect(() => {
     if (!versionId || isOriginal) {
@@ -260,6 +286,17 @@ export function GlobalAudioPlayer() {
 
   return (
     <>
+      {toastMessage && typeof document !== 'undefined' && createPortal(
+        <div className="fixed bottom-28 left-1/2 -translate-x-1/2 px-4 py-2 rounded-lg bg-void/95 border border-white/20 text-bone text-sm whitespace-nowrap z-[100] animate-fade-in flex items-center gap-2 shadow-lg">
+          {toastMessage.isAdd ? (
+            <Heart className="w-4 h-4 text-red-500" fill="currentColor" />
+          ) : (
+            <Check className="w-4 h-4 text-green-500" />
+          )}
+          {toastMessage.text}
+        </div>,
+        document.body
+      )}
       {/* Player UI only shows when there's a track */}
       {currentVersion && (
         <div
@@ -294,7 +331,7 @@ export function GlobalAudioPlayer() {
                     type="button"
                     onClick={async (e) => {
                       e.stopPropagation()
-                      await toggleLike(versionId)
+                      await handleLikeClick(versionId, liked)
                     }}
                     className="p-1.5 cursor-pointer"
                     title={liked ? 'Unlike' : 'Like'}
@@ -462,7 +499,7 @@ export function GlobalAudioPlayer() {
                         type="button"
                         onClick={async (e) => {
                           e.stopPropagation()
-                          await toggleLike(versionId)
+                          await handleLikeClick(versionId, liked)
                         }}
                         className="p-1 hover:bg-white/10 rounded transition-colors cursor-pointer"
                         title={liked ? 'Unlike' : 'Like'}

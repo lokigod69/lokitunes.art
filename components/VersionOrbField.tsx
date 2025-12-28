@@ -185,7 +185,7 @@ function OrbScene({
         )}
         
         {/* Invisible physics boundaries - adjusts when vinyl is visible */}
-        <InvisibleBounds size={25} isPlaying={!!(hoveredVersion || playingVersion)} />
+        <InvisibleBounds size={25} isPlaying={!!(hoveredVersion || playingVersion)} depth={60} />
       </Suspense>
       
       {/* CENTERED GRID TEXT - Shows hovered or playing version label on album grid */}
