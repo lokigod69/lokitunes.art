@@ -193,6 +193,7 @@ function OrbScene({
         hoveredVersion={hoveredVersion}
         playingVersion={playingVersion}
         albumPalette={albumPalette}
+        isMobile={isMobile}
       />
       
       {/* ALBUM GRID - FIXED position for consistency across all albums */}

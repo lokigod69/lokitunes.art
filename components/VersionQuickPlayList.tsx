@@ -45,6 +45,8 @@ export function VersionQuickPlayList({
   const { currentTime, duration } = useAudioStore()
   const [toastMessage, setToastMessage] = useState<{ text: string; isAdd: boolean } | null>(null)
 
+  const useGridOnDesktop = versions.length > 3
+
   // Handle like with toast notification
   const handleLikeClick = async (versionId: string, currentlyLiked: boolean) => {
     const success = await toggleLike(versionId)
@@ -80,7 +82,13 @@ export function VersionQuickPlayList({
       </div>
       
       {/* Version list */}
-      <div className="flex flex-col gap-0.5 max-h-[200px] overflow-y-auto scrollbar-hide">
+      <div
+        className={`
+          flex flex-col gap-0.5 scrollbar-hide
+          ${useGridOnDesktop ? 'md:grid md:grid-cols-2 md:gap-1 md:max-h-none md:overflow-visible' : ''}
+          max-h-[200px] overflow-y-auto
+        `}
+      >
         {versions.map((version) => {
           const isCurrentVersion = version.id === currentVersionId
           const isThisPlaying = isCurrentVersion && isPlaying

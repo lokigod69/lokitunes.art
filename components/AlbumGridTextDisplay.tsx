@@ -21,8 +21,11 @@ const TEXT_CONFIG = {
   maxSafeZ: 8,  // Never exceed this to stay within container
 } as const
 
+const DESKTOP_FRONT_CENTER_Z = 4.5
+
 // Front center position - for playing version (prominent, always visible)
-const FRONT_CENTER_POSITION: [number, number, number] = [0, TEXT_CONFIG.positionY, TEXT_CONFIG.frontCenterZ]
+const FRONT_CENTER_POSITION_MOBILE: [number, number, number] = [0, TEXT_CONFIG.positionY, TEXT_CONFIG.frontCenterZ]
+const FRONT_CENTER_POSITION_DESKTOP: [number, number, number] = [0, TEXT_CONFIG.positionY, DESKTOP_FRONT_CENTER_Z]
 
 // Outer-edge text spots - for hovered versions
 // All Z values clamped to safe range to prevent text from extending beyond container
@@ -49,6 +52,7 @@ interface AlbumGridTextDisplayProps {
   hoveredVersion: ExtendedVersion | null
   playingVersion: ExtendedVersion | null
   albumPalette: Album['palette'] | null
+  isMobile?: boolean
 }
 
 /**
@@ -58,7 +62,7 @@ interface AlbumGridTextDisplayProps {
  * - Hovered version (different from playing): shown at random outer positions
  * - Uses album color palette for neon styling
  */
-export function AlbumGridTextDisplay({ hoveredVersion, playingVersion, albumPalette }: AlbumGridTextDisplayProps) {
+export function AlbumGridTextDisplay({ hoveredVersion, playingVersion, albumPalette, isMobile = false }: AlbumGridTextDisplayProps) {
   const groupRef = useRef<THREE.Group>(null)
   const [flicker, setFlicker] = useState(1)
   const [shadowFlicker1, setShadowFlicker1] = useState(1)
@@ -78,7 +82,9 @@ export function AlbumGridTextDisplay({ hoveredVersion, playingVersion, albumPale
   // Determine which version to show and where
   const isShowingPlaying = !hoveredVersion || hoveredVersion.id === playingVersion?.id
   const displayVersion = hoveredVersion || playingVersion
-  const position = isShowingPlaying ? FRONT_CENTER_POSITION : hoverPosition
+  const position = isShowingPlaying
+    ? (isMobile ? FRONT_CENTER_POSITION_MOBILE : FRONT_CENTER_POSITION_DESKTOP)
+    : hoverPosition
 
   // Use album palette passed from scene
   const palette = albumPalette || {

@@ -5,6 +5,7 @@ import AudioEngine from "@/components/AudioEngine";
 import { GlobalAudioPlayer } from "@/components/GlobalAudioPlayer";
 import { StyleManager } from "@/components/StyleManager";
 import { AdminAnalyticsRoot } from "@/components/AdminAnalyticsRoot";
+import { AuthInteractionGate } from "@/components/AuthInteractionGate";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -42,10 +43,12 @@ export default function RootLayout({
         {/* Hidden audio engine - always mounted so playback persists across routes */}
         <AudioEngine />
 
-        {children}
+        <AuthInteractionGate>
+          {children}
 
-        {/* Full player UI for non-home routes */}
-        <GlobalAudioPlayer />
+          {/* Full player UI for non-home routes */}
+          <GlobalAudioPlayer />
+        </AuthInteractionGate>
       </body>
     </html>
   );

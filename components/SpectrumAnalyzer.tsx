@@ -220,7 +220,7 @@ export function SpectrumAnalyzer() {
   if (isMobile) return null
 
   return (
-    <div className="container mx-auto px-4">
+    <div className="max-w-6xl mx-auto px-4 md:px-8">
       <div className="w-full h-[100px]">
         <canvas
           ref={canvasRef}

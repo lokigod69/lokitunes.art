@@ -173,7 +173,7 @@ export function AlbumPage({ album }: AlbumPageProps) {
           background: `linear-gradient(to bottom, ${hexWithOpacity(palette.dominant, 0.25)} 0%, transparent 100%)`,
         }}
       >
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-start md:items-end gap-6">
+        <div className="max-w-6xl mx-auto flex flex-col md:grid md:grid-cols-[auto_1fr] items-start md:items-end gap-6">
           {/* LEFT SIDE: Cover + Info */}
           <div className="flex items-start gap-4 md:gap-6 flex-1">
           <div className="w-32 h-32 md:w-48 md:h-48 lg:w-56 lg:h-56 rounded-xl overflow-hidden shadow-2xl flex-shrink-0 border border-bone/10">
@@ -228,7 +228,7 @@ export function AlbumPage({ album }: AlbumPageProps) {
           </div>
 
           {/* RIGHT SIDE: Version Quick-Play List */}
-          <div className="w-full md:w-auto md:flex-shrink-0">
+          <div className="w-full md:flex md:justify-center">
             <VersionQuickPlayList
               versions={orbVersions}
               currentVersionId={currentVersion?.id}
