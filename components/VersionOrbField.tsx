@@ -294,11 +294,6 @@ export function VersionOrbField({
     ? Math.max(baseCameraDistance, minSmallCountDistance)
     : baseCameraDistance
 
-  // Minor desktop-only zoom for 3–4 orbs (keep larger counts unchanged).
-  if (!isMobile && (versions.length === 3 || versions.length === 4)) {
-    cameraDistance = cameraDistance * 0.92
-  }
-  
   devLog(`📷 Camera distance for ${versions.length} versions: ${cameraDistance} (mobile: ${isMobile}, aspect: ${aspectRatio.toFixed(2)})`)
 
   // Pointer event handlers to ensure touch events are captured for orb attraction
