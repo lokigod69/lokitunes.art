@@ -52,14 +52,16 @@ export function SpectrumAnalyzer() {
   const currentVersion = useAudioStore((s) => s.currentVersion)
   const isMobile = useIsMobile(768)
 
+  const MODE_ORDER: SpectrumMode[] = [1, 0, 2]
+
   const [mode, setMode] = useState<SpectrumMode>(() => {
     if (typeof window === 'undefined') return 0
     try {
       const raw = window.localStorage?.getItem(STORAGE_KEY)
       const n = raw ? parseInt(raw, 10) : 0
-      return (n === 1 || n === 2 ? n : 0) as SpectrumMode
+      return (n === 0 || n === 1 || n === 2 ? n : 1) as SpectrumMode
     } catch {
-      return 0
+      return 1
     }
   })
 
@@ -207,7 +209,8 @@ export function SpectrumAnalyzer() {
     }
 
     setMode((prev) => {
-      const next = (((prev + 1) % 3) as unknown) as SpectrumMode
+      const index = MODE_ORDER.indexOf(prev)
+      const next = MODE_ORDER[(index === -1 ? 0 : index + 1) % MODE_ORDER.length]
       try {
         window.localStorage?.setItem(STORAGE_KEY, String(next))
       } catch {
@@ -215,7 +218,7 @@ export function SpectrumAnalyzer() {
       }
       return next
     })
-  }, [])
+  }, [MODE_ORDER])
 
   if (isMobile) return null
 
