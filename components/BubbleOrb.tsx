@@ -42,7 +42,6 @@ interface BubbleOrbProps {
   radius: number
   visualScale?: number  // Visual-only scale (0.6-1.0) based on version count
   deviceTier: DeviceTier
-  isMobile?: boolean
   onHover: (title: string | null) => void
   onNavigate: (slug: string) => void
   onRegisterRigidBody?: (body: RapierRigidBody) => void
@@ -59,7 +58,6 @@ export function BubbleOrb({
   radius,
   visualScale = 1,
   deviceTier,
-  isMobile = false,
   onHover, 
   onNavigate,
   onRegisterRigidBody,
@@ -237,7 +235,7 @@ export function BubbleOrb({
     }, true)
   }, [pushTrigger, album.title])
 
-  useFrame((state, delta) => {
+  useFrame((state) => {
     if (!ref.current || pendingBurst) return
     
     // Wrap body access in try-catch - body may have been removed
@@ -379,21 +377,6 @@ export function BubbleOrb({
       }
     }
 
-    if (!isMobile && !playModeActive) {
-      try {
-        const v = body.linvel()
-        const speedXY = Math.sqrt(v.x * v.x + v.y * v.y)
-        const MAX_SPEED_XY = 12
-        if (speedXY > MAX_SPEED_XY) {
-          const targetFactor = MAX_SPEED_XY / speedXY
-          const tClamp = 1 - Math.exp(-Math.max(delta, 0) * 18)
-          const smoothFactor = 1 + (targetFactor - 1) * tClamp
-          body.setLinvel({ x: v.x * smoothFactor, y: v.y * smoothFactor, z: v.z }, true)
-        }
-      } catch {
-        // ignore
-      }
-    }
   })
 
   return (
@@ -403,8 +386,8 @@ export function BubbleOrb({
       colliders={false}         // Use custom BallCollider for dynamic sizing
       restitution={0.6}         // Balanced bounce - lower to prevent jittering
       friction={0.15}           // Light friction (was 0.1, then 0.3)
-      linearDamping={isMobile ? 0.12 : 0.18}      // Slight damping (was 0.05, then 0.8)
-      angularDamping={isMobile ? 0.5 : 0.55}      // REDUCED - More rotation
+      linearDamping={0.12}      // Slight damping (was 0.05, then 0.8)
+      angularDamping={0.5}      // REDUCED - More rotation
       gravityScale={0}
       mass={radius * 0.5}       // LIGHTER = more responsive to forces
       ccd={true}                // Continuous collision detection

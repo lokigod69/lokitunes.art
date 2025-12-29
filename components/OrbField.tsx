@@ -63,7 +63,6 @@ function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGla
               radius={orbRadius}
               visualScale={calculateOrbScale(album.total_versions || 1)}
               deviceTier={deviceTier}
-              isMobile={isMobile}
               onHover={onHover}
               onNavigate={onNavigate}
               onRegisterRigidBody={(body) => onRegisterRigidBody(album.id, body, positions[index])}
