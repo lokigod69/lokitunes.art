@@ -235,7 +235,7 @@ export function AlbumPage({ album }: AlbumPageProps) {
 
           {/* RIGHT SIDE: Version Quick-Play List */}
           {orbVersions.length > 0 && (
-            <div className="w-full md:w-[420px] md:flex-shrink-0">
+            <div className="w-full md:w-[420px] md:flex-shrink-0 md:mr-8">
               <VersionQuickPlayList
                 versions={orbVersions}
                 currentVersionId={currentVersion?.id}
