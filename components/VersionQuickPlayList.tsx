@@ -45,10 +45,6 @@ export function VersionQuickPlayList({
   const { currentTime, duration } = useAudioStore()
   const [toastMessage, setToastMessage] = useState<{ text: string; isAdd: boolean } | null>(null)
 
-  const useTwoColumnsOnDesktop = versions.length > 3
-  const leftColumn = useTwoColumnsOnDesktop ? versions.slice(0, 3) : versions
-  const rightColumn = useTwoColumnsOnDesktop ? versions.slice(3) : []
-
   // Handle like with toast notification
   const handleLikeClick = async (versionId: string, currentlyLiked: boolean) => {
     const success = await toggleLike(versionId)
@@ -123,13 +119,13 @@ export function VersionQuickPlayList({
 
         <div className="flex-1 min-w-0 flex flex-col">
           <span className={`
-                  text-sm truncate md:whitespace-normal md:overflow-visible md:text-clip md:break-words
+                  text-sm truncate
                   ${isCurrentVersion ? 'text-bone font-medium' : 'text-bone/80'}
                 `}>
             {version.label}
           </span>
           {version.songTitle && version.songTitle !== version.label && (
-            <span className="text-xs text-bone/50 truncate md:whitespace-normal md:overflow-visible md:text-clip md:break-words">
+            <span className="text-xs text-bone/50 truncate">
               {version.songTitle}
             </span>
           )}
@@ -234,21 +230,10 @@ export function VersionQuickPlayList({
       </div>
       
       {/* Version list */}
-      <div className="scrollbar-hide max-h-[200px] overflow-y-auto md:max-h-none md:overflow-visible">
-        {useTwoColumnsOnDesktop ? (
-          <div className="flex flex-col gap-0.5 md:grid md:grid-cols-2 md:gap-2">
-            <div className="flex flex-col gap-0.5">
-              {leftColumn.map(renderRow)}
-            </div>
-            <div className="flex flex-col gap-0.5">
-              {rightColumn.map(renderRow)}
-            </div>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-0.5">
-            {versions.map(renderRow)}
-          </div>
-        )}
+      <div className="scrollbar-hide max-h-[200px] overflow-y-auto md:max-h-[220px] md:overflow-y-auto">
+        <div className="flex flex-col gap-0.5">
+          {versions.map(renderRow)}
+        </div>
       </div>
     </div>
   )
