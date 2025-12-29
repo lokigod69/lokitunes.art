@@ -74,7 +74,11 @@ function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGla
         </group>
         
         {/* Mouse attraction - Dynamic range for large collections */}
-        <MouseAttraction albumCount={albums.length} />
+        {isMobile ? (
+          <MouseAttraction albumCount={albums.length} />
+        ) : (
+          <MouseAttraction albumCount={albums.length} targetPlaneZ={0} baselineStrength={0.04} />
+        )}
         
         {/* Invisible physics boundaries */}
         <InvisibleBounds size={25} />

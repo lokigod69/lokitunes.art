@@ -288,7 +288,7 @@ export function BubbleOrb({
     }
 
     // Perlin noise drift for organic motion (reduced while idle).
-    const noiseScale = isMouseIdle ? 0.25 : 1
+    const noiseScale = isMouseIdle ? 0.12 : 1
     const noiseX = Math.sin(t * 0.3 + seed) * 0.04 * forceScale * noiseScale
     const noiseY = Math.cos(t * 0.2 + seed * 0.7) * 0.04 * forceScale * noiseScale
     body.applyImpulse({ x: noiseX, y: noiseY, z: 0 }, true)

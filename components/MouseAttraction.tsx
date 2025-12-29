@@ -16,7 +16,7 @@ import { applyAttractorForceOnRigidBody } from '@react-three/rapier-addons'
  * @param targetPlaneZ - Optional Z plane to project pointer ray onto for attractor position
  */
 // Wrap in React.memo to prevent infinite re-renders!
-function MouseAttractionComponent({ albumCount, targetPlaneZ }: { albumCount?: number; targetPlaneZ?: number }) {
+function MouseAttractionComponent({ albumCount, targetPlaneZ, baselineStrength = 0.12 }: { albumCount?: number; targetPlaneZ?: number; baselineStrength?: number }) {
   const { camera, pointer } = useThree()
   const { world } = useRapier()
   const attractorObject = useRef<THREE.Object3D>(null)
@@ -101,7 +101,7 @@ function MouseAttractionComponent({ albumCount, targetPlaneZ }: { albumCount?: n
 
     // Keep a stable baseline pull at rest so orbs stay clustered around the cursor.
     // Ramp up with speed/accel so fast swipes still feel more energetic.
-    const BASELINE = 0.12
+    const BASELINE = baselineStrength
     const scaledStrength = attractorStrength * (BASELINE + (1 - BASELINE) * movementScale)
 
     const object = attractorObject.current
