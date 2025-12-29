@@ -77,7 +77,14 @@ function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGla
         {isMobile ? (
           <MouseAttraction albumCount={albums.length} />
         ) : (
-          <MouseAttraction albumCount={albums.length} targetPlaneZ={0} baselineStrength={0.04} />
+          <MouseAttraction
+            albumCount={albums.length}
+            targetPlaneZ={0}
+            baselineStrength={0.025}
+            strengthScale={0.55}
+            speedFull={14}
+            accelFull={180}
+          />
         )}
         
         {/* Invisible physics boundaries */}

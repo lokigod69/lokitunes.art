@@ -383,6 +383,7 @@ export function BubbleOrb({
     <RigidBody
       ref={ref}
       type="dynamic"            // CRITICAL: Must be dynamic to respond to forces!
+      enabledTranslations={[true, true, false]}
       colliders={false}         // Use custom BallCollider for dynamic sizing
       restitution={0.6}         // Balanced bounce - lower to prevent jittering
       friction={0.15}           // Light friction (was 0.1, then 0.3)

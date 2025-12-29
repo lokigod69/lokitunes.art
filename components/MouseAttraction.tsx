@@ -16,7 +16,7 @@ import { applyAttractorForceOnRigidBody } from '@react-three/rapier-addons'
  * @param targetPlaneZ - Optional Z plane to project pointer ray onto for attractor position
  */
 // Wrap in React.memo to prevent infinite re-renders!
-function MouseAttractionComponent({ albumCount, targetPlaneZ, baselineStrength = 0.12 }: { albumCount?: number; targetPlaneZ?: number; baselineStrength?: number }) {
+function MouseAttractionComponent({ albumCount, targetPlaneZ, baselineStrength = 0.12, strengthScale = 1, speedFull = 4.0, accelFull = 40.0 }: { albumCount?: number; targetPlaneZ?: number; baselineStrength?: number; strengthScale?: number; speedFull?: number; accelFull?: number }) {
   const { camera, pointer } = useThree()
   const { world } = useRapier()
   const attractorObject = useRef<THREE.Object3D>(null)
@@ -93,16 +93,14 @@ function MouseAttractionComponent({ albumCount, targetPlaneZ, baselineStrength =
 
     // Speed- and acceleration-driven scaling.
     // This makes orbs follow smoothly at slow movement, and only ramp strongly when the cursor accelerates.
-    const SPEED_FULL = 4.0
-    const ACCEL_FULL = 40.0
-    const speedScale = Math.min(smoothedSpeed.current / SPEED_FULL, 1)
-    const accelScale = Math.min(smoothedAccel.current / ACCEL_FULL, 1)
+    const speedScale = Math.min(smoothedSpeed.current / speedFull, 1)
+    const accelScale = Math.min(smoothedAccel.current / accelFull, 1)
     const movementScale = Math.min(1, speedScale * 0.7 + accelScale * 0.3)
 
     // Keep a stable baseline pull at rest so orbs stay clustered around the cursor.
     // Ramp up with speed/accel so fast swipes still feel more energetic.
     const BASELINE = baselineStrength
-    const scaledStrength = attractorStrength * (BASELINE + (1 - BASELINE) * movementScale)
+    const scaledStrength = attractorStrength * strengthScale * (BASELINE + (1 - BASELINE) * movementScale)
 
     const object = attractorObject.current
 
