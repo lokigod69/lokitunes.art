@@ -30,7 +30,7 @@ interface AlbumPageProps {
 export function AlbumPage({ album }: AlbumPageProps) {
   const isMobile = useMobileDetection(768)
 
-  const { currentVersion, isPlaying, playStandalone, pause, play, startAlbumQueue, setAutoplayMode, startGlobalQueue } = useAudioStore()
+  const { currentVersion, isPlaying, playStandalone, pause, play, startAlbumQueue, setAutoplayMode, startGlobalQueue, autoplayMode } = useAudioStore()
 
   // Handle version click from quick-play list - same as orb click behavior
   const handleVersionClick = (version: ExtendedVersion) => {
@@ -42,8 +42,14 @@ export function AlbumPage({ album }: AlbumPageProps) {
         play(version, version.songId, palette)
       }
     } else {
-      // Different version - start playing with album queue
-      startAlbumQueue(orbVersions, version.id, palette)
+      // Different version - start playing based on autoplay mode
+      if (autoplayMode === 'all') {
+        startGlobalQueue(version, palette)
+      } else if (autoplayMode === 'album') {
+        startAlbumQueue(orbVersions, version.id, palette)
+      } else {
+        play(version, version.songId, palette, true)
+      }
     }
   }
 
@@ -173,7 +179,7 @@ export function AlbumPage({ album }: AlbumPageProps) {
           background: `linear-gradient(to bottom, ${hexWithOpacity(palette.dominant, 0.25)} 0%, transparent 100%)`,
         }}
       >
-        <div className="max-w-6xl mx-auto flex flex-col items-start md:items-end gap-6">
+        <div className="max-w-6xl mx-auto flex flex-col items-start gap-6">
           {/* LEFT SIDE: Cover + Info */}
           <div className="flex items-start gap-4 md:gap-6 flex-1">
           <div className="w-32 h-32 md:w-48 md:h-48 lg:w-56 lg:h-56 rounded-xl overflow-hidden shadow-2xl flex-shrink-0 border border-bone/10">

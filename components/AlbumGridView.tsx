@@ -23,6 +23,7 @@ export function AlbumGridView({ versions, albumPalette }: AlbumGridViewProps) {
   const pause = useAudioStore((state) => state.pause)
   const autoplayMode = useAudioStore((state) => state.autoplayMode)
   const startAlbumQueue = useAudioStore((state) => state.startAlbumQueue)
+  const startGlobalQueue = useAudioStore((state) => state.startGlobalQueue)
 
   const accentColor = albumPalette?.accent1 || '#4F9EFF'
   const dominantColor = albumPalette?.dominant || '#1a1a1a'
@@ -38,8 +39,10 @@ export function AlbumGridView({ versions, albumPalette }: AlbumGridViewProps) {
         play(version, version.songId || version.song_id || '')
       }
     } else {
-      // Start playing new track with album queue if autoplay is album mode
-      if (autoplayMode === 'album' && versions.length > 1) {
+      // Start playback based on autoplay mode
+      if (autoplayMode === 'all') {
+        startGlobalQueue(version, albumPalette)
+      } else if (autoplayMode === 'album' && versions.length > 1) {
         startAlbumQueue(versions, version.id, albumPalette)
       } else {
         play(version, version.songId || version.song_id || '', albumPalette)

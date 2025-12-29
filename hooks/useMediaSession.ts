@@ -20,6 +20,7 @@ export function useMediaSession() {
   const currentTime = useAudioStore((state) => state.currentTime)
   const duration = useAudioStore((state) => state.duration)
   const queue = useAudioStore((state) => state.queue)
+  const autoplayMode = useAudioStore((state) => state.autoplayMode)
 
   // Update Media Session metadata when track changes
   useEffect(() => {
@@ -91,13 +92,19 @@ export function useMediaSession() {
   useEffect(() => {
     if (!('mediaSession' in navigator)) return
 
-    const canSkip = queue.length > 1
+    // Allow skip controls when:
+    // - we already have a multi-item queue, OR
+    // - we're in global autoplay mode ('all') where next() can build a global queue on demand.
+    const canSkip = queue.length > 1 || autoplayMode === 'all'
 
     // Play handler
     const handlePlay = () => {
       console.log('[MediaSession] Play action')
       if (currentVersion) {
-        play(currentVersion, currentVersion.song_id)
+        const songId = (currentVersion as unknown as { songId?: string; song_id?: string }).songId
+          ?? (currentVersion as unknown as { songId?: string; song_id?: string }).song_id
+          ?? ''
+        play(currentVersion, songId)
       }
     }
 
@@ -123,22 +130,6 @@ export function useMediaSession() {
       }
     }
 
-    // Seek backward handler (10 seconds)
-    const handleSeekBackward = (details: MediaSessionActionDetails) => {
-      const skipTime = details.seekOffset || 10
-      const newTime = Math.max(currentTime - skipTime, 0)
-      console.log('[MediaSession] Seek backward:', skipTime)
-      setCurrentTime(newTime)
-    }
-
-    // Seek forward handler (10 seconds)
-    const handleSeekForward = (details: MediaSessionActionDetails) => {
-      const skipTime = details.seekOffset || 10
-      const newTime = Math.min(currentTime + skipTime, duration || Infinity)
-      console.log('[MediaSession] Seek forward:', skipTime)
-      setCurrentTime(newTime)
-    }
-
     // Seek to specific position
     const handleSeekTo = (details: MediaSessionActionDetails) => {
       if (details.seekTime !== undefined) {
@@ -159,8 +150,9 @@ export function useMediaSession() {
       navigator.mediaSession.setActionHandler('pause', handlePause)
       navigator.mediaSession.setActionHandler('previoustrack', canSkip ? handlePreviousTrack : null)
       navigator.mediaSession.setActionHandler('nexttrack', canSkip ? handleNextTrack : null)
-      navigator.mediaSession.setActionHandler('seekbackward', handleSeekBackward)
-      navigator.mediaSession.setActionHandler('seekforward', handleSeekForward)
+      // Prefer next/previous track buttons on lock screen (avoid +/- 10s UI).
+      navigator.mediaSession.setActionHandler('seekbackward', null)
+      navigator.mediaSession.setActionHandler('seekforward', null)
       navigator.mediaSession.setActionHandler('seekto', handleSeekTo)
       navigator.mediaSession.setActionHandler('stop', handleStop)
     } catch (e) {
@@ -182,7 +174,7 @@ export function useMediaSession() {
         // Ignore cleanup errors
       }
     }
-  }, [currentVersion, queue.length, currentTime, duration, play, pause, next, previous, setCurrentTime])
+  }, [currentVersion, queue.length, autoplayMode, play, pause, next, previous, setCurrentTime])
 
   return null
 }
