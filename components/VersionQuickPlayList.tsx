@@ -131,7 +131,7 @@ export function VersionQuickPlayList({
           )}
         </div>
 
-        <span className="flex-shrink-0 text-xs text-bone/50 tabular-nums min-w-[70px] text-right">
+        <span className="flex self-center items-center justify-end flex-shrink-0 text-xs leading-none text-bone/50 tabular-nums min-w-[70px] text-right">
           {isCurrentVersion ? (
             <>{formatTime(currentTime)} / {formatTime(duration || version.duration_sec)}</>
           ) : (
@@ -147,7 +147,7 @@ export function VersionQuickPlayList({
               handleLikeClick(version.id, liked)
             }}
             className={`
-                    flex-shrink-0 p-1.5 rounded-full
+                    self-center flex items-center justify-center flex-shrink-0 p-1.5 rounded-full
                     transition-all duration-150 cursor-pointer
                     ${liked 
                       ? 'text-red-500' 
@@ -170,7 +170,7 @@ export function VersionQuickPlayList({
               e.stopPropagation()
               onRateClick(version)
             }}
-            className="flex-shrink-0 p-1 rounded-full text-bone/30 hover:text-yellow-400 transition-all duration-150 cursor-pointer opacity-0 group-hover:opacity-100"
+            className="self-center flex-shrink-0 p-1 rounded-full text-bone/30 hover:text-yellow-400 transition-all duration-150 cursor-pointer opacity-0 group-hover:opacity-100"
             title="Rate this version"
           >
             <Star className="w-4 h-4" />
@@ -178,7 +178,7 @@ export function VersionQuickPlayList({
         )}
 
         {isThisPlaying && (
-          <div className="flex-shrink-0 flex items-end gap-0.5 h-4">
+          <div className="self-center flex-shrink-0 flex items-end gap-0.5 h-4">
             <span 
               className="w-0.5 bg-current animate-pulse rounded-full"
               style={{ 
