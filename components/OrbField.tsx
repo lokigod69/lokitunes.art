@@ -115,6 +115,7 @@ function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGla
       <GridTextDisplay 
         album={hoveredAlbum}
         visible={!!hoveredAlbum}
+        isMobile={isMobile}
       />
       
       {/* OBSTACLE FIELD - Rainbow obstacles for play mode */}

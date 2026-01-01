@@ -33,6 +33,7 @@ const GRID_TEXT_SPOTS: [number, number, number][] = [
 interface GridTextDisplayProps {
   album: Album | null
   visible: boolean
+  isMobile?: boolean
 }
 
 /**
@@ -48,14 +49,20 @@ export function GridTextDisplay({ album, visible }: GridTextDisplayProps) {
   const [shadow1Flicker, setShadow1Flicker] = useState(1)
   const [shadow2Flicker, setShadow2Flicker] = useState(1)
   const [shadow3Flicker, setShadow3Flicker] = useState(1)
+
+  const mobilePosition: [number, number, number] = [0, -11, -8]
   
   // Pick random spot when album changes
   useEffect(() => {
     if (album) {
-      const randomIndex = Math.floor(Math.random() * GRID_TEXT_SPOTS.length)
-      setPosition(GRID_TEXT_SPOTS[randomIndex])
+      if (isMobile) {
+        setPosition(mobilePosition)
+      } else {
+        const randomIndex = Math.floor(Math.random() * GRID_TEXT_SPOTS.length)
+        setPosition(GRID_TEXT_SPOTS[randomIndex])
+      }
     }
-  }, [album?.id])
+  }, [album?.id, isMobile])
   
   // Broken neon flickering (like header)
   useFrame(() => {

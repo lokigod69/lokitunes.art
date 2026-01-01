@@ -36,9 +36,10 @@ export function useMediaSession() {
       songTitle?: string 
       artistName?: string
     }
-    
+
+    const isOriginal = !!(currentVersion as unknown as { is_original?: boolean }).is_original
     const title = extended.songTitle || currentVersion.label || 'Unknown Track'
-    const artist = extended.artistName || 'Loki Lazer'
+    const artist = !isOriginal && currentVersion.label ? currentVersion.label : (extended.artistName || 'Loki Lazer')
     const album = extended.albumTitle || 'LokiTunes'
 
     // Build artwork array - use cover_url if available
