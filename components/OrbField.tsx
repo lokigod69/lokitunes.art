@@ -377,7 +377,7 @@ export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
       {/* 3D Canvas - Fullscreen */}
       <Canvas
         key={canvasKey}
-        onPointerMissed={handleDepthPush}
+        onPointerMissed={isMobile ? undefined : handleDepthPush}
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
         onPointerLeave={handlePointerLeave}
