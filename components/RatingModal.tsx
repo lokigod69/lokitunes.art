@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { X, Star } from 'lucide-react'
 import { RatingStars } from '@/components/RatingStars'
 import { useAudioStore } from '@/lib/audio-store'
+import type { SongVersion, Album } from '@/lib/supabase'
 
 const TAG_OPTIONS = ['melody', 'vibe', 'drums', 'vocals', 'lyrics', 'structure', 'everything', 'trash'] as const
 type TagOption = (typeof TAG_OPTIONS)[number]
@@ -41,6 +42,8 @@ interface RatingModalProps {
 
 export function RatingModal({ isOpen, onClose, onRated }: RatingModalProps) {
   const { currentVersion, currentPalette } = useAudioStore()
+  const [modalVersion, setModalVersion] = useState<SongVersion | null>(null)
+  const [modalPalette, setModalPalette] = useState<Album['palette'] | null>(null)
   const [rating, setRating] = useState(0)
   const [comment, setComment] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -69,10 +72,23 @@ export function RatingModal({ isOpen, onClose, onRated }: RatingModalProps) {
     () => KUDOS_MESSAGES[Math.floor(Math.random() * KUDOS_MESSAGES.length)]
   )
 
-  const accentColor = currentPalette?.accent1 || '#4F9EFF'
+  useEffect(() => {
+    if (!isOpen) {
+      setModalVersion(null)
+      setModalPalette(null)
+      return
+    }
+
+    if (!modalVersion && currentVersion) {
+      setModalVersion(currentVersion)
+      setModalPalette(currentPalette)
+    }
+  }, [isOpen, currentVersion, currentPalette, modalVersion])
+
+  const accentColor = modalPalette?.accent1 || currentPalette?.accent1 || '#4F9EFF'
 
   useEffect(() => {
-    if (!isOpen || !currentVersion) return
+    if (!isOpen || !modalVersion) return
 
     let isCancelled = false
     const load = async () => {
@@ -82,7 +98,7 @@ export function RatingModal({ isOpen, onClose, onRated }: RatingModalProps) {
       setSuccess(false)
 
       try {
-        const res = await fetch(`/api/ratings/${currentVersion.id}`)
+        const res = await fetch(`/api/ratings/${modalVersion.id}`)
         if (!res.ok) throw new Error('Failed to load ratings')
         const data = (await res.json()) as {
           stats?: RatingStatsData | null
@@ -126,7 +142,7 @@ export function RatingModal({ isOpen, onClose, onRated }: RatingModalProps) {
     return () => {
       isCancelled = true
     }
-  }, [isOpen, currentVersion])
+  }, [isOpen, modalVersion])
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -146,7 +162,7 @@ export function RatingModal({ isOpen, onClose, onRated }: RatingModalProps) {
 
   if (!isOpen) return null
 
-  if (!currentVersion) {
+  if (!modalVersion) {
     return (
       <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm" onClick={onClose}>
         <div
@@ -185,6 +201,11 @@ export function RatingModal({ isOpen, onClose, onRated }: RatingModalProps) {
     event.preventDefault()
     if (isSubmitting) return
 
+    if (!modalVersion) {
+      setError('No song is currently playing.')
+      return
+    }
+
     if (rating < 1 || rating > 10) {
       setError('Please select a rating between 1 and 10.')
       return
@@ -206,8 +227,8 @@ export function RatingModal({ isOpen, onClose, onRated }: RatingModalProps) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          versionId: currentVersion.id,
-          songId: currentVersion.song_id,
+          versionId: modalVersion.id,
+          songId: modalVersion.song_id,
           ratingStars: rating,
           comment: trimmedComment || undefined,
           tags: {
@@ -230,9 +251,9 @@ export function RatingModal({ isOpen, onClose, onRated }: RatingModalProps) {
 
       setSuccess(true)
 
-      if (currentVersion) {
+      if (modalVersion) {
         try {
-          const refresh = await fetch(`/api/ratings/${currentVersion.id}`)
+          const refresh = await fetch(`/api/ratings/${modalVersion.id}`)
           if (refresh.ok) {
             const data = await refresh.json()
             setStats(data.stats || null)
@@ -277,7 +298,7 @@ export function RatingModal({ isOpen, onClose, onRated }: RatingModalProps) {
             <h2 className="text-lg font-semibold">
               {userRating ? kudosMessage : 'Rate this version'}
             </h2>
-            <p className="text-sm text-bone/70 mt-1 truncate">{currentVersion.label}</p>
+            <p className="text-sm text-bone/70 mt-1 truncate">{modalVersion.label}</p>
           </div>
           <button
             type="button"

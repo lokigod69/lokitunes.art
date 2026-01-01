@@ -190,6 +190,8 @@ export function BubbleOrb({
   const HOME_Z = 0               // Front position
   const SETTLE_TIME = 2000       // Wait 2 seconds before returning
   const MAX_SETTLE_TIME = 5000   // Safety: force return after 5 seconds
+  const MAX_BACK_Z = -60
+  const FRONT_CORRECT_STRENGTH = 0.015
   
   // Track when last pushed (for settle time)
   const lastPushTime = useRef(0)
@@ -296,33 +298,40 @@ export function BubbleOrb({
     // SOFT PROXIMITY CUSHION - prevents deep overlap and sticky behavior
     // Always-on gentle repulsion between nearby orbs (independent of slider)
     if (allBodiesRef?.current) {
-      const cushionDistance = colliderRadius * 2.1  // Start pushing before contact
-      const currentRepulsion = useOrbRepulsion.getState().repulsionStrength
+      const shouldRunCushion = !(
+        (deviceTier === 'low' || deviceTier === 'medium') &&
+        orbIndex % 2 !== Math.floor(t * 60) % 2
+      )
 
-      allBodiesRef.current.forEach(({ body: otherBody }, otherId) => {
-        if (otherId === album.id) return
+      if (shouldRunCushion) {
+        const cushionDistance = colliderRadius * 2.1  // Start pushing before contact
+        const currentRepulsion = useOrbRepulsion.getState().repulsionStrength
 
-        try {
-          const otherPos = otherBody.translation()
-          const toOther = new THREE.Vector3(
-            otherPos.x - pos.x,
-            otherPos.y - pos.y,
-            otherPos.z - pos.z
-          )
-          const dist = toOther.length()
+        allBodiesRef.current.forEach(({ body: otherBody }, otherId) => {
+          if (otherId === album.id) return
 
-          // Soft cushion: gentle push when close, before hard collision
-          if (dist < cushionDistance && dist > 0.1) {
-            const overlap = 1 - (dist / cushionDistance)
-            // Base cushion + extra from slider
-            const cushionStrength = 0.015 * overlap * overlap + currentRepulsion * 0.08 * overlap
-            const pushForce = toOther.normalize().multiplyScalar(-cushionStrength * forceScale)
-            body.applyImpulse(pushForce, true)
+          try {
+            const otherPos = otherBody.translation()
+            const toOther = new THREE.Vector3(
+              otherPos.x - pos.x,
+              otherPos.y - pos.y,
+              otherPos.z - pos.z
+            )
+            const dist = toOther.length()
+
+            // Soft cushion: gentle push when close, before hard collision
+            if (dist < cushionDistance && dist > 0.1) {
+              const overlap = 1 - (dist / cushionDistance)
+              // Base cushion + extra from slider
+              const cushionStrength = 0.015 * overlap * overlap + currentRepulsion * 0.08 * overlap
+              const pushForce = toOther.normalize().multiplyScalar(-cushionStrength * forceScale)
+              body.applyImpulse(pushForce, true)
+            }
+          } catch (e) {
+            // Other body might be invalid
           }
-        } catch (e) {
-          // Other body might be invalid
-        }
-      })
+        })
+      }
     }
 
     // Gentle rotation for inner sphere
@@ -377,13 +386,31 @@ export function BubbleOrb({
       }
     }
 
+    if (!playModeActive) {
+      if (pos.z < MAX_BACK_Z) {
+        body.setTranslation({ x: pos.x, y: pos.y, z: MAX_BACK_Z }, true)
+        body.setLinvel({ x: vel.x, y: vel.y, z: 0 }, true)
+      }
+
+      const timeSincePush = Date.now() - lastPushTime.current
+      const isInDepthInteraction = lastPushTime.current !== 0 && timeSincePush < SETTLE_TIME
+      if (!isInDepthInteraction) {
+        const zError = HOME_Z - pos.z
+        if (Math.abs(zError) > 0.02) {
+          body.applyImpulse({ x: 0, y: 0, z: zError * zError * Math.sign(zError) * FRONT_CORRECT_STRENGTH }, true)
+        }
+        if (Math.abs(vel.z) > 0.02) {
+          body.setLinvel({ x: vel.x, y: vel.y, z: vel.z * 0.65 }, true)
+        }
+      }
+    }
+
   })
 
   return (
     <RigidBody
       ref={ref}
       type="dynamic"            // CRITICAL: Must be dynamic to respond to forces!
-      enabledTranslations={[true, true, false]}
       colliders={false}         // Use custom BallCollider for dynamic sizing
       restitution={0.6}         // Balanced bounce - lower to prevent jittering
       friction={0.15}           // Light friction (was 0.1, then 0.3)

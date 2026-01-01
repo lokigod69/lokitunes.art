@@ -48,6 +48,10 @@ function MouseAttractionComponent({ albumCount, targetPlaneZ, baselineStrength =
   useFrame((_state, delta) => {
     frameCount.current++
 
+    if (isTouchDevice && frameCount.current % 2 === 0) {
+      return
+    }
+
     // Calculate mouse movement delta
     const deltaX = pointer.x - lastPointer.current.x
     const deltaY = pointer.y - lastPointer.current.y

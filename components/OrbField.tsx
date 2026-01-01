@@ -75,7 +75,7 @@ function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGla
         
         {/* Mouse attraction - Dynamic range for large collections */}
         {isMobile ? (
-          <MouseAttraction albumCount={albums.length} />
+          <MouseAttraction albumCount={albums.length} targetPlaneZ={0} />
         ) : (
           <MouseAttraction
             albumCount={albums.length}
@@ -328,10 +328,10 @@ export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
   const handlePointerDown = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
     if (event.button !== 0) return
     isPointerDownRef.current = true
-    if (!hoveredAlbum) {
+    if (!isMobile && !hoveredAlbum) {
       setIsHolding(true)
     }
-  }, [hoveredAlbum])
+  }, [hoveredAlbum, isMobile])
 
   const handlePointerUp = useCallback(() => {
     isPointerDownRef.current = false
@@ -344,6 +344,14 @@ export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
   }, [])
 
   useEffect(() => {
+    if (isMobile) {
+      if (autoClickIntervalRef.current) {
+        clearInterval(autoClickIntervalRef.current)
+        autoClickIntervalRef.current = null
+      }
+      return
+    }
+
     if (isHolding) {
       if (autoClickIntervalRef.current) {
         return
@@ -362,7 +370,7 @@ export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
         autoClickIntervalRef.current = null
       }
     }
-  }, [isHolding, handleDepthPush])
+  }, [isHolding, handleDepthPush, isMobile])
   
   return (
     <>
