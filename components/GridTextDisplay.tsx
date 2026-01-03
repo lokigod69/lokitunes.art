@@ -40,7 +40,7 @@ interface GridTextDisplayProps {
  * Grid Text Display - Neon text projected on grid floor
  * Shows album name with LOKI TUNES style when hovering orbs
  */
-export function GridTextDisplay({ album, visible }: GridTextDisplayProps) {
+export function GridTextDisplay({ album, visible, isMobile = false }: GridTextDisplayProps) {
   const groupRef = useRef<THREE.Group>(null)
   const [position, setPosition] = useState<[number, number, number]>(GRID_TEXT_SPOTS[0])
   

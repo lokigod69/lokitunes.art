@@ -24,8 +24,7 @@ export function PulsingWireframe({
   const meshRef = useRef<THREE.Mesh>(null)
   const materialRef = useRef<THREE.MeshBasicMaterial>(null)
   
-  // Use album color if hovering, otherwise base color
-  const displayColor = hoveredAlbum?.palette?.dominant || color
+  const displayColor = color
   
   useFrame((state) => {
     if (!materialRef.current) return

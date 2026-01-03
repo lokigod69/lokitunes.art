@@ -26,8 +26,7 @@ export function InfoDisplayCube({
   const meshRef = useRef<THREE.Mesh>(null)
   const materialRef = useRef<THREE.MeshBasicMaterial>(null)
   
-  // Use album color if hovering, otherwise base color
-  const displayColor = hoveredAlbum?.palette?.dominant || baseColor
+  const displayColor = baseColor
   
   useFrame((state) => {
     if (!materialRef.current) return
