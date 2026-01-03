@@ -186,7 +186,7 @@ export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
   const [isHolding, setIsHolding] = useState(false)
   
   // Play mode - set total orbs count
-  const { setTotalOrbs, isActive: playModeActive, stopGame } = usePlayMode()
+  const { setTotalOrbs, isActive: playModeActive, stopGame, resetRun } = usePlayMode()
 
   devLog('OrbField rendering with albums:', albums.length)
   
@@ -322,9 +322,13 @@ export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
       // Wake up body
       body.wakeUp()
     })
+
+    if (playModeActive) {
+      resetRun()
+    }
     
     setResetTrigger(prev => prev + 1)
-  }, [])
+  }, [playModeActive, resetRun])
 
   const handlePointerDown = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
     if (event.button !== 0) return

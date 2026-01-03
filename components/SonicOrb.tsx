@@ -149,6 +149,8 @@ export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1
     // Reset is handled by parent, but we can add any orb-specific reset logic here
     // For now, just reset the lastPushTime
     lastPushTime.current = 0
+    setPendingBurst(false)
+    setIsLost(false)
   }, [resetTrigger])
 
   // Depth interaction: Push orb backward when triggered

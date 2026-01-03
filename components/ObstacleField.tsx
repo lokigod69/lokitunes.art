@@ -9,6 +9,8 @@ import { GameObstacle } from './GameObstacle'
 import { usePlayMode } from '@/hooks/usePlayMode'
 
 const OBSTACLE_COUNT = 8
+const OBSTACLE_Y_MIN = -15
+const OBSTACLE_Y_MAX = 10
 
 export function ObstacleField() {
   const { isActive } = usePlayMode()
@@ -18,7 +20,7 @@ export function ObstacleField() {
       id: `obstacle-${i}`,
       position: [
         (Math.random() - 0.5) * 30,     // X spread
-        (Math.random() - 0.5) * 12,     // Y spread  
+        OBSTACLE_Y_MIN + Math.random() * (OBSTACLE_Y_MAX - OBSTACLE_Y_MIN),
         -25 - i * 5 - Math.random() * 10 // Z: staggered starting positions
       ] as [number, number, number],
       size: 1.2 + Math.random() * 1.0,  // Random size 1.2-2.2

@@ -69,7 +69,19 @@ export function UnifiedMenu({
     stopGame,
     orbsRemaining,
     totalOrbs,
+    score,
+    lastScore,
+    bestScore,
+    runEndsAt,
   } = usePlayMode()
+
+  const [now, setNow] = useState(() => Date.now())
+
+  useEffect(() => {
+    if (!isOpen) return
+    const timer = setInterval(() => setNow(Date.now()), 250)
+    return () => clearInterval(timer)
+  }, [isOpen])
 
   useEffect(() => {
     if (!isOpen) return
@@ -237,6 +249,31 @@ export function UnifiedMenu({
                           </button>
                         </>
                       )}
+                    </div>
+
+                    <div className="mt-3 space-y-1 text-xs font-mono text-bone/60">
+                      {playModeActive && runEndsAt && (
+                        <div className="flex items-center justify-between">
+                          <span>Time</span>
+                          <span>{Math.max(0, Math.ceil((runEndsAt - now) / 1000))}s</span>
+                        </div>
+                      )}
+                      {playModeActive && (
+                        <div className="flex items-center justify-between">
+                          <span>Score</span>
+                          <span>{score}</span>
+                        </div>
+                      )}
+                      {!playModeActive && lastScore !== null && (
+                        <div className="flex items-center justify-between text-red-400">
+                          <span>Game Over</span>
+                          <span>{lastScore}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between">
+                        <span>Best</span>
+                        <span>{bestScore}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
