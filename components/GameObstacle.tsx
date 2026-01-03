@@ -19,23 +19,17 @@ interface GameObstacleProps {
 }
 
 export function GameObstacle({ id, initialPosition, size, hueOffset }: GameObstacleProps) {
-  const { isActive, isPaused, obstacleSpeed, runEndsAt, finishRun, incrementScore } = usePlayMode()
+  const { isActive, isPaused, obstacleSpeed } = usePlayMode()
   const meshRef = useRef<THREE.Mesh>(null)
   const bodyRef = useRef<RapierRigidBody>(null)
   const materialRef = useRef<THREE.MeshBasicMaterial>(null)
   const [currentHue, setCurrentHue] = useState(hueOffset)
-  const hitAnyOrbRef = useRef(false)
 
   const OBSTACLE_Y_MIN = -15
   const OBSTACLE_Y_MAX = 10
   
   useFrame((state, delta) => {
     if (!isActive || isPaused || !meshRef.current || !bodyRef.current) return
-
-    if (runEndsAt && Date.now() >= runEndsAt) {
-      finishRun()
-      return
-    }
     
     // Rainbow color cycling
     const newHue = (currentHue + delta * 0.15) % 1
@@ -57,11 +51,6 @@ export function GameObstacle({ id, initialPosition, size, hueOffset }: GameObsta
     // Check if passed the orb plane and needs recycling
     const pos = bodyRef.current.translation()
     if (pos.z > 10) {
-      if (!hitAnyOrbRef.current) {
-        incrementScore()
-      }
-
-      hitAnyOrbRef.current = false
       // Reset to back with new random position
       bodyRef.current.setTranslation({ 
         x: (Math.random() - 0.5) * 30, 
@@ -80,12 +69,6 @@ export function GameObstacle({ id, initialPosition, size, hueOffset }: GameObsta
       type="kinematicVelocity"
       colliders={false}
       name={`obstacle-${id}`}
-      onCollisionEnter={({ other }) => {
-        const otherName = other.rigidBodyObject?.name || ''
-        if (otherName.startsWith('orb-')) {
-          hitAnyOrbRef.current = true
-        }
-      }}
     >
       {/* Sphere collider for smoother physics interactions */}
       <BallCollider args={[size * 0.8]} restitution={1.5} friction={0.1} />
