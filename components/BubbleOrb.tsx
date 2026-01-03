@@ -286,7 +286,9 @@ export function BubbleOrb({
     if (isMouseIdle && speed > 0.02) {
       body.setLinvel({ x: vel.x * 0.92, y: vel.y * 0.92, z: vel.z * 0.92 }, true)
     } else if (isMouseIdle && speed < 0.008) {
-      body.setLinvel({ x: 0, y: 0, z: 0 }, true)
+      const zError = HOME_Z - pos.z
+      const shouldFreezeZ = Math.abs(zError) < 0.03
+      body.setLinvel({ x: 0, y: 0, z: shouldFreezeZ ? 0 : vel.z }, true)
     }
 
     // Perlin noise drift for organic motion (reduced while idle).

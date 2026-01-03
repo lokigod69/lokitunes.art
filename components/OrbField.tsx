@@ -473,13 +473,6 @@ export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
           </EffectComposer>
         ) : (
           <EffectComposer multisampling={0}>
-            <Bloom
-              intensity={0.3}
-              luminanceThreshold={0.98}
-              luminanceSmoothing={0.1}
-              mipmapBlur={false}
-              kernelSize={KernelSize.SMALL}
-            />
             <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
           </EffectComposer>
         )}
