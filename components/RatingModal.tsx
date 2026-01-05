@@ -10,11 +10,6 @@ const TAG_OPTIONS = ['melody', 'vibe', 'drums', 'vocals', 'lyrics', 'structure',
 type TagOption = (typeof TAG_OPTIONS)[number]
 type TagType = 'like' | 'dislike'
 
-interface RatingStatsData {
-  avg_rating: number
-  rating_count: number
-}
-
 interface RatingTagsPayload {
   likes: string[]
   dislikes: string[]
@@ -25,13 +20,6 @@ interface UserRatingData {
   rating: number
   comment: string | null
   tags?: RatingTagsPayload
-}
-
-interface RatingComment {
-  id: string
-  rating: number
-  comment: string
-  created_at: string
 }
 
 interface RatingModalProps {
@@ -52,10 +40,7 @@ export function RatingModal({ isOpen, onClose, onRated }: RatingModalProps) {
 
   const [likedTags, setLikedTags] = useState<string[]>([])
   const [dislikedTags, setDislikedTags] = useState<string[]>([])
-
-  const [stats, setStats] = useState<RatingStatsData | null>(null)
   const [userRating, setUserRating] = useState<UserRatingData | null>(null)
-  const [comments, setComments] = useState<RatingComment[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [hoverRating, setHoverRating] = useState(0)
@@ -101,16 +86,11 @@ export function RatingModal({ isOpen, onClose, onRated }: RatingModalProps) {
         const res = await fetch(`/api/ratings/${modalVersion.id}`)
         if (!res.ok) throw new Error('Failed to load ratings')
         const data = (await res.json()) as {
-          stats?: RatingStatsData | null
           userRating?: UserRatingData | null
-          comments?: RatingComment[]
         }
 
         if (isCancelled) return
-
-        setStats(data.stats ?? null)
         setUserRating(data.userRating ?? null)
-        setComments(data.comments ?? [])
 
         const userTags = data.userRating?.tags
         if (userTags) {
@@ -256,9 +236,7 @@ export function RatingModal({ isOpen, onClose, onRated }: RatingModalProps) {
           const refresh = await fetch(`/api/ratings/${modalVersion.id}`)
           if (refresh.ok) {
             const data = await refresh.json()
-            setStats(data.stats || null)
             setUserRating(data.userRating || null)
-            setComments(data.comments || [])
             setIsEditing(false)
           }
         } catch (err) {
@@ -336,44 +314,6 @@ export function RatingModal({ isOpen, onClose, onRated }: RatingModalProps) {
                 Edit your rating
               </button>
             </div>
-
-            {stats && stats.rating_count > 0 && (
-              <div>
-                <p className="text-xs text-bone/60 mb-2">Community rating</p>
-                <div className="flex items-center justify-center gap-2">
-                  <Star size={20} fill={accentColor} color={accentColor} />
-                  <span className="text-lg font-medium text-bone">
-                    {stats.avg_rating.toFixed(1)}/10
-                  </span>
-                  <span className="text-sm text-bone/60">
-                    ({stats.rating_count} {stats.rating_count === 1 ? 'rating' : 'ratings'})
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {comments.length > 0 && (
-              <div>
-                <p className="text-xs text-bone/60 mb-2">Recent comments</p>
-                <div className="space-y-3 max-h-48 overflow-y-auto pr-2">
-                  {comments.map((c) => (
-                    <div
-                      key={c.id}
-                      className="p-3 bg-bone/5 rounded border-l-2 border-bone/20"
-                    >
-                      <p className="text-sm text-bone/90 mb-1">
-                        &quot;{c.comment}&quot;
-                      </p>
-                      <div className="flex items-center gap-2 text-xs text-bone/50">
-                        <span>{new Date(c.created_at).toLocaleDateString()}</span>
-                        <span>•</span>
-                        <span>{c.rating}/10</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         ) : (
           <>

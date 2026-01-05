@@ -18,11 +18,6 @@ function formatTime(seconds: number): string {
   return `${mins}:${secs.toString().padStart(2, '0')}`
 }
 
-interface RatingStats {
-  avg_rating: number
-  rating_count: number
-}
-
 interface UserRating {
   rating: number
   comment: string | null
@@ -96,7 +91,6 @@ export function GlobalAudioPlayer() {
   const progressBarRef = useRef<HTMLDivElement | null>(null)
   const [isScrubbing, setIsScrubbing] = useState(false)
   const [isRatingOpen, setIsRatingOpen] = useState(false)
-  const [ratingStats, setRatingStats] = useState<RatingStats | null>(null)
   const [userRating, setUserRating] = useState<UserRating | null>(null)
   const [isRatingLoading, setIsRatingLoading] = useState(false)
   const [ratingRefreshToken, setRatingRefreshToken] = useState(0)
@@ -137,7 +131,6 @@ export function GlobalAudioPlayer() {
 
   useEffect(() => {
     if (!versionId || isOriginal) {
-      setRatingStats(null)
       setUserRating(null)
       setIsRatingLoading(false)
       return
@@ -152,12 +145,10 @@ export function GlobalAudioPlayer() {
         if (!res.ok) throw new Error('Failed to load ratings')
         const data = await res.json()
         if (isCancelled) return
-        setRatingStats(data.stats || null)
         setUserRating(data.userRating || null)
       } catch (error) {
         if (!isCancelled) {
           console.error('Failed to load ratings for player:', error)
-          setRatingStats(null)
           setUserRating(null)
         }
       } finally {
@@ -235,7 +226,6 @@ export function GlobalAudioPlayer() {
     }
   }
 
-  const hasRatingStats = !isRatingLoading && !!(ratingStats && ratingStats.rating_count > 0)
   const hasUserRating = !isRatingLoading && !!userRating
   const isRated = hasUserRating
 
@@ -269,20 +259,6 @@ export function GlobalAudioPlayer() {
     )
   }
 
-  // Render dual rating display (user / avg)
-  const renderDualRating = () => {
-    if (isOriginal) return null
-    const userVal = hasUserRating && userRating ? userRating.rating.toFixed(1) : '—'
-    const avgVal = hasRatingStats && ratingStats ? ratingStats.avg_rating.toFixed(1) : '—'
-    return (
-      <div className="flex items-center gap-1 text-[11px]">
-        <span className="font-medium" style={{ color: accentColor }}>{userVal}</span>
-        <span className="text-bone/40">/</span>
-        <span className="text-bone/50">{avgVal}</span>
-        <Star className="w-3 h-3" fill={accentColor} color={accentColor} />
-      </div>
-    )
-  }
 
   return (
     <>
@@ -352,15 +328,17 @@ export function GlobalAudioPlayer() {
                   </span>
                   <div className="flex items-center gap-1 text-[10px] text-bone/50">
                     <span className="tabular-nums">{formatTime(currentTime)} / {formatTime(duration)}</span>
-                    <span>|</span>
-                    <span style={{ color: accentColor }}>
-                      {hasUserRating && userRating ? userRating.rating.toFixed(1) : '—'}
-                    </span>
-                    <span>/</span>
-                    <span>⊘</span>
-                    <span>
-                      {hasRatingStats && ratingStats ? ratingStats.avg_rating.toFixed(1) : '—'}
-                    </span>
+                    {hasUserRating && userRating && (
+                      <>
+                        <span>|</span>
+                        <span style={{ color: accentColor }}>
+                          {Number.isInteger(userRating.rating)
+                            ? userRating.rating.toFixed(0)
+                            : userRating.rating.toFixed(1)}
+                          /10
+                        </span>
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -522,19 +500,15 @@ export function GlobalAudioPlayer() {
                   
                   {/* Row 2: Ratings + Rate + Download */}
                   <div className="flex items-center gap-2 overflow-hidden">
-                    {!isOriginal && !isRatingLoading && (ratingStats || userRating) && (
+                    {!isOriginal && !isRatingLoading && userRating && (
                       <div className="flex items-center gap-1 text-[10px] text-bone/70">
-                        {ratingStats && (
-                          <span className="text-bone/40">({ratingStats.rating_count})</span>
-                        )}
-                        {hasUserRating && userRating && (
-                          <>
-                            <span className="text-bone/40">u:</span>
-                            <span style={{ color: accentColor }}>
-                              {Number.isInteger(userRating.rating) ? userRating.rating.toFixed(0) : userRating.rating.toFixed(1)}
-                            </span>
-                          </>
-                        )}
+                        <span className="text-bone/40">Your rating:</span>
+                        <span style={{ color: accentColor }}>
+                          {Number.isInteger(userRating.rating)
+                            ? userRating.rating.toFixed(0)
+                            : userRating.rating.toFixed(1)}
+                          /10
+                        </span>
                       </div>
                     )}
                     {!isOriginal && (
