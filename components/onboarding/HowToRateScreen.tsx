@@ -12,29 +12,15 @@ export function HowToRateScreen({ language }: HowToRateScreenProps) {
 
   if (!screen) return null
 
-  const lines = screen.body
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean)
-
   return (
     <div className="space-y-5">
-      <div className="flex items-start gap-3">
-        <div className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl border border-bone/20 bg-black/40 text-lg shadow-[0_0_14px_rgba(0,0,0,0.65)]">
-          🧪
-        </div>
-        <div className="min-w-0 space-y-1">
-          <h2 className="text-xl font-semibold text-bone tracking-tight">
-            {screen.title}
-          </h2>
-          <div className="space-y-2">
-            {lines.map((line, index) => (
-              <p key={`${index}-${line}`} className="text-sm leading-relaxed text-bone/80">
-                {line}
-              </p>
-            ))}
-          </div>
-        </div>
+      <div className="space-y-3">
+        <h2 className="text-xl font-semibold text-bone tracking-tight">
+          {screen.title}
+        </h2>
+        <p className="text-sm leading-relaxed text-bone/80 whitespace-pre-line">
+          {screen.body}
+        </p>
       </div>
 
       {screen.bullets && screen.bullets.length > 0 && (
@@ -42,7 +28,7 @@ export function HowToRateScreen({ language }: HowToRateScreenProps) {
           <ul className="space-y-2 text-sm text-bone/80">
             {screen.bullets.map((item) => (
               <li key={item} className="flex items-start gap-2">
-                <span className="mt-0.5 text-sm">👉</span>
+                <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-voltage" aria-hidden="true" />
                 <span className="leading-relaxed">{item}</span>
               </li>
             ))}
@@ -58,12 +44,7 @@ export function HowToRateScreen({ language }: HowToRateScreenProps) {
               className="rounded-xl border border-bone/20 bg-black/40 px-3 py-2 shadow-[0_0_12px_rgba(0,0,0,0.6)]"
             >
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-base" aria-hidden="true">
-                  {highlight.title.toLowerCase().includes('low') ||
-                  highlight.title.toLowerCase().includes('nied')
-                    ? '🧊'
-                    : '🔥'}
-                </span>
+                <span className="h-2 w-2 flex-shrink-0 rounded-full bg-voltage" aria-hidden="true" />
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-voltage">
                   {highlight.title}
                 </p>

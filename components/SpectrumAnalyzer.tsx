@@ -47,6 +47,7 @@ function sampleBands(data: Uint8Array, bands: number): number[] {
 
 export function SpectrumAnalyzer() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const activeEndRef = useRef<number>(0)
 
   const isPlaying = useAudioStore((s) => s.isPlaying)
   const currentVersion = useAudioStore((s) => s.currentVersion)
@@ -55,10 +56,10 @@ export function SpectrumAnalyzer() {
   const MODE_ORDER: SpectrumMode[] = [1, 0, 2]
 
   const [mode, setMode] = useState<SpectrumMode>(() => {
-    if (typeof window === 'undefined') return 0
+    if (typeof window === 'undefined') return 1
     try {
       const raw = window.localStorage?.getItem(STORAGE_KEY)
-      const n = raw ? parseInt(raw, 10) : 0
+      const n = raw ? parseInt(raw, 10) : 1
       return (n === 0 || n === 1 || n === 2 ? n : 1) as SpectrumMode
     } catch {
       return 1
@@ -120,6 +121,22 @@ export function SpectrumAnalyzer() {
         return
       }
 
+      const minEnd = Math.max(32, Math.floor(data.length * 0.35))
+      let targetEnd = minEnd
+      for (let i = data.length - 1; i >= minEnd; i--) {
+        if (data[i] > 6) {
+          targetEnd = i + 1
+          break
+        }
+      }
+
+      const prevEnd = activeEndRef.current || targetEnd
+      const smoothed = prevEnd + (targetEnd - prevEnd) * 0.15
+      const effectiveEnd = Math.max(minEnd, Math.min(data.length, Math.round(smoothed)))
+      activeEndRef.current = effectiveEnd
+
+      const effectiveData = data.subarray(0, effectiveEnd)
+
       const palette = {
         dominant: readCssVar('--album-dominant') || '#090B0D',
         accent1: readCssVar('--album-accent1') || '#4F9EFF',
@@ -127,7 +144,7 @@ export function SpectrumAnalyzer() {
       }
 
       if (mode === 0) {
-        const points = sampleBands(data, LINE_POINTS)
+        const points = sampleBands(effectiveData, LINE_POINTS)
 
         ctx.save()
         ctx.lineWidth = 2
@@ -159,7 +176,7 @@ export function SpectrumAnalyzer() {
         return
       }
 
-      const bands = sampleBands(data, BAR_COUNT)
+      const bands = sampleBands(effectiveData, BAR_COUNT)
       const gap = 2
       const totalGap = gap * (BAR_COUNT - 1)
       const barWidth = (width - totalGap) / BAR_COUNT

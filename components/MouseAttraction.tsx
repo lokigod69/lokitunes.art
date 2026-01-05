@@ -16,10 +16,11 @@ import { applyAttractorForceOnRigidBody } from '@react-three/rapier-addons'
  * @param targetPlaneZ - Optional Z plane to project pointer ray onto for attractor position
  */
 // Wrap in React.memo to prevent infinite re-renders!
-function MouseAttractionComponent({ albumCount, targetPlaneZ, baselineStrength = 0.12, strengthScale = 1, speedFull = 4.0, accelFull = 40.0 }: { albumCount?: number; targetPlaneZ?: number; baselineStrength?: number; strengthScale?: number; speedFull?: number; accelFull?: number }) {
+function MouseAttractionComponent({ albumCount, targetPlaneZ, baselineStrength = 0.12, strengthScale = 1, speedFull = 4.0, accelFull = 40.0, cohesionStrength = 0 }: { albumCount?: number; targetPlaneZ?: number; baselineStrength?: number; strengthScale?: number; speedFull?: number; accelFull?: number; cohesionStrength?: number }) {
   const { camera, pointer } = useThree()
   const { world } = useRapier()
   const attractorObject = useRef<THREE.Object3D>(null)
+  const cohesionObject = useRef<THREE.Object3D>(null)
   const frameCount = useRef(0)
   const lastPointer = useRef({ x: 0, y: 0 })
   const smoothedSpeed = useRef(0)
@@ -106,6 +107,30 @@ function MouseAttractionComponent({ albumCount, targetPlaneZ, baselineStrength =
     const BASELINE = baselineStrength
     const scaledStrength = attractorStrength * strengthScale * (BASELINE + (1 - BASELINE) * movementScale)
 
+    const cohesionPull = attractorStrength * cohesionStrength
+    let cohesionX = 0
+    let cohesionY = 0
+    let cohesionZ = 0
+    let cohesionCount = 0
+
+    if (cohesionPull > 0 && cohesionObject.current) {
+      world.bodies.forEach((body: any) => {
+        if (!body.isDynamic()) return
+        const p = body.translation()
+        cohesionX += p.x
+        cohesionY += p.y
+        cohesionZ += p.z
+        cohesionCount++
+      })
+      if (cohesionCount > 0) {
+        cohesionObject.current.position.set(
+          cohesionX / cohesionCount,
+          cohesionY / cohesionCount,
+          cohesionZ / cohesionCount
+        )
+      }
+    }
+
     const object = attractorObject.current
 
     world.bodies.forEach((body: any) => {
@@ -117,11 +142,24 @@ function MouseAttractionComponent({ albumCount, targetPlaneZ, baselineStrength =
         type: 'linear',
         gravitationalConstant: 6.673e-11,
       })
+
+      if (cohesionPull > 0 && cohesionObject.current) {
+        applyAttractorForceOnRigidBody(body, {
+          object: cohesionObject.current,
+          strength: cohesionPull,
+          range: attractorRange,
+          type: 'linear',
+          gravitationalConstant: 6.673e-11,
+        })
+      }
     })
   })
   
   return (
-    <object3D ref={attractorObject} />
+    <>
+      <object3D ref={attractorObject} />
+      <object3D ref={cohesionObject} />
+    </>
   )
 }
 
