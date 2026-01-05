@@ -29,31 +29,20 @@ export const onboardingContent: Record<OnboardingLanguage, OnboardingContent> = 
     screens: [
       {
         id: 'welcome',
-        title: 'Welcome to LoKi Tunes',
+        title: 'Welcome to LokiTunes',
         body:
-          'This is a space for audio exploration and rating.\n\n' +
-          "You're listening to raw versions of songs.\n\n" +
-          'Your job? Help decide which ones are worth finishing.',
+          "You're listening to AI-generated versions of my own music — old, mostly unfinished songs run through the machine.\n" +
+          'The output is well...decide for yourself!\n' +
+          "What's trash? What has potential?\n" +
+          'Share by rating.',
       },
       {
         id: 'howToRate',
-        title: 'How should I rate?',
-        body: "Don't judge technical quality. Judge potential.\n\nAsk yourself:",
-        bullets: [
-          'Does this evoke emotion?',
-          'Do I like the style or vibe?',
-          'Would I listen to a finished version of this?',
-        ],
-        highlights: [
-          {
-            title: 'Low rating',
-            body: 'Means “Not my style” (not “This sounds unfinished”).',
-          },
-          {
-            title: 'High rating',
-            body: 'Means “This has potential, finish it!”. Your ratings help decide what gets created.',
-          },
-        ],
+        title: 'An experiment',
+        body:
+          "These tracks won't stay as is. Good ones will be finished, remixed, or get their own music video. Bad ones (most of them) disappear.\n" +
+          'Your ratings decide which is which.\n' +
+          'Be brutal in your evaluation, since only a few % will pass to the next stage.',
       },
       {
         id: 'interactiveTour',
@@ -74,28 +63,20 @@ export const onboardingContent: Record<OnboardingLanguage, OnboardingContent> = 
     screens: [
       {
         id: 'welcome',
-        title: 'Willkommen bei LoKi Tunes',
+        title: 'Willkommen bei LokiTunes',
         body:
-          'Dies ist ein Raum für Audio-Exploration und Bewertungen.\n\n' +
-          'Du hörst Songs in der Rohversion.\n\n' +
-          'Du entscheidest welche Songs fertiggestellt werden.',
+          'Du hörst KI-generierte Versionen meiner eigenen Musik — alte, größtenteils unfertige Songs, durch die Maschine gejagt.\n' +
+          'Das Ergebnis ist nun ja... entscheide selbst!\n' +
+          'Was ist Müll? Was hat Potenzial?\n' +
+          'Teile es, indem du bewertest.',
       },
       {
         id: 'howToRate',
-        title: 'WIE?',
+        title: 'Ein Experiment',
         body:
-          'Bewerte das Potenzial, nicht die Makel.',
-        highlights: [
-          {
-            title: 'Niedrige Bewertung',
-            body: 'Nichts besonderes, Nicht mein Stil',
-          },
-          {
-            title: 'Hohe Bewertung',
-            body:
-              '„Das kann was, bitte fertig produzieren!".\n\nDeine Bewertung beeinflusst, was entsteht.',
-          },
-        ],
+          'Diese Tracks bleiben nicht so, wie sie sind. Die guten werden fertiggestellt, geremixt oder bekommen ihr eigenes Musikvideo. Die schlechten (die meisten davon) verschwinden.\n' +
+          'Deine Bewertungen entscheiden, was was ist.\n' +
+          'Sei brutal in deiner Bewertung, denn nur wenige % schaffen es in die nächste Stufe.',
       },
       {
         id: 'interactiveTour',
