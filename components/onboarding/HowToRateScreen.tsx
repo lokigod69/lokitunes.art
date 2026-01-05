@@ -12,15 +12,34 @@ export function HowToRateScreen({ language }: HowToRateScreenProps) {
 
   if (!screen) return null
 
+  const paragraphs = screen.body
+    .split(/\n\n+/)
+    .map((p) => p.trim())
+    .filter(Boolean)
+
   return (
     <div className="space-y-5">
       <div className="space-y-3">
         <h2 className="text-xl font-semibold text-bone tracking-tight">
           {screen.title}
         </h2>
-        <p className="text-sm leading-relaxed text-bone/80 whitespace-pre-line">
-          {screen.body}
-        </p>
+        <div className="space-y-2">
+          {paragraphs.map((paragraph, index) => {
+            const isLast = index === paragraphs.length - 1
+            return (
+              <p
+                key={`${index}-${paragraph}`}
+                className={
+                  isLast
+                    ? 'pt-2 text-sm leading-relaxed text-bone/90'
+                    : 'text-sm leading-relaxed text-bone/80 whitespace-pre-line'
+                }
+              >
+                {paragraph}
+              </p>
+            )
+          })}
+        </div>
       </div>
 
       {screen.bullets && screen.bullets.length > 0 && (
