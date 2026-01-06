@@ -1,14 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { getClientIp, hashIp } from '@/lib/ip-hash'
-import { getAlbumsWithVersionCounts } from '@/lib/queries'
 
 export async function GET(request: NextRequest) {
   try {
-    const albums = await getAlbumsWithVersionCounts()
-    const totalVersions = albums.reduce((sum, album) => {
-      return sum + (album.total_versions || 0)
-    }, 0)
+    const { count: totalVersionsCount, error: totalVersionsError } = await supabase
+      .from('song_versions')
+      .select('id', { count: 'exact', head: true })
+      .eq('is_original', false)
+
+    if (totalVersionsError) {
+      console.error('Supabase rating progress total count error:', totalVersionsError)
+    }
+
+    const totalVersions = typeof totalVersionsCount === 'number' ? totalVersionsCount : 0
 
     let ratedByUser = 0
 
@@ -18,8 +23,9 @@ export async function GET(request: NextRequest) {
     if (ipHash) {
       const { count, error } = await supabase
         .from('song_version_ratings')
-        .select('version_id', { count: 'exact', head: true })
+        .select('version_id, song_versions!inner(is_original)', { count: 'exact', head: true })
         .eq('ip_hash', ipHash)
+        .eq('song_versions.is_original', false)
 
       if (error) {
         console.error('Supabase rating progress user count error:', error)
