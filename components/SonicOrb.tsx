@@ -221,7 +221,7 @@ export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1
 
     // When mouse is idle, gently damp velocity to reduce jitter but keep physics active.
     if (isMouseIdle && speed > 0.02) {
-      body.setLinvel({ x: vel.x * 0.91, y: vel.y * 0.91, z: vel.z * 0.91 }, true)
+      body.setLinvel({ x: vel.x * 0.92, y: vel.y * 0.92, z: vel.z * 0.92 }, true)
     } else if (isMouseIdle && speed < 0.008) {
       const zError = HOME_Z - pos.z
       const shouldFreezeZ = Math.abs(zError) < 0.03
@@ -229,7 +229,7 @@ export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1
     }
 
     // Perlin noise drift for organic motion (reduced while idle).
-    const noiseScale = isMouseIdle ? 0.08 : 1
+    const noiseScale = isMouseIdle ? 0.12 : 1
     const noiseX = Math.sin(t * 0.3 + seed) * 0.04 * forceScale * noiseScale
     const noiseY = Math.cos(t * 0.2 + seed * 0.7) * 0.04 * forceScale * noiseScale
     body.applyImpulse({ x: noiseX, y: noiseY, z: 0 }, true)
@@ -261,9 +261,8 @@ export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1
             // Soft cushion: gentle push when close, before hard collision
             if (dist < cushionDistance && dist > 0.1) {
               const overlap = 1 - (dist / cushionDistance)
-              const cushionScale = isMouseIdle ? 0.6 : 1
               // Base cushion + extra from slider
-              const cushionStrength = (0.015 * overlap * overlap + currentRepulsion * 0.08 * overlap) * cushionScale
+              const cushionStrength = 0.015 * overlap * overlap + currentRepulsion * 0.08 * overlap
               const pushForce = toOther.normalize().multiplyScalar(-cushionStrength * forceScale)
               body.applyImpulse(pushForce, true)
             }
@@ -344,11 +343,16 @@ export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1
       const isInDepthInteraction = lastPushTime.current !== 0 && timeSincePush < SETTLE_TIME
       if (!isInDepthInteraction) {
         const zError = HOME_Z - pos.z
-        if (Math.abs(zError) > 0.02) {
-          body.applyImpulse({ x: 0, y: 0, z: zError * zError * Math.sign(zError) * FRONT_CORRECT_STRENGTH }, true)
-        }
-        if (Math.abs(vel.z) > 0.02) {
-          body.setLinvel({ x: vel.x, y: vel.y, z: vel.z * 0.65 }, true)
+        if (isMouseIdle && Math.abs(zError) < 0.08 && Math.abs(vel.z) < 0.12) {
+          body.setTranslation({ x: pos.x, y: pos.y, z: HOME_Z }, true)
+          body.setLinvel({ x: vel.x, y: vel.y, z: 0 }, true)
+        } else {
+          if (Math.abs(zError) > 0.02) {
+            body.applyImpulse({ x: 0, y: 0, z: zError * zError * Math.sign(zError) * FRONT_CORRECT_STRENGTH }, true)
+          }
+          if (Math.abs(vel.z) > 0.02) {
+            body.setLinvel({ x: vel.x, y: vel.y, z: vel.z * 0.65 }, true)
+          }
         }
       }
     }
@@ -365,7 +369,7 @@ export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1
       linearDamping={0.12}      // Slight damping (was 0.05, then 0.8)
       angularDamping={0.5}      // Match BubbleOrb/VersionOrb (was 0.3)
       gravityScale={0}          // Add missing property
-      mass={1.0}       // Add missing property - LIGHTER = more responsive
+      mass={radius * 0.5}       // Add missing property - LIGHTER = more responsive
       ccd={true}                // Add continuous collision detection
       position={position}
       name={`orb-${album.id}`}
@@ -382,7 +386,7 @@ export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1
       }}
     >
       {/* Dynamic collider - grows with repulsion slider */}
-      <BallCollider args={[colliderRadius]} restitution={0.75} friction={0.05} />
+      <BallCollider args={[colliderRadius]} restitution={0.85} friction={0.03} />
       
       <group scale={visualScale}>
         {/* Inner glow */}

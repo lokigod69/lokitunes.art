@@ -80,11 +80,11 @@ function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGla
           <MouseAttraction
             albumCount={albums.length}
             targetPlaneZ={0}
-            baselineStrength={0.05}
+            baselineStrength={0.18}
             strengthScale={0.55}
-            cohesionStrength={0.01}
-            speedFull={14}
-            accelFull={180}
+            cohesionStrength={0}
+            speedFull={26}
+            accelFull={320}
           />
         )}
         
