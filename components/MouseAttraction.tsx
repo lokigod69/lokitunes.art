@@ -16,7 +16,7 @@ import { applyAttractorForceOnRigidBody } from '@react-three/rapier-addons'
  * @param targetPlaneZ - Optional Z plane to project pointer ray onto for attractor position
  */
 // Wrap in React.memo to prevent infinite re-renders!
-function MouseAttractionComponent({ albumCount, targetPlaneZ, baselineStrength = 0.12, strengthScale = 1, speedFull = 4.0, accelFull = 40.0, cohesionStrength = 0 }: { albumCount?: number; targetPlaneZ?: number; baselineStrength?: number; strengthScale?: number; speedFull?: number; accelFull?: number; cohesionStrength?: number }) {
+function MouseAttractionComponent({ albumCount, targetPlaneZ, baselineStrength = 0.12, strengthScale = 1, speedFull = 4.0, accelFull = 40.0, cohesionStrength = 0, idleBaselineMultiplier = 1, softCoreRadius = 0 }: { albumCount?: number; targetPlaneZ?: number; baselineStrength?: number; strengthScale?: number; speedFull?: number; accelFull?: number; cohesionStrength?: number; idleBaselineMultiplier?: number; softCoreRadius?: number }) {
   const { camera, pointer } = useThree()
   const { world } = useRapier()
   const attractorObject = useRef<THREE.Object3D>(null)
@@ -26,6 +26,7 @@ function MouseAttractionComponent({ albumCount, targetPlaneZ, baselineStrength =
   const smoothedSpeed = useRef(0)
   const smoothedAccel = useRef(0)
   const lastSpeed = useRef(0)
+  const baselineMul = useRef(1)
   
   // Movement threshold - ignore tiny mouse movements to keep orbs calmer
   const MOVEMENT_THRESHOLD = 0.0035  // Minimum pointer delta to trigger force
@@ -104,7 +105,11 @@ function MouseAttractionComponent({ albumCount, targetPlaneZ, baselineStrength =
 
     // Keep a stable baseline pull at rest so orbs stay clustered around the cursor.
     // Ramp up with speed/accel so fast swipes still feel more energetic.
-    const BASELINE = baselineStrength
+    const baselineTarget = isActiveMove ? 1 : idleBaselineMultiplier
+    const baselineSmoothing = 1 - Math.exp(-dt * 10)
+    baselineMul.current = baselineMul.current + (baselineTarget - baselineMul.current) * baselineSmoothing
+
+    const BASELINE = Math.min(1, Math.max(0, baselineStrength * baselineMul.current))
     const scaledStrength = attractorStrength * strengthScale * (BASELINE + (1 - BASELINE) * movementScale)
 
     const cohesionPull = attractorStrength * cohesionStrength
@@ -135,9 +140,24 @@ function MouseAttractionComponent({ albumCount, targetPlaneZ, baselineStrength =
 
     world.bodies.forEach((body: any) => {
       if (!body.isDynamic()) return
+
+      let perBodyStrength = scaledStrength
+      if (softCoreRadius > 0) {
+        const p = body.translation()
+        const dx = p.x - object.position.x
+        const dy = p.y - object.position.y
+        const dxy = Math.sqrt(dx * dx + dy * dy)
+        if (dxy < softCoreRadius) {
+          const t = Math.min(Math.max(dxy / softCoreRadius, 0), 1)
+          const smooth = t * t * (3 - 2 * t)
+          const mul = 0.05 + 0.95 * smooth
+          perBodyStrength = scaledStrength * mul
+        }
+      }
+
       applyAttractorForceOnRigidBody(body, {
         object,
-        strength: scaledStrength,
+        strength: perBodyStrength,
         range: attractorRange,
         type: 'linear',
         gravitationalConstant: 6.673e-11,

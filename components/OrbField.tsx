@@ -85,6 +85,8 @@ function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGla
             cohesionStrength={0}
             speedFull={26}
             accelFull={320}
+            idleBaselineMultiplier={0.25}
+            softCoreRadius={1.4}
           />
         )}
         

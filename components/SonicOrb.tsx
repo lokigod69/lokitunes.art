@@ -229,7 +229,7 @@ export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1
     }
 
     // Perlin noise drift for organic motion (reduced while idle).
-    const noiseScale = isMouseIdle ? 0.12 : 1
+    const noiseScale = isMouseIdle ? 0.06 : 1
     const noiseX = Math.sin(t * 0.3 + seed) * 0.04 * forceScale * noiseScale
     const noiseY = Math.cos(t * 0.2 + seed * 0.7) * 0.04 * forceScale * noiseScale
     body.applyImpulse({ x: noiseX, y: noiseY, z: 0 }, true)
@@ -343,14 +343,16 @@ export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1
       const isInDepthInteraction = lastPushTime.current !== 0 && timeSincePush < SETTLE_TIME
       if (!isInDepthInteraction) {
         const zError = HOME_Z - pos.z
-        if (isMouseIdle && Math.abs(zError) < 0.08 && Math.abs(vel.z) < 0.12) {
+        if (isMouseIdle && Math.abs(zError) < 0.18 && Math.abs(vel.z) < 0.25) {
           body.setTranslation({ x: pos.x, y: pos.y, z: HOME_Z }, true)
           body.setLinvel({ x: vel.x, y: vel.y, z: 0 }, true)
         } else {
           if (Math.abs(zError) > 0.02) {
             body.applyImpulse({ x: 0, y: 0, z: zError * zError * Math.sign(zError) * FRONT_CORRECT_STRENGTH }, true)
           }
-          if (Math.abs(vel.z) > 0.02) {
+          if (isMouseIdle && Math.abs(vel.z) > 0.01) {
+            body.setLinvel({ x: vel.x, y: vel.y, z: vel.z * 0.4 }, true)
+          } else if (Math.abs(vel.z) > 0.02) {
             body.setLinvel({ x: vel.x, y: vel.y, z: vel.z * 0.65 }, true)
           }
         }
