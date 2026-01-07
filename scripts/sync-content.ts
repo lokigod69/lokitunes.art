@@ -9,6 +9,7 @@ import * as readline from 'readline'
 // Load environment variables
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
 if (!supabaseUrl || !supabaseKey) {
   console.error('❌ Error: Missing Supabase credentials')
@@ -16,13 +17,49 @@ if (!supabaseUrl || !supabaseKey) {
   process.exit(1)
 }
 
-const supabase = createClient(supabaseUrl, supabaseKey)
+const supabaseUrlSafe = supabaseUrl as string
+const supabaseKeySafe = supabaseKey as string
+
+const urlRef = getProjectRefFromUrl(supabaseUrlSafe)
+const activeKeyForInit = serviceRoleKey || supabaseKeySafe
+const activeKeyPayloadForInit = decodeJwtPayload(activeKeyForInit)
+if (!activeKeyPayloadForInit) {
+  console.error('❌ Error: Supabase API key is not a valid JWT')
+  process.exit(1)
+}
+if (urlRef && activeKeyPayloadForInit.ref && activeKeyPayloadForInit.ref !== urlRef) {
+  console.error(`❌ Error: Supabase URL project ref (${urlRef}) does not match API key ref (${activeKeyPayloadForInit.ref})`)
+  process.exit(1)
+}
+
+const supabase = createClient(supabaseUrlSafe, activeKeyForInit)
+const supabaseService = serviceRoleKey ? createClient(supabaseUrlSafe, serviceRoleKey) : null
 
 // Parse command line flags
 const args = process.argv.slice(2)
 const forceMode = args.includes('--force')
 const refreshCovers = args.includes('--refresh-covers')
+const refreshAlbumsArg = args.find((a) => a.startsWith('--refresh-albums='))
+const refreshAlbumSlugs = refreshAlbumsArg
+  ? refreshAlbumsArg
+      .split('=')[1]
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
+  : null
 const contentDirArg = args.find(arg => !arg.startsWith('--'))
+
+if (refreshCovers && !serviceRoleKey) {
+  console.error('❌ Error: --refresh-covers requires SUPABASE_SERVICE_ROLE_KEY')
+  console.error('   Add it to your .env.local file')
+  process.exit(1)
+}
+
+if (serviceRoleKey) {
+  console.log('🔑 Service role key detected - full upload permissions enabled')
+} else {
+  console.log('⚠️ No service role key - some uploads may fail due to RLS')
+}
 
 interface AlbumData {
   slug: string
@@ -68,6 +105,7 @@ interface DbVersion {
   song_id: string
   label: string
   audio_url: string
+  cover_url?: string | null
   is_original?: boolean
 }
 
@@ -167,11 +205,62 @@ function parseAudioFilename(filename: string): { trackNo: number; title: string;
   }
 }
 
+function sanitizeCliPathArg(input: string): string {
+  let s = input.trim()
+  s = s.replace(/^["']+/, '')
+  s = s.replace(/["']+$/, '')
+  return s
+}
+
+function decodeJwtPayload(token: string): any | null {
+  const parts = token.split('.')
+  if (parts.length < 2) return null
+  let b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/')
+  while (b64.length % 4 !== 0) b64 += '='
+  try {
+    const json = Buffer.from(b64, 'base64').toString('utf8')
+    return JSON.parse(json)
+  } catch {
+    return null
+  }
+}
+
+function getProjectRefFromUrl(url: string): string | null {
+  try {
+    const host = new URL(url).hostname
+    const first = host.split('.')[0]
+    return first || null
+  } catch {
+    return null
+  }
+}
+
+function extractStorageObjectName(publicUrl: string | null | undefined, bucket: string): string | null {
+  if (!publicUrl) return null
+  const marker = `/storage/v1/object/public/${bucket}/`
+  const idx = publicUrl.indexOf(marker)
+  if (idx === -1) return null
+  let name = publicUrl.substring(idx + marker.length)
+  const q = name.indexOf('?')
+  if (q !== -1) name = name.substring(0, q)
+  try {
+    return decodeURIComponent(name)
+  } catch {
+    return name
+  }
+}
+
 async function refreshExistingCovers(
   localAlbums: Map<string, AlbumData>,
   dbState: { albums: DbAlbum[]; songs: DbSong[]; versions: DbVersion[] }
 ): Promise<void> {
   console.log('\n🎨 Refreshing covers (--refresh-covers)...\n')
+
+  if (!supabaseService) {
+    console.log('❌ ERROR: SUPABASE_SERVICE_ROLE_KEY is required for cover uploads.')
+    console.log('   Add it to your .env.local file.')
+    return
+  }
 
   const cacheBust = Date.now()
   const dbAlbumsBySlug = new Map(dbState.albums.map((a) => [a.slug, a]))
@@ -192,14 +281,25 @@ async function refreshExistingCovers(
     dbVersionsBySong.get(version.song_id)!.push(version)
   }
 
-  for (const [slug, localAlbum] of localAlbums) {
-    const dbAlbum = dbAlbumsBySlug.get(slug)
-    if (!dbAlbum) continue
+  const refreshSet = refreshAlbumSlugs ? new Set(refreshAlbumSlugs) : null
 
-    const coverFileName = `${localAlbum.slug}${path.extname(localAlbum.coverPath)}`
+  for (const [slug, localAlbum] of localAlbums) {
+    if (refreshSet && !refreshSet.has(slug)) continue
+    const dbAlbum = dbAlbumsBySlug.get(slug)
+    if (!dbAlbum) {
+      console.log(`   ⚠️ Album not in database: ${slug}`)
+      continue
+    }
+
+    console.log(`\n📁 Processing album: ${dbAlbum.title}`)
+
+    const existingAlbumObject = extractStorageObjectName(dbAlbum.cover_url, 'covers')
+    const coverFileName = existingAlbumObject || `${localAlbum.slug}${path.extname(localAlbum.coverPath)}`
+    console.log(`   📤 Uploading album cover: ${coverFileName}`)
     const coverUrl = await uploadFile('covers', localAlbum.coverPath, coverFileName, {
       upsert: true,
       skipIfExists: false,
+      useServiceRole: true,
     })
 
     if (coverUrl) {
@@ -212,31 +312,47 @@ async function refreshExistingCovers(
         .eq('id', dbAlbum.id)
 
       if (albumUpdateError) {
-        console.log(`   ❌ Failed to update cover for ${dbAlbum.title}: ${albumUpdateError.message}`)
+        console.log(`   ❌ Failed to update album cover: ${albumUpdateError.message}`)
       } else {
-        console.log(`   ✅ Updated cover for ${dbAlbum.title}`)
+        console.log('   ✅ Updated album cover')
       }
+    } else {
+      console.log('   ❌ Failed to upload album cover')
     }
 
     const dbSongs = dbSongsByAlbum.get(dbAlbum.id) || []
     const dbSongsByTrack = new Map(dbSongs.map((s) => [s.track_no, s]))
 
+    console.log(`   📀 Processing ${localAlbum.songs.size} song(s)...`)
+
     for (const localSong of localAlbum.songs.values()) {
       const dbSong = dbSongsByTrack.get(localSong.trackNo)
-      if (!dbSong) continue
+      if (!dbSong) {
+        console.log(`      ⚠️ Song not in DB (track ${localSong.trackNo}): ${localSong.title}`)
+        continue
+      }
 
       const dbVersions = dbVersionsBySong.get(dbSong.id) || []
       const dbVersionsByLabel = new Map(dbVersions.map((v) => [v.label, v]))
 
       for (const localVersion of localSong.versions) {
-        if (!localVersion.coverPath) continue
         const dbVersion = dbVersionsByLabel.get(localVersion.label)
-        if (!dbVersion) continue
+        if (!dbVersion) {
+          console.log(`      ⚠️ Version not in DB: ${localVersion.label}`)
+          continue
+        }
+
+        if (!localVersion.coverPath) {
+          console.log(`      ⚠️ No local cover for: ${localVersion.label}`)
+          continue
+        }
 
         const versionCoverFileName = `${slug}/${path.basename(localVersion.coverPath)}`
+        console.log(`      📤 Uploading: ${versionCoverFileName}`)
         const versionCoverUrl = await uploadFile('covers', localVersion.coverPath, versionCoverFileName, {
           upsert: true,
           skipIfExists: false,
+          useServiceRole: true,
         })
 
         if (versionCoverUrl) {
@@ -247,14 +363,18 @@ async function refreshExistingCovers(
             .eq('id', dbVersion.id)
 
           if (versionUpdateError) {
-            console.log(`   ❌ Failed to update version cover for ${dbAlbum.title} - ${localSong.title} - ${localVersion.label}: ${versionUpdateError.message}`)
+            console.log(`      ❌ DB update failed for ${localVersion.label}: ${versionUpdateError.message}`)
           } else {
-            console.log(`   ✅ Updated version cover for ${dbAlbum.title} - ${localSong.title} - ${localVersion.label}`)
+            console.log(`      ✅ Updated: ${localVersion.label}`)
           }
+        } else {
+          console.log(`      ❌ Upload failed for: ${localVersion.label}`)
         }
       }
     }
   }
+
+  console.log('\n✅ Cover refresh complete!')
 }
 
 function isImageFile(filename: string): boolean {
@@ -297,44 +417,70 @@ async function uploadFile(
   bucket: string,
   filePath: string,
   fileName: string,
-  options?: { upsert?: boolean; skipIfExists?: boolean }
+  options?: { upsert?: boolean; skipIfExists?: boolean; useServiceRole?: boolean }
 ): Promise<string | null> {
   try {
     const fileBuffer = fs.readFileSync(filePath)
 
     const upsert = options?.upsert ?? false
     const skipIfExists = options?.skipIfExists ?? true
+    const useServiceRole = options?.useServiceRole ?? true
+    const client = useServiceRole && supabaseService ? supabaseService : supabase
     
-    // Check if file already exists
-    // For files in folders (e.g., "Platypus/cover.jpg"), we need to check the folder
-    if (skipIfExists) {
+    if (skipIfExists && !upsert) {
       const folderPath = fileName.includes('/') ? fileName.substring(0, fileName.lastIndexOf('/')) : ''
-      const { data: existingFiles } = await supabase.storage
+      const { data: existingFiles } = await client.storage
         .from(bucket)
         .list(folderPath, { search: path.basename(fileName) })
       
       if (existingFiles && existingFiles.length > 0) {
-        // File exists, return its public URL with full path
-        const { data } = supabase.storage.from(bucket).getPublicUrl(fileName)
+        const { data } = client.storage.from(bucket).getPublicUrl(fileName)
+        console.log(`      ⏭️ Skipped (exists): ${fileName}`)
         return data.publicUrl
       }
     }
 
-    // Upload new file with full path (including folder)
-    const { data, error } = await supabase.storage
+    const { data, error } = await client.storage
       .from(bucket)
       .upload(fileName, fileBuffer, {
         contentType: getContentType(fileName),
-        upsert,
+        upsert: upsert,
       })
 
     if (error) {
-      console.error(`      ❌ Failed to upload ${fileName}:`, error.message)
+      if (error.message.includes('already exists') && upsert) {
+        console.log(`      🔄 File exists, removing and re-uploading: ${fileName}`)
+        const { error: removeError } = await client.storage.from(bucket).remove([fileName])
+        if (removeError) {
+          console.error(`      ❌ Remove failed for ${fileName}:`, removeError.message)
+          return null
+        }
+
+        const { data: retryData, error: retryError } = await client.storage
+          .from(bucket)
+          .upload(fileName, fileBuffer, {
+            contentType: getContentType(fileName),
+          })
+
+        if (retryError || !retryData) {
+          console.error(`      ❌ Retry failed for ${fileName}:`, retryError?.message)
+          return null
+        }
+
+        const { data: urlData } = client.storage.from(bucket).getPublicUrl(retryData.path)
+        return urlData.publicUrl
+      }
+
+      console.error(`      ❌ Upload failed for ${fileName}:`, error.message)
       return null
     }
 
-    // Return public URL with full path (data.path includes the folder)
-    const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(data.path)
+    if (!data) {
+      console.error(`      ❌ Upload failed for ${fileName}: No data returned`)
+      return null
+    }
+
+    const { data: urlData } = client.storage.from(bucket).getPublicUrl(data.path)
     return urlData.publicUrl
   } catch (error) {
     console.error(`      ❌ Error uploading ${fileName}:`, error)
@@ -440,8 +586,13 @@ function scanAlbumFolder(albumPath: string, slug: string): AlbumData | null {
       const coverPath = path.join(albumPath, coverName)
       if (fs.existsSync(coverPath)) {
         versionCoverPath = coverPath
+        console.log(`      🎨 Found version cover: ${coverName}`)
         break
       }
+    }
+
+    if (!versionCoverPath) {
+      console.log(`      ⚠️ No cover found for: ${audioFile}`)
     }
     
     songs.get(trackNo)!.versions.push({
@@ -491,8 +642,7 @@ async function fetchDatabaseState(): Promise<{ albums: DbAlbum[]; songs: DbSong[
     .select('*')
   
   if (albumsError) {
-    console.error('❌ Error fetching albums:', albumsError.message)
-    return { albums: [], songs: [], versions: [] }
+    throw new Error(`Error fetching albums: ${albumsError.message}`)
   }
   
   // Fetch all songs
@@ -501,8 +651,7 @@ async function fetchDatabaseState(): Promise<{ albums: DbAlbum[]; songs: DbSong[
     .select('*')
   
   if (songsError) {
-    console.error('❌ Error fetching songs:', songsError.message)
-    return { albums: albums || [], songs: [], versions: [] }
+    throw new Error(`Error fetching songs: ${songsError.message}`)
   }
   
   // Fetch all versions
@@ -511,8 +660,7 @@ async function fetchDatabaseState(): Promise<{ albums: DbAlbum[]; songs: DbSong[
     .select('*')
   
   if (versionsError) {
-    console.error('❌ Error fetching versions:', versionsError.message)
-    return { albums: albums || [], songs: songs || [], versions: [] }
+    throw new Error(`Error fetching versions: ${versionsError.message}`)
   }
   
   return {
@@ -1002,7 +1150,20 @@ async function syncContent(contentDir: string) {
   
   // Fetch database state
   console.log('🗄️  Fetching database state...')
-  const dbState = await fetchDatabaseState()
+  let dbState: { albums: DbAlbum[]; songs: DbSong[]; versions: DbVersion[] }
+  try {
+    dbState = await fetchDatabaseState()
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    console.error(`❌ ${message}`)
+    console.error('   Refusing to continue, because the database state is unknown.')
+    const activeKeyPayload = decodeJwtPayload(serviceRoleKey || supabaseKeySafe)
+    if (activeKeyPayload?.ref || activeKeyPayload?.role) {
+      console.error(`   Active key role: ${activeKeyPayload.role || 'unknown'}, ref: ${activeKeyPayload.ref || 'unknown'}`)
+    }
+    console.error('   Fix your Supabase URL/key in the .bat. (Make sure the key matches this project.)')
+    return
+  }
   console.log(`   Found ${dbState.albums.length} album(s) in database\n`)
   
   // Detect changes
@@ -1067,6 +1228,7 @@ if (!contentDirArg) {
   console.error('\nFlags:')
   console.error('  --force    Enable destructive operations (delete missing content)')
   console.error('  --refresh-covers  Overwrite covers and update cover URLs/palette (cache-busting)')
+  console.error('  --refresh-albums=<slug1,slug2>  Limit cover refresh to specific album folders')
   console.error('\nExpected structure:')
   console.error('  ~/loki-content/')
   console.error('  ├── first-album/')
@@ -1079,4 +1241,4 @@ if (!contentDirArg) {
   process.exit(1)
 }
 
-syncContent(path.resolve(contentDirArg))
+syncContent(path.resolve(sanitizeCliPathArg(contentDirArg)))
