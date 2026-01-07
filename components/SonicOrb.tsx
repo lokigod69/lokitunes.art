@@ -221,7 +221,8 @@ export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1
 
     // When mouse is idle, gently damp velocity to reduce jitter but keep physics active.
     if (isMouseIdle && speed > 0.02) {
-      body.setLinvel({ x: vel.x * 0.92, y: vel.y * 0.92, z: vel.z * 0.92 }, true)
+      const idleDamp = 0.885 + 0.035 * visualScale
+      body.setLinvel({ x: vel.x * idleDamp, y: vel.y * idleDamp, z: vel.z * idleDamp }, true)
     } else if (isMouseIdle && speed < 0.008) {
       const zError = HOME_Z - pos.z
       const shouldFreezeZ = Math.abs(zError) < 0.03
@@ -229,7 +230,7 @@ export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1
     }
 
     // Perlin noise drift for organic motion (reduced while idle).
-    const noiseScale = isMouseIdle ? 0.06 : 1
+    const noiseScale = isMouseIdle ? 0.03 : 1
     const noiseX = Math.sin(t * 0.3 + seed) * 0.04 * forceScale * noiseScale
     const noiseY = Math.cos(t * 0.2 + seed * 0.7) * 0.04 * forceScale * noiseScale
     body.applyImpulse({ x: noiseX, y: noiseY, z: 0 }, true)
@@ -274,7 +275,7 @@ export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1
     }
 
     const v = body.linvel()
-    const maxSpeed = 11 * (0.6 + 0.4 * visualScale)
+    const maxSpeed = 10.2 * (0.38 + 0.62 * visualScale)
     const speedSq = v.x * v.x + v.y * v.y + v.z * v.z
     if (speedSq > maxSpeed * maxSpeed) {
       const vLen = Math.sqrt(speedSq)
