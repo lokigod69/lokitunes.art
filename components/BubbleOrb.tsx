@@ -287,8 +287,7 @@ export function BubbleOrb({
 
     // When mouse is idle, gently damp velocity to reduce jitter but keep physics active.
     if (isMouseIdle && speed > 0.02) {
-      const idleDamp = 0.885 + 0.035 * visualScale
-      body.setLinvel({ x: vel.x * idleDamp, y: vel.y * idleDamp, z: vel.z * idleDamp }, true)
+      body.setLinvel({ x: vel.x * 0.92, y: vel.y * 0.92, z: vel.z * 0.92 }, true)
     } else if (isMouseIdle && speed < 0.008) {
       const zError = HOME_Z - pos.z
       const shouldFreezeZ = Math.abs(zError) < 0.03
@@ -296,7 +295,7 @@ export function BubbleOrb({
     }
 
     // Perlin noise drift for organic motion (reduced while idle).
-    const noiseScale = isMouseIdle ? 0.03 : 1
+    const noiseScale = isMouseIdle ? 0.06 : 1
     const noiseX = Math.sin(t * 0.3 + seed) * 0.04 * forceScale * noiseScale
     const noiseY = Math.cos(t * 0.2 + seed * 0.7) * 0.04 * forceScale * noiseScale
     body.applyImpulse({ x: noiseX, y: noiseY, z: 0 }, true)
@@ -329,7 +328,7 @@ export function BubbleOrb({
             if (dist < cushionDistance && dist > 0.1) {
               const overlap = 1 - (dist / cushionDistance)
               // Base cushion + extra from slider
-              const cushionStrength = (0.015 * overlap * overlap + currentRepulsion * 0.08 * overlap) * 0.65
+              const cushionStrength = 0.015 * overlap * overlap + currentRepulsion * 0.08 * overlap
               const pushForce = toOther.normalize().multiplyScalar(-cushionStrength * forceScale)
               body.applyImpulse(pushForce, true)
             }
@@ -338,15 +337,6 @@ export function BubbleOrb({
           }
         })
       }
-    }
-
-    const v = body.linvel()
-    const maxSpeed = 10.2 * (0.38 + 0.62 * visualScale)
-    const speedSq = v.x * v.x + v.y * v.y + v.z * v.z
-    if (speedSq > maxSpeed * maxSpeed) {
-      const vLen = Math.sqrt(speedSq)
-      const s = maxSpeed / vLen
-      body.setLinvel({ x: v.x * s, y: v.y * s, z: v.z * s }, true)
     }
 
     // Gentle rotation for inner sphere

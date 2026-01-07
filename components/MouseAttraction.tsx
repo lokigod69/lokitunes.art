@@ -16,7 +16,7 @@ import { applyAttractorForceOnRigidBody } from '@react-three/rapier-addons'
  * @param targetPlaneZ - Optional Z plane to project pointer ray onto for attractor position
  */
 // Wrap in React.memo to prevent infinite re-renders!
-function MouseAttractionComponent({ albumCount, targetPlaneZ, baselineStrength = 0.12, strengthScale = 1, speedFull = 4.0, accelFull = 40.0, cohesionStrength = 0, idleBaselineMultiplier = 1, softCoreRadius = 0, massStrengthExponent = 0, massStrengthReference = 1 }: { albumCount?: number; targetPlaneZ?: number; baselineStrength?: number; strengthScale?: number; speedFull?: number; accelFull?: number; cohesionStrength?: number; idleBaselineMultiplier?: number; softCoreRadius?: number; massStrengthExponent?: number; massStrengthReference?: number }) {
+function MouseAttractionComponent({ albumCount, targetPlaneZ, baselineStrength = 0.12, strengthScale = 1, speedFull = 4.0, accelFull = 40.0, cohesionStrength = 0, idleBaselineMultiplier = 1, softCoreRadius = 0 }: { albumCount?: number; targetPlaneZ?: number; baselineStrength?: number; strengthScale?: number; speedFull?: number; accelFull?: number; cohesionStrength?: number; idleBaselineMultiplier?: number; softCoreRadius?: number }) {
   const { camera, pointer } = useThree()
   const { world } = useRapier()
   const attractorObject = useRef<THREE.Object3D>(null)
@@ -142,26 +142,7 @@ function MouseAttractionComponent({ albumCount, targetPlaneZ, baselineStrength =
       if (!body.isDynamic()) return
 
       let perBodyStrength = scaledStrength
-      if (massStrengthExponent !== 0) {
-        let m = 1
-        try {
-          if (typeof body.mass === 'function') {
-            m = body.mass()
-          } else if (typeof body.massProperties === 'function') {
-            const mp = body.massProperties()
-            if (mp && typeof mp.mass === 'number') m = mp.mass
-          }
-        } catch {
-          // ignore
-        }
-
-        const refM = Math.max(1e-3, massStrengthReference)
-        const ratio = m / refM
-        const ratioClamped = Math.min(Math.max(ratio, 0.45), 1.85)
-        perBodyStrength *= Math.pow(ratioClamped, massStrengthExponent)
-      }
-
-      if (!isActiveMove && softCoreRadius > 0) {
+      if (softCoreRadius > 0) {
         const p = body.translation()
         const dx = p.x - object.position.x
         const dy = p.y - object.position.y
@@ -170,7 +151,7 @@ function MouseAttractionComponent({ albumCount, targetPlaneZ, baselineStrength =
           const t = Math.min(Math.max(dxy / softCoreRadius, 0), 1)
           const smooth = t * t * (3 - 2 * t)
           const mul = 0.05 + 0.95 * smooth
-          perBodyStrength *= mul
+          perBodyStrength = scaledStrength * mul
         }
       }
 
