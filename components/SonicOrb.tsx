@@ -388,7 +388,7 @@ export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1
       }}
     >
       {/* Dynamic collider - grows with repulsion slider */}
-      <BallCollider args={[colliderRadius]} restitution={0.85} friction={0.03} />
+      <BallCollider args={[colliderRadius]} restitution={0.82} friction={0.03} />
       
       <group scale={visualScale}>
         {/* Inner glow */}
