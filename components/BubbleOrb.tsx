@@ -329,7 +329,7 @@ export function BubbleOrb({
             if (dist < cushionDistance && dist > 0.1) {
               const overlap = 1 - (dist / cushionDistance)
               // Base cushion + extra from slider
-              const cushionStrength = 0.015 * overlap * overlap + currentRepulsion * 0.08 * overlap
+              const cushionStrength = (0.015 * overlap * overlap + currentRepulsion * 0.08 * overlap) * 0.65
               const pushForce = toOther.normalize().multiplyScalar(-cushionStrength * forceScale)
               body.applyImpulse(pushForce, true)
             }
