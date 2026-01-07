@@ -21,6 +21,7 @@ const supabase = createClient(supabaseUrl, supabaseKey)
 // Parse command line flags
 const args = process.argv.slice(2)
 const forceMode = args.includes('--force')
+const refreshCovers = args.includes('--refresh-covers')
 const contentDirArg = args.find(arg => !arg.startsWith('--'))
 
 interface AlbumData {
@@ -166,6 +167,96 @@ function parseAudioFilename(filename: string): { trackNo: number; title: string;
   }
 }
 
+async function refreshExistingCovers(
+  localAlbums: Map<string, AlbumData>,
+  dbState: { albums: DbAlbum[]; songs: DbSong[]; versions: DbVersion[] }
+): Promise<void> {
+  console.log('\n🎨 Refreshing covers (--refresh-covers)...\n')
+
+  const cacheBust = Date.now()
+  const dbAlbumsBySlug = new Map(dbState.albums.map((a) => [a.slug, a]))
+  const dbSongsByAlbum = new Map<string, DbSong[]>()
+  const dbVersionsBySong = new Map<string, DbVersion[]>()
+
+  for (const song of dbState.songs) {
+    if (!dbSongsByAlbum.has(song.album_id)) {
+      dbSongsByAlbum.set(song.album_id, [])
+    }
+    dbSongsByAlbum.get(song.album_id)!.push(song)
+  }
+
+  for (const version of dbState.versions) {
+    if (!dbVersionsBySong.has(version.song_id)) {
+      dbVersionsBySong.set(version.song_id, [])
+    }
+    dbVersionsBySong.get(version.song_id)!.push(version)
+  }
+
+  for (const [slug, localAlbum] of localAlbums) {
+    const dbAlbum = dbAlbumsBySlug.get(slug)
+    if (!dbAlbum) continue
+
+    const coverFileName = `${localAlbum.slug}${path.extname(localAlbum.coverPath)}`
+    const coverUrl = await uploadFile('covers', localAlbum.coverPath, coverFileName, {
+      upsert: true,
+      skipIfExists: false,
+    })
+
+    if (coverUrl) {
+      const cacheBustedUrl = `${coverUrl}?v=${cacheBust}`
+      const palette = await extractPalette(coverUrl)
+
+      const { error: albumUpdateError } = await supabase
+        .from('albums')
+        .update({ cover_url: cacheBustedUrl, palette })
+        .eq('id', dbAlbum.id)
+
+      if (albumUpdateError) {
+        console.log(`   ❌ Failed to update cover for ${dbAlbum.title}: ${albumUpdateError.message}`)
+      } else {
+        console.log(`   ✅ Updated cover for ${dbAlbum.title}`)
+      }
+    }
+
+    const dbSongs = dbSongsByAlbum.get(dbAlbum.id) || []
+    const dbSongsByTrack = new Map(dbSongs.map((s) => [s.track_no, s]))
+
+    for (const localSong of localAlbum.songs.values()) {
+      const dbSong = dbSongsByTrack.get(localSong.trackNo)
+      if (!dbSong) continue
+
+      const dbVersions = dbVersionsBySong.get(dbSong.id) || []
+      const dbVersionsByLabel = new Map(dbVersions.map((v) => [v.label, v]))
+
+      for (const localVersion of localSong.versions) {
+        if (!localVersion.coverPath) continue
+        const dbVersion = dbVersionsByLabel.get(localVersion.label)
+        if (!dbVersion) continue
+
+        const versionCoverFileName = `${slug}/${path.basename(localVersion.coverPath)}`
+        const versionCoverUrl = await uploadFile('covers', localVersion.coverPath, versionCoverFileName, {
+          upsert: true,
+          skipIfExists: false,
+        })
+
+        if (versionCoverUrl) {
+          const cacheBustedUrl = `${versionCoverUrl}?v=${cacheBust}`
+          const { error: versionUpdateError } = await supabase
+            .from('song_versions')
+            .update({ cover_url: cacheBustedUrl })
+            .eq('id', dbVersion.id)
+
+          if (versionUpdateError) {
+            console.log(`   ❌ Failed to update version cover for ${dbAlbum.title} - ${localSong.title} - ${localVersion.label}: ${versionUpdateError.message}`)
+          } else {
+            console.log(`   ✅ Updated version cover for ${dbAlbum.title} - ${localSong.title} - ${localVersion.label}`)
+          }
+        }
+      }
+    }
+  }
+}
+
 function isImageFile(filename: string): boolean {
   const ext = path.extname(filename).toLowerCase()
   return ['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(ext)
@@ -202,21 +293,31 @@ function getContentType(fileName: string): string {
   return types[ext] || 'application/octet-stream'
 }
 
-async function uploadFile(bucket: string, filePath: string, fileName: string): Promise<string | null> {
+async function uploadFile(
+  bucket: string,
+  filePath: string,
+  fileName: string,
+  options?: { upsert?: boolean; skipIfExists?: boolean }
+): Promise<string | null> {
   try {
     const fileBuffer = fs.readFileSync(filePath)
+
+    const upsert = options?.upsert ?? false
+    const skipIfExists = options?.skipIfExists ?? true
     
     // Check if file already exists
     // For files in folders (e.g., "Platypus/cover.jpg"), we need to check the folder
-    const folderPath = fileName.includes('/') ? fileName.substring(0, fileName.lastIndexOf('/')) : ''
-    const { data: existingFiles } = await supabase.storage
-      .from(bucket)
-      .list(folderPath, { search: path.basename(fileName) })
-    
-    if (existingFiles && existingFiles.length > 0) {
-      // File exists, return its public URL with full path
-      const { data } = supabase.storage.from(bucket).getPublicUrl(fileName)
-      return data.publicUrl
+    if (skipIfExists) {
+      const folderPath = fileName.includes('/') ? fileName.substring(0, fileName.lastIndexOf('/')) : ''
+      const { data: existingFiles } = await supabase.storage
+        .from(bucket)
+        .list(folderPath, { search: path.basename(fileName) })
+      
+      if (existingFiles && existingFiles.length > 0) {
+        // File exists, return its public URL with full path
+        const { data } = supabase.storage.from(bucket).getPublicUrl(fileName)
+        return data.publicUrl
+      }
     }
 
     // Upload new file with full path (including folder)
@@ -224,7 +325,7 @@ async function uploadFile(bucket: string, filePath: string, fileName: string): P
       .from(bucket)
       .upload(fileName, fileBuffer, {
         contentType: getContentType(fileName),
-        upsert: false,
+        upsert,
       })
 
     if (error) {
@@ -922,7 +1023,7 @@ async function syncContent(contentDir: string) {
     changes.versionsToDelete.length > 0 ||
     changes.versionsToUpdate.length > 0
   
-  if (!hasChanges) {
+  if (!hasChanges && !refreshCovers) {
     console.log('💡 Everything is already in sync!\n')
     return
   }
@@ -948,6 +1049,11 @@ async function syncContent(contentDir: string) {
   
   // Apply changes
   await applyChanges(changes, forceMode)
+
+  if (refreshCovers) {
+    const postDbState = await fetchDatabaseState()
+    await refreshExistingCovers(localAlbums, postDbState)
+  }
   
   console.log('\n💡 Visit your site to see the changes!\n')
 }
@@ -960,6 +1066,7 @@ if (!contentDirArg) {
   console.error('Example: pnpm sync-content ~/loki-content --force')
   console.error('\nFlags:')
   console.error('  --force    Enable destructive operations (delete missing content)')
+  console.error('  --refresh-covers  Overwrite covers and update cover URLs/palette (cache-busting)')
   console.error('\nExpected structure:')
   console.error('  ~/loki-content/')
   console.error('  ├── first-album/')

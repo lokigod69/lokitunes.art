@@ -81,10 +81,10 @@ function OrbScene({ albums, pushTrigger, onHover, onNavigate, deviceTier, useGla
             albumCount={albums.length}
             targetPlaneZ={0}
             baselineStrength={0.18}
-            strengthScale={0.55}
+            strengthScale={0.45}
             cohesionStrength={0}
-            speedFull={26}
-            accelFull={320}
+            speedFull={30}
+            accelFull={420}
             idleBaselineMultiplier={0.25}
             softCoreRadius={1.4}
           />
