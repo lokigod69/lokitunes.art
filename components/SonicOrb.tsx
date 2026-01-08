@@ -280,7 +280,7 @@ export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1
     }
 
     const v = body.linvel()
-    const maxSpeed = 10 + 4.0 * sizeT
+    const maxSpeed = 10 + 6.0 * sizeT
     const speedSq = v.x * v.x + v.y * v.y + v.z * v.z
     if (speedSq > maxSpeed * maxSpeed) {
       const vLen = Math.sqrt(speedSq)

@@ -101,7 +101,7 @@ function MouseAttractionComponent({ albumCount, targetPlaneZ, baselineStrength =
     // This makes orbs follow smoothly at slow movement, and only ramp strongly when the cursor accelerates.
     const speedScale = Math.min(smoothedSpeed.current / speedFull, 1)
     const accelScale = Math.min(smoothedAccel.current / accelFull, 1)
-    const movementScale = Math.min(1, speedScale * 0.7 + accelScale * 0.3)
+    const movementScale = Math.min(1, speedScale * 0.85 + accelScale * 0.15)
 
     // Keep a stable baseline pull at rest so orbs stay clustered around the cursor.
     // Ramp up with speed/accel so fast swipes still feel more energetic.

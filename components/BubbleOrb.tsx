@@ -285,7 +285,7 @@ export function BubbleOrb({
     const speed = Math.sqrt(vel.x * vel.x + vel.y * vel.y + vel.z * vel.z)
     const forceScale = radius * visualScale
 
-    const maxSpeed = 10 + 4.0 * sizeT
+    const maxSpeed = 10 + 6.0 * sizeT
     if (speed > maxSpeed) {
       const s = maxSpeed / speed
       body.setLinvel({ x: vel.x * s, y: vel.y * s, z: vel.z * s }, true)
