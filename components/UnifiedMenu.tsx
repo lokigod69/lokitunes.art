@@ -185,7 +185,6 @@ export function UnifiedMenu({
                 <div className="py-2">
                   <div className="px-4 py-3 rounded-lg bg-bone/5 border border-bone/10">
                     <div className="flex items-center gap-3">
-                      <Play className="w-5 h-5 text-voltage" />
                       <span className="text-bone font-medium">Play Mode</span>
                     </div>
 
