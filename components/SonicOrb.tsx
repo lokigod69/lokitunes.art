@@ -81,6 +81,11 @@ export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1
   
   // Calculate collider radius based on repulsion - larger collider = orbs push apart physically
   const colliderRadius = radius * visualScale * (1 + repulsionStrength * 2)
+
+  const sizeT = Math.min(Math.max((visualScale - 0.6) / 0.4, 0), 1)
+  const colliderRestitution = 0.72 + 0.04 * sizeT
+  const massScale = 1.05 - 0.1 * sizeT
+  const linearDamping = 0.11 + 0.03 * (1 - sizeT)
   
   // CRITICAL FIX: Load texture with proper CORS handling using Image element
   useEffect(() => {
@@ -274,7 +279,7 @@ export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1
     }
 
     const v = body.linvel()
-    const maxSpeed = 11 * (0.6 + 0.4 * visualScale)
+    const maxSpeed = 9 + 3.5 * sizeT
     const speedSq = v.x * v.x + v.y * v.y + v.z * v.z
     if (speedSq > maxSpeed * maxSpeed) {
       const vLen = Math.sqrt(speedSq)
@@ -368,10 +373,10 @@ export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1
       colliders={false}         // Use custom BallCollider for dynamic sizing
       restitution={0.6}         // Balanced bounce - lower to prevent jittering
       friction={0.15}           // Light friction (was 0.1, then 0.3)
-      linearDamping={0.12}      // Slight damping (was 0.05, then 0.8)
+      linearDamping={linearDamping}      // Slight damping (was 0.05, then 0.8)
       angularDamping={0.5}      // Match BubbleOrb/VersionOrb (was 0.3)
       gravityScale={0}          // Add missing property
-      mass={radius * 0.5}       // Add missing property - LIGHTER = more responsive
+      mass={radius * 0.5 * massScale}       // Add missing property - LIGHTER = more responsive
       ccd={true}                // Add continuous collision detection
       position={position}
       name={`orb-${album.id}`}
@@ -388,7 +393,7 @@ export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1
       }}
     >
       {/* Dynamic collider - grows with repulsion slider */}
-      <BallCollider args={[colliderRadius]} restitution={0.82} friction={0.03} />
+      <BallCollider args={[colliderRadius]} restitution={colliderRestitution} friction={0.03} />
       
       <group scale={visualScale}>
         {/* Inner glow */}

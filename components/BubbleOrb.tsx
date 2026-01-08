@@ -121,6 +121,11 @@ export function BubbleOrb({
   
   // Calculate collider radius based on repulsion - larger collider = orbs push apart physically
   const colliderRadius = radius * visualScale * (1 + repulsionStrength * 2)
+
+  const sizeT = Math.min(Math.max((visualScale - 0.6) / 0.4, 0), 1)
+  const colliderRestitution = 0.72 + 0.04 * sizeT
+  const massScale = 1.05 - 0.1 * sizeT
+  const linearDamping = 0.11 + 0.03 * (1 - sizeT)
   
   const quality = getQualitySettings(deviceTier)
 
@@ -280,6 +285,12 @@ export function BubbleOrb({
     const speed = Math.sqrt(vel.x * vel.x + vel.y * vel.y + vel.z * vel.z)
     const forceScale = radius * visualScale
 
+    const maxSpeed = 9 + 3.5 * sizeT
+    if (speed > maxSpeed) {
+      const s = maxSpeed / speed
+      body.setLinvel({ x: vel.x * s, y: vel.y * s, z: vel.z * s }, true)
+    }
+
     // Ensure bodies don't remain sleeping after previous idle logic.
     if (body.isSleeping()) {
       body.wakeUp()
@@ -426,10 +437,10 @@ export function BubbleOrb({
       colliders={false}         // Use custom BallCollider for dynamic sizing
       restitution={0.6}         // Balanced bounce - lower to prevent jittering
       friction={0.15}           // Light friction (was 0.1, then 0.3)
-      linearDamping={0.12}      // Slight damping (was 0.05, then 0.8)
+      linearDamping={linearDamping}      // Slight damping (was 0.05, then 0.8)
       angularDamping={0.5}      // REDUCED - More rotation
       gravityScale={0}
-      mass={radius * 0.5}       // LIGHTER = more responsive to forces
+      mass={radius * 0.5 * massScale}       // LIGHTER = more responsive to forces
       ccd={true}                // Continuous collision detection
       position={position}
       name={`orb-${album.id}`}
@@ -446,7 +457,7 @@ export function BubbleOrb({
       }}
     >
       {/* Dynamic collider - grows with repulsion slider */}
-      <BallCollider args={[colliderRadius]} restitution={0.82} friction={0.03} />
+      <BallCollider args={[colliderRadius]} restitution={colliderRestitution} friction={0.03} />
       
       <group scale={visualScale}>
         <pointLight
