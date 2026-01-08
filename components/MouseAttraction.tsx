@@ -30,8 +30,6 @@ function MouseAttractionComponent({ albumCount, targetPlaneZ, baselineStrength =
   
   // Movement threshold - ignore tiny mouse movements to keep orbs calmer
   const MOVEMENT_THRESHOLD = 0.0035  // Minimum pointer delta to trigger force
-  const SIZE_STRENGTH_MIN = 0.85
-  const SIZE_STRENGTH_MAX = 1.2
   
   // Dynamic attraction settings based on album size
   // Range scales with album size (larger albums need longer reach)
@@ -112,8 +110,7 @@ function MouseAttractionComponent({ albumCount, targetPlaneZ, baselineStrength =
     baselineMul.current = baselineMul.current + (baselineTarget - baselineMul.current) * baselineSmoothing
 
     const BASELINE = Math.min(1, Math.max(0, baselineStrength * baselineMul.current))
-    const baseUnitStrength = attractorStrength * strengthScale
-    const scaledStrength = baseUnitStrength * (BASELINE + (1 - BASELINE) * movementScale)
+    const scaledStrength = attractorStrength * strengthScale * (BASELINE + (1 - BASELINE) * movementScale)
 
     const cohesionPull = attractorStrength * cohesionStrength
     let cohesionX = 0
@@ -145,13 +142,6 @@ function MouseAttractionComponent({ albumCount, targetPlaneZ, baselineStrength =
       if (!body.isDynamic()) return
 
       let perBodyStrength = scaledStrength
-
-      const sizeT = (body as any).__orbSizeT
-      if (typeof sizeT === 'number' && Number.isFinite(sizeT)) {
-        const tSize = Math.min(Math.max(sizeT, 0), 1)
-        const sizeMul = SIZE_STRENGTH_MIN + (SIZE_STRENGTH_MAX - SIZE_STRENGTH_MIN) * tSize
-        perBodyStrength = baseUnitStrength * (BASELINE + (1 - BASELINE) * movementScale * sizeMul)
-      }
       if (softCoreRadius > 0) {
         const p = body.translation()
         const dx = p.x - object.position.x
@@ -161,7 +151,7 @@ function MouseAttractionComponent({ albumCount, targetPlaneZ, baselineStrength =
           const t = Math.min(Math.max(dxy / softCoreRadius, 0), 1)
           const smooth = t * t * (3 - 2 * t)
           const mul = 0.05 + 0.95 * smooth
-          perBodyStrength = perBodyStrength * mul
+          perBodyStrength = scaledStrength * mul
         }
       }
 
