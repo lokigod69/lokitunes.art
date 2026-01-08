@@ -150,7 +150,7 @@ function MouseAttractionComponent({ albumCount, targetPlaneZ, baselineStrength =
         if (dxy < softCoreRadius) {
           const t = Math.min(Math.max(dxy / softCoreRadius, 0), 1)
           const smooth = t * t * (3 - 2 * t)
-          const mul = 0.05 + 0.95 * smooth
+          const mul = 0.18 + 0.82 * smooth
           perBodyStrength = scaledStrength * mul
         }
       }
