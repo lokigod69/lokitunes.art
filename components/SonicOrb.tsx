@@ -83,9 +83,9 @@ export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1
   const colliderRadius = radius * visualScale * (1 + repulsionStrength * 2)
 
   const sizeT = Math.min(Math.max((visualScale - 0.6) / 0.4, 0), 1)
-  const colliderRestitution = 0.72 + 0.04 * sizeT
+  const colliderRestitution = 0.76 + 0.04 * sizeT
   const massScale = 1.05 - 0.1 * sizeT
-  const linearDamping = 0.11 + 0.03 * (1 - sizeT)
+  const linearDamping = 0.11 + 0.02 * (1 - sizeT)
   
   // CRITICAL FIX: Load texture with proper CORS handling using Image element
   useEffect(() => {
@@ -248,7 +248,7 @@ export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1
       )
 
       if (shouldRunCushion) {
-        const cushionDistance = colliderRadius * 2.1  // Start pushing before contact
+        const cushionDistance = colliderRadius * (2.1 + 0.45 * (1 - sizeT))  // Start pushing before contact
         const currentRepulsion = useOrbRepulsion.getState().repulsionStrength
 
         allBodiesRef.current.forEach(({ body: otherBody }, otherId) => {
@@ -266,8 +266,9 @@ export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1
             // Soft cushion: gentle push when close, before hard collision
             if (dist < cushionDistance && dist > 0.1) {
               const overlap = 1 - (dist / cushionDistance)
+              const cushionSizeMul = 1.35 - 0.35 * sizeT
               // Base cushion + extra from slider
-              const cushionStrength = 0.015 * overlap * overlap + currentRepulsion * 0.08 * overlap
+              const cushionStrength = (0.015 * overlap * overlap + currentRepulsion * 0.08 * overlap) * cushionSizeMul
               const pushForce = toOther.normalize().multiplyScalar(-cushionStrength * forceScale)
               body.applyImpulse(pushForce, true)
             }
@@ -279,7 +280,7 @@ export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1
     }
 
     const v = body.linvel()
-    const maxSpeed = 9 + 3.5 * sizeT
+    const maxSpeed = 10 + 4.0 * sizeT
     const speedSq = v.x * v.x + v.y * v.y + v.z * v.z
     if (speedSq > maxSpeed * maxSpeed) {
       const vLen = Math.sqrt(speedSq)

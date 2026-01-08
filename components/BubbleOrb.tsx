@@ -123,9 +123,9 @@ export function BubbleOrb({
   const colliderRadius = radius * visualScale * (1 + repulsionStrength * 2)
 
   const sizeT = Math.min(Math.max((visualScale - 0.6) / 0.4, 0), 1)
-  const colliderRestitution = 0.72 + 0.04 * sizeT
+  const colliderRestitution = 0.76 + 0.04 * sizeT
   const massScale = 1.05 - 0.1 * sizeT
-  const linearDamping = 0.11 + 0.03 * (1 - sizeT)
+  const linearDamping = 0.11 + 0.02 * (1 - sizeT)
   
   const quality = getQualitySettings(deviceTier)
 
@@ -285,7 +285,7 @@ export function BubbleOrb({
     const speed = Math.sqrt(vel.x * vel.x + vel.y * vel.y + vel.z * vel.z)
     const forceScale = radius * visualScale
 
-    const maxSpeed = 9 + 3.5 * sizeT
+    const maxSpeed = 10 + 4.0 * sizeT
     if (speed > maxSpeed) {
       const s = maxSpeed / speed
       body.setLinvel({ x: vel.x * s, y: vel.y * s, z: vel.z * s }, true)
@@ -320,7 +320,7 @@ export function BubbleOrb({
       )
 
       if (shouldRunCushion) {
-        const cushionDistance = colliderRadius * 2.1  // Start pushing before contact
+        const cushionDistance = colliderRadius * (2.1 + 0.45 * (1 - sizeT))  // Start pushing before contact
         const currentRepulsion = useOrbRepulsion.getState().repulsionStrength
 
         allBodiesRef.current.forEach(({ body: otherBody }, otherId) => {
@@ -338,8 +338,9 @@ export function BubbleOrb({
             // Soft cushion: gentle push when close, before hard collision
             if (dist < cushionDistance && dist > 0.1) {
               const overlap = 1 - (dist / cushionDistance)
+              const cushionSizeMul = 1.35 - 0.35 * sizeT
               // Base cushion + extra from slider
-              const cushionStrength = 0.015 * overlap * overlap + currentRepulsion * 0.08 * overlap
+              const cushionStrength = (0.015 * overlap * overlap + currentRepulsion * 0.08 * overlap) * cushionSizeMul
               const pushForce = toOther.normalize().multiplyScalar(-cushionStrength * forceScale)
               body.applyImpulse(pushForce, true)
             }
