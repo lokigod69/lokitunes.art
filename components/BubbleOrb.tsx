@@ -212,6 +212,11 @@ export function BubbleOrb({
     }
   }, [onRegisterRigidBody])
 
+  useEffect(() => {
+    if (!ref.current) return
+    ;(ref.current as any).__orbSizeT = sizeT
+  }, [sizeT])
+
   // Handle reset trigger
   useEffect(() => {
     if (!ref.current || resetTrigger === 0) return
