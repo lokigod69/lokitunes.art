@@ -120,7 +120,7 @@ export function AlbumPage({ album }: AlbumPageProps) {
   const isAlbumPlaying = orbVersions.some(v => v.id === currentVersion?.id) && isPlaying
 
   // Play All shuffle - picks random track from THIS album, then sets autoplay to 'all' (infinity shuffle)
-  const handlePlayAllShuffle = async () => {
+  const handlePlayAllShuffle = () => {
     if (orbVersions.length === 0) return
     
     if (isAlbumPlaying) {
@@ -132,11 +132,8 @@ export function AlbumPage({ album }: AlbumPageProps) {
     const randomIndex = Math.floor(Math.random() * orbVersions.length)
     const startVersion = orbVersions[randomIndex]
     
-    // Set autoplay to 'all' (infinity shuffle across ALL albums)
-    setAutoplayMode('all')
-    
-    // Start with this track, queue will be built from ALL versions globally
-    await startGlobalQueue(startVersion, palette)
+    setAutoplayMode('album')
+    startAlbumQueue(orbVersions, startVersion.id, palette)
   }
 
   // Inject album palette into CSS variables

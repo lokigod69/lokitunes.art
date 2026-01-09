@@ -249,6 +249,7 @@ export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1
 
       if (shouldRunCushion) {
         const cushionDistance = colliderRadius * (2.1 + 0.45 * (1 - sizeT))  // Start pushing before contact
+        const cushionDistanceSq = cushionDistance * cushionDistance
         const currentRepulsion = useOrbRepulsion.getState().repulsionStrength
 
         allBodiesRef.current.forEach(({ body: otherBody }, otherId) => {
@@ -256,21 +257,27 @@ export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1
 
           try {
             const otherPos = otherBody.translation()
-            const toOther = new THREE.Vector3(
-              otherPos.x - pos.x,
-              otherPos.y - pos.y,
-              isMouseIdle ? 0 : (otherPos.z - pos.z)
-            )
-            const dist = toOther.length()
+            const dx = otherPos.x - pos.x
+            const dy = otherPos.y - pos.y
+            const dz = isMouseIdle ? 0 : (otherPos.z - pos.z)
+            const distSq = dx * dx + dy * dy + dz * dz
 
             // Soft cushion: gentle push when close, before hard collision
-            if (dist < cushionDistance && dist > 0.1) {
+            if (distSq < cushionDistanceSq && distSq > 0.01) {
+              const dist = Math.sqrt(distSq)
               const overlap = 1 - (dist / cushionDistance)
               const cushionSizeMul = 1.35 - 0.35 * sizeT
               // Base cushion + extra from slider
               const cushionStrength = (0.015 * overlap * overlap + currentRepulsion * 0.08 * overlap) * cushionSizeMul
-              const pushForce = toOther.normalize().multiplyScalar(-cushionStrength * forceScale)
-              body.applyImpulse(pushForce, true)
+              const invDist = 1 / dist
+              body.applyImpulse(
+                {
+                  x: -dx * invDist * cushionStrength * forceScale,
+                  y: -dy * invDist * cushionStrength * forceScale,
+                  z: -dz * invDist * cushionStrength * forceScale,
+                },
+                true
+              )
             }
           } catch (e) {
             // Other body might be invalid

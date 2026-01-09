@@ -28,6 +28,10 @@ function MouseAttractionComponent({ albumCount, targetPlaneZ, baselineStrength =
   const lastSpeed = useRef(0)
   const baselineMul = useRef(1)
   const activeHold = useRef(0)
+
+  const pointerRayVec = useRef(new THREE.Vector3())
+  const pointerDirVec = useRef(new THREE.Vector3())
+  const pointerTargetVec = useRef(new THREE.Vector3())
   
   // Movement threshold - ignore tiny mouse movements to keep orbs calmer
   const MOVEMENT_THRESHOLD = 0.0025  // Minimum pointer delta to trigger force
@@ -64,25 +68,27 @@ function MouseAttractionComponent({ albumCount, targetPlaneZ, baselineStrength =
     lastPointer.current = { x: pointer.x, y: pointer.y }
 
     // Convert 2D mouse pointer to 3D world position
-    const vector = new THREE.Vector3(pointer.x, pointer.y, 0.5)
+    const vector = pointerRayVec.current
+    vector.set(pointer.x, pointer.y, 0.5)
     vector.unproject(camera)
-    const dir = vector.sub(camera.position).normalize()
+    const dir = pointerDirVec.current
+    dir.copy(vector).sub(camera.position).normalize()
 
-    let targetPos: THREE.Vector3
+    const targetPos = pointerTargetVec.current
     if (typeof targetPlaneZ === 'number') {
       const dz = dir.z
       if (Math.abs(dz) > 1e-4) {
         const tPlane = (targetPlaneZ - camera.position.z) / dz
         const tClamped = Math.min(Math.max(tPlane, 0), 200)
-        targetPos = camera.position.clone().add(dir.clone().multiplyScalar(tClamped))
+        targetPos.copy(camera.position).addScaledVector(dir, tClamped)
       } else {
         const distance = 15
-        targetPos = camera.position.clone().add(dir.clone().multiplyScalar(distance))
+        targetPos.copy(camera.position).addScaledVector(dir, distance)
         targetPos.z = targetPlaneZ
       }
     } else {
       const distance = 15
-      targetPos = camera.position.clone().add(dir.clone().multiplyScalar(distance))
+      targetPos.copy(camera.position).addScaledVector(dir, distance)
     }
 
     if (!attractorObject.current) return

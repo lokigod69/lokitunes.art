@@ -398,16 +398,27 @@ export function VersionOrb({
         // CENTER ATTRACTION - Gentle pull toward origin when idle
         // Keeps orbs from drifting too far and creates a cohesive group
         // ═══════════════════════════════════════════════════════════════════════════════
-        const centerPos = new THREE.Vector3(0, 0, 0)
-        const orbPos = new THREE.Vector3(pos.x, pos.y, pos.z)
-        const toCenter = centerPos.clone().sub(orbPos)
-        const distanceToCenter = toCenter.length()
+        const dxToCenter = -pos.x
+        const dyToCenter = -pos.y
+        const dzToCenter = -pos.z
+        const distanceToCenter = Math.sqrt(
+          dxToCenter * dxToCenter +
+          dyToCenter * dyToCenter +
+          dzToCenter * dzToCenter
+        )
         
         // Apply gentle center attraction (stronger when further away)
         if (distanceToCenter > 3) {
           const centerStrength = 0.02 * Math.min(distanceToCenter / 10, 1)
-          const centerAttraction = toCenter.normalize().multiplyScalar(centerStrength)
-          body.applyImpulse(centerAttraction, true)
+          const invDist = 1 / distanceToCenter
+          body.applyImpulse(
+            {
+              x: dxToCenter * invDist * centerStrength,
+              y: dyToCenter * invDist * centerStrength,
+              z: dzToCenter * invDist * centerStrength,
+            },
+            true
+          )
         }
 
         // ═══════════════════════════════════════════════════════════════════════════════
