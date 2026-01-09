@@ -68,7 +68,9 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    console.log(`[update-duration] Saved duration for ${versionId}: ${Math.round(duration)}s`)
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[update-duration] Saved duration for ${versionId}: ${Math.round(duration)}s`)
+    }
     
     return NextResponse.json({ 
       success: true,

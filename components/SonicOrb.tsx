@@ -8,7 +8,7 @@ import * as THREE from 'three'
 import type { Album } from '@/lib/supabase'
 import { usePlayMode } from '@/hooks/usePlayMode'
 import { useOrbRepulsion } from '@/hooks/useOrbRepulsion'
-import { devLog } from '@/lib/debug'
+import { devLog, devWarn } from '@/lib/debug'
 
 interface OrbProps {
   album: Album
@@ -90,7 +90,7 @@ export function SonicOrb({ album, pushTrigger, position, radius, visualScale = 1
   // CRITICAL FIX: Load texture with proper CORS handling using Image element
   useEffect(() => {
     if (!album.cover_url) {
-      console.warn(`⚠️ No cover URL for ${album.title}`)
+      devWarn(`⚠️ No cover URL for ${album.title}`)
       return
     }
     

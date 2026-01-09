@@ -1,5 +1,7 @@
 // Singleton Web Audio analyzer attached to the global <audio> element.
 
+import { devLog } from './debug'
+
 let audioContext: AudioContext | null = null
 let analyserNode: AnalyserNode | null = null
 let sourceNode: MediaElementAudioSourceNode | null = null
@@ -57,7 +59,7 @@ export function ensureConnected(audioEl: HTMLAudioElement): AnalyserNode {
       analyser.connect(ctx.destination)
     } catch (e) {
       // MediaElementAudioSourceNode already created for this element - reuse it
-      console.log('Audio analyzer: element already connected, reusing')
+      devLog('Audio analyzer: element already connected, reusing')
     }
   }
 
@@ -88,7 +90,7 @@ export async function forceResumeAudioContext(): Promise<boolean> {
   if (audioContext.state === 'suspended') {
     try {
       await audioContext.resume()
-      console.log('[AudioAnalyzer] 🔊 AudioContext resumed from suspended state')
+      devLog('[AudioAnalyzer] 🔊 AudioContext resumed from suspended state')
       return true
     } catch (err) {
       console.error('[AudioAnalyzer] Failed to resume AudioContext:', err)

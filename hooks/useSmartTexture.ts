@@ -77,7 +77,7 @@ export function useSmartTexture(possibleUrls: string[], albumName: string = 'Unk
       }
 
       console.error(`🚨 [${albumName}] ALL URLS FAILED!`)
-      console.error(`🚨 [${albumName}] Tried:`, possibleUrls)
+      devLog(`🚨 [${albumName}] Tried:`, possibleUrls)
     }
 
     loadTexture()

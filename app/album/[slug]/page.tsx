@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { getAlbumBySlug } from '@/lib/queries'
 import { AlbumPage } from './AlbumPage'
+import { devLog } from '@/lib/debug'
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -15,7 +16,7 @@ export default async function Album({ params }: PageProps) {
   }
 
   // 🔥🔥🔥 DEBUG: Log exact palette data on server
-  console.log('🔥🔥🔥 SERVER: Album data for', slug, ':', {
+  devLog('🔥🔥🔥 SERVER: Album data for', slug, ':', {
     palette: album.palette,
     paletteType: typeof album.palette,
     dominantColor: album.palette?.dominant,

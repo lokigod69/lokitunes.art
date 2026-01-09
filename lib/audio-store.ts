@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import type { SongVersion, Album } from './supabase'
+import { devLog } from './debug'
 
 type AutoplayMode = 'off' | 'album' | 'all'
 
@@ -262,7 +263,7 @@ export const useAudioStore = create<AudioState>((set, get) => ({
         currentTime: 0,
       })
       
-      console.log(`🌍 Global queue built: ${queue.length} tracks from all albums`)
+      devLog(` Global queue built: ${queue.length} tracks from all albums`)
     } catch (error) {
       console.error('Failed to build global queue:', error)
       // Fallback to single track playback

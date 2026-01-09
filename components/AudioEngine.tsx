@@ -5,7 +5,7 @@ import { useAudioStore } from '@/lib/audio-store'
 import { setAudioElement } from '@/lib/audio-element-registry'
 import { forceResumeAudioContext, isAudioRoutedThroughWebAudio } from '@/lib/audio-analyzer'
 import { useMediaSession } from '@/hooks/useMediaSession'
-import { devLog } from '@/lib/debug'
+import { devLog, devWarn } from '@/lib/debug'
 
 export default function AudioEngine() {
   const audioRef = useRef<HTMLAudioElement>(null)
@@ -134,7 +134,7 @@ export default function AudioEngine() {
   useEffect(() => {
     const audio = audioRef.current
     if (!audio) {
-      console.warn('[AudioEngine] No audio element for event listeners')
+      devWarn('[AudioEngine] No audio element for event listeners')
       return
     }
 

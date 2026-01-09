@@ -1,4 +1,5 @@
 import { supabase, Album, AlbumWithSongs, Song, SongVersion } from './supabase'
+import { devLog } from './debug'
 
 /**
  * Clean palette colors by stripping alpha channel
@@ -7,7 +8,7 @@ import { supabase, Album, AlbumWithSongs, Song, SongVersion } from './supabase'
 function cleanPalette(palette: any): any {
   if (!palette || typeof palette !== 'object') return palette
   
-  console.log('🎨 CLEANING PALETTE - BEFORE:', JSON.stringify(palette, null, 2))
+  devLog('🎨 CLEANING PALETTE - BEFORE:', JSON.stringify(palette, null, 2))
   
   const cleaned: any = {}
   for (const key in palette) {
@@ -18,7 +19,7 @@ function cleanPalette(palette: any): any {
       : color
   }
   
-  console.log('🎨 CLEANING PALETTE - AFTER:', JSON.stringify(cleaned, null, 2))
+  devLog('🎨 CLEANING PALETTE - AFTER:', JSON.stringify(cleaned, null, 2))
   
   return cleaned
 }

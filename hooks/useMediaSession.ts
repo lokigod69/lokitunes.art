@@ -8,6 +8,7 @@
  */
 import { useEffect } from 'react'
 import { useAudioStore } from '@/lib/audio-store'
+import { devLog, devWarn } from '@/lib/debug'
 
 export function useMediaSession() {
   const currentVersion = useAudioStore((state) => state.currentVersion)
@@ -62,7 +63,7 @@ export function useMediaSession() {
       artwork,
     })
 
-    console.log('[MediaSession] Metadata set:', { title, artist, album })
+    devLog('[MediaSession] Metadata set:', { title, artist, album })
   }, [currentVersion])
 
   // Update playback state
@@ -85,7 +86,7 @@ export function useMediaSession() {
       })
     } catch (e) {
       // Some browsers don't support setPositionState
-      console.debug('[MediaSession] setPositionState not supported:', e)
+      devLog('[MediaSession] setPositionState not supported:', e)
     }
   }, [currentTime, duration, currentVersion])
 
@@ -100,7 +101,7 @@ export function useMediaSession() {
 
     // Play handler
     const handlePlay = () => {
-      console.log('[MediaSession] Play action')
+      devLog('[MediaSession] Play action')
       if (currentVersion) {
         const songId = (currentVersion as unknown as { songId?: string; song_id?: string }).songId
           ?? (currentVersion as unknown as { songId?: string; song_id?: string }).song_id
@@ -111,13 +112,13 @@ export function useMediaSession() {
 
     // Pause handler
     const handlePause = () => {
-      console.log('[MediaSession] Pause action')
+      devLog('[MediaSession] Pause action')
       pause()
     }
 
     // Previous track handler
     const handlePreviousTrack = () => {
-      console.log('[MediaSession] Previous track action')
+      devLog('[MediaSession] Previous track action')
       if (canSkip) {
         previous()
       }
@@ -125,7 +126,7 @@ export function useMediaSession() {
 
     // Next track handler
     const handleNextTrack = () => {
-      console.log('[MediaSession] Next track action')
+      devLog('[MediaSession] Next track action')
       if (canSkip) {
         next()
       }
@@ -134,14 +135,14 @@ export function useMediaSession() {
     // Seek to specific position
     const handleSeekTo = (details: MediaSessionActionDetails) => {
       if (details.seekTime !== undefined) {
-        console.log('[MediaSession] Seek to:', details.seekTime)
+        devLog('[MediaSession] Seek to:', details.seekTime)
         setCurrentTime(details.seekTime)
       }
     }
 
     // Stop handler
     const handleStop = () => {
-      console.log('[MediaSession] Stop action')
+      devLog('[MediaSession] Stop action')
       pause()
     }
 
@@ -157,7 +158,7 @@ export function useMediaSession() {
       navigator.mediaSession.setActionHandler('seekto', handleSeekTo)
       navigator.mediaSession.setActionHandler('stop', handleStop)
     } catch (e) {
-      console.warn('[MediaSession] Error setting action handlers:', e)
+      devWarn('[MediaSession] Error setting action handlers:', e)
     }
 
     return () => {
