@@ -27,6 +27,7 @@ function MouseAttractionComponent({ albumCount, targetPlaneZ, baselineStrength =
   const smoothedAccel = useRef(0)
   const lastSpeed = useRef(0)
   const baselineMul = useRef(1)
+  const activeHold = useRef(0)
   
   // Movement threshold - ignore tiny mouse movements to keep orbs calmer
   const MOVEMENT_THRESHOLD = 0.0025  // Minimum pointer delta to trigger force
@@ -89,6 +90,12 @@ function MouseAttractionComponent({ albumCount, targetPlaneZ, baselineStrength =
 
     const dt = Math.max(delta, 1 / 120)
     const isActiveMove = movementDelta >= MOVEMENT_THRESHOLD
+    if (isActiveMove) {
+      activeHold.current = 0.25
+    } else {
+      activeHold.current = Math.max(0, activeHold.current - dt)
+    }
+    const isEffectivelyActive = isActiveMove || activeHold.current > 0
     const speed = isActiveMove ? (movementDelta / dt) : 0
     const accel = isActiveMove ? ((speed - lastSpeed.current) / dt) : 0
     lastSpeed.current = isActiveMove ? speed : 0
@@ -105,7 +112,7 @@ function MouseAttractionComponent({ albumCount, targetPlaneZ, baselineStrength =
 
     // Keep a stable baseline pull at rest so orbs stay clustered around the cursor.
     // Ramp up with speed/accel so fast swipes still feel more energetic.
-    const baselineTarget = isActiveMove ? 1 : idleBaselineMultiplier
+    const baselineTarget = isEffectivelyActive ? 1 : idleBaselineMultiplier
     const baselineSmoothing = 1 - Math.exp(-dt * 10)
     baselineMul.current = baselineMul.current + (baselineTarget - baselineMul.current) * baselineSmoothing
 
