@@ -271,7 +271,7 @@ export function BubbleOrb({
     lastMouseRef.current = currentMouse
     
     // Track how many frames mouse has been idle
-    const MOUSE_IDLE_THRESHOLD = 0.0035  // Very small movement threshold
+    const MOUSE_IDLE_THRESHOLD = 0.0025  // Very small movement threshold
     if (mouseSpeed < MOUSE_IDLE_THRESHOLD) {
       mouseIdleFrames.current++
     } else {

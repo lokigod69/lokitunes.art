@@ -29,7 +29,7 @@ function MouseAttractionComponent({ albumCount, targetPlaneZ, baselineStrength =
   const baselineMul = useRef(1)
   
   // Movement threshold - ignore tiny mouse movements to keep orbs calmer
-  const MOVEMENT_THRESHOLD = 0.0035  // Minimum pointer delta to trigger force
+  const MOVEMENT_THRESHOLD = 0.0025  // Minimum pointer delta to trigger force
   
   // Dynamic attraction settings based on album size
   // Range scales with album size (larger albums need longer reach)
