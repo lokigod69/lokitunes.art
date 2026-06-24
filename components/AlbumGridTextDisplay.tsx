@@ -1,89 +1,77 @@
 'use client'
 
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Text } from '@react-three/drei'
 import * as THREE from 'three'
 import type { Album } from '@/lib/supabase'
 import type { ExtendedVersion } from './VersionOrb'
+import { getAlbumGridTextLayout } from '@/lib/album-grid-text-layout'
 
-// FIXED TEXT POSITIONS - Consistent across ALL albums regardless of orb count
-// Text should be IN FRONT of grid but WITHIN the black container bounds
-// Grid is at Z=-10 (desktop) or Z=-15 (mobile), so text at Z=5-8 is in front
-// Maximum safe Z is ~8 to stay within container's ~10% black space at front
-const TEXT_CONFIG = {
-  // Y position: slightly above grid plane for visibility
-  positionY: -11,
-  // Z position: in front of grid, within container bounds
-  // FIXED - never changes based on orb count or camera distance
-  frontCenterZ: 6,  // Playing version - prominent but not too far forward
-  hoverSpotsZ: { min: 3, max: 5 },  // Hovered versions - slightly behind front center
-  maxSafeZ: 8,  // Never exceed this to stay within container
-} as const
+function getStableHoverSpotIndex(versionId: string, spotCount: number): number {
+  let hash = 0
+  for (let i = 0; i < versionId.length; i += 1) {
+    hash = (hash * 31 + versionId.charCodeAt(i)) >>> 0
+  }
+  return hash % spotCount
+}
 
-const DESKTOP_FRONT_CENTER_Z = 4.5
-
-// Front center position - for playing version (prominent, always visible)
-const FRONT_CENTER_POSITION_MOBILE: [number, number, number] = [0, TEXT_CONFIG.positionY, TEXT_CONFIG.frontCenterZ]
-const FRONT_CENTER_POSITION_DESKTOP: [number, number, number] = [0, TEXT_CONFIG.positionY, DESKTOP_FRONT_CENTER_Z]
-
-// Outer-edge text spots - for hovered versions
-// All Z values clamped to safe range to prevent text from extending beyond container
-const ALBUM_TEXT_SPOTS: [number, number, number][] = [
-  // Left edge
-  [-10, TEXT_CONFIG.positionY, 4],
-  [-8, TEXT_CONFIG.positionY, 3],
-  [-12, TEXT_CONFIG.positionY, 3],
-  // Right edge
-  [10, TEXT_CONFIG.positionY, 4],
-  [8, TEXT_CONFIG.positionY, 3],
-  [12, TEXT_CONFIG.positionY, 3],
-  // Center variations
-  [-4, TEXT_CONFIG.positionY, 4],
-  [0, TEXT_CONFIG.positionY, 3],
-  [4, TEXT_CONFIG.positionY, 4],
-  // Additional positions - kept within safe bounds
-  [-6, TEXT_CONFIG.positionY, 5],
-  [0, TEXT_CONFIG.positionY, 5],
-  [6, TEXT_CONFIG.positionY, 5],
-]
+function applyTextLayerMaterial(
+  mesh: THREE.Mesh,
+  renderOrder: number,
+  depthTest: boolean,
+  depthWrite: boolean
+) {
+  mesh.renderOrder = renderOrder
+  const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
+  materials.forEach((material) => {
+    material.depthTest = depthTest
+    material.depthWrite = depthWrite
+    material.needsUpdate = true
+  })
+}
 
 interface AlbumGridTextDisplayProps {
   hoveredVersion: ExtendedVersion | null
   playingVersion: ExtendedVersion | null
   albumPalette: Album['palette'] | null
   isMobile?: boolean
+  cameraDistance: number
 }
 
 /**
  * AlbumGridTextDisplay
  * - Used on ALBUM PAGES only (VersionOrbField scene)
  * - Playing version: always shown at front center (prominent)
- * - Hovered version (different from playing): shown at random outer positions
+ * - Hovered version (different from playing): shown at stable outer positions
  * - Uses album color palette for neon styling
  */
-export function AlbumGridTextDisplay({ hoveredVersion, playingVersion, albumPalette, isMobile = false }: AlbumGridTextDisplayProps) {
+export function AlbumGridTextDisplay({
+  hoveredVersion,
+  playingVersion,
+  albumPalette,
+  isMobile = false,
+  cameraDistance,
+}: AlbumGridTextDisplayProps) {
   const groupRef = useRef<THREE.Group>(null)
   const [flicker, setFlicker] = useState(1)
   const [shadowFlicker1, setShadowFlicker1] = useState(1)
   const [shadowFlicker2, setShadowFlicker2] = useState(1)
-  
-  // Random outer-edge position for hovered versions
-  const [hoverPosition, setHoverPosition] = useState<[number, number, number]>(ALBUM_TEXT_SPOTS[0])
-  
-  // Pick new random position when hovering a DIFFERENT version than playing
-  useEffect(() => {
-    if (hoveredVersion && hoveredVersion.id !== playingVersion?.id) {
-      const randomIndex = Math.floor(Math.random() * ALBUM_TEXT_SPOTS.length)
-      setHoverPosition(ALBUM_TEXT_SPOTS[randomIndex])
-    }
-  }, [hoveredVersion?.id, playingVersion?.id])
+  const textLayout = useMemo(
+    () => getAlbumGridTextLayout({ cameraDistance, isMobile }),
+    [cameraDistance, isMobile]
+  )
   
   // Determine which version to show and where
   const isShowingPlaying = !hoveredVersion || hoveredVersion.id === playingVersion?.id
   const displayVersion = hoveredVersion || playingVersion
+  const hoverSpotIndex = useMemo(() => {
+    if (!hoveredVersion || hoveredVersion.id === playingVersion?.id) return 0
+    return getStableHoverSpotIndex(hoveredVersion.id, textLayout.hoverPositions.length)
+  }, [hoveredVersion?.id, playingVersion?.id, textLayout.hoverPositions.length])
+  const hoverPosition = textLayout.hoverPositions[hoverSpotIndex % textLayout.hoverPositions.length]
   const position = isShowingPlaying
-    ? (isMobile ? FRONT_CENTER_POSITION_MOBILE : FRONT_CENTER_POSITION_DESKTOP)
+    ? textLayout.playingPosition
     : hoverPosition
 
   // Use album palette passed from scene
@@ -97,6 +85,7 @@ export function AlbumGridTextDisplay({ hoveredVersion, playingVersion, albumPale
   const mainColor = palette.accent1 || palette.dominant || '#4F9EFF'
   const accent1 = palette.accent1 || mainColor
   const accent2 = palette.accent2 || accent1
+  const { anchorY, depthTest, depthWrite, fontSize, maxWidth, renderOrder } = textLayout
 
   // Broken neon flickering for shadows / light
   useFrame(() => {
@@ -130,13 +119,15 @@ export function AlbumGridTextDisplay({ hoveredVersion, playingVersion, albumPale
       {/* Inner white glow - subtle, under colored text */}
       <Text
         position={[0, 0, 0.01]}
-        fontSize={4.0}
+        fontSize={fontSize}
         color="#ffffff"
         anchorX="center"
-        anchorY="middle"
-        maxWidth={40}
+        anchorY={anchorY}
+        maxWidth={maxWidth}
         textAlign="center"
         fillOpacity={0.35}
+        renderOrder={renderOrder}
+        onSync={(mesh) => applyTextLayerMaterial(mesh, renderOrder, depthTest, depthWrite)}
       >
         {label}
       </Text>
@@ -144,15 +135,17 @@ export function AlbumGridTextDisplay({ hoveredVersion, playingVersion, albumPale
       {/* Main text layer - album dominant color (BIG, always full opacity) */}
       <Text
         position={[0, 0, 0.02]}
-        fontSize={4.0}
+        fontSize={fontSize}
         color={mainColor}
         anchorX="center"
-        anchorY="middle"
-        maxWidth={40}
+        anchorY={anchorY}
+        maxWidth={maxWidth}
         textAlign="center"
         outlineWidth={0.1}
         outlineColor="#000000"   // Dark outline for readability
         fillOpacity={1.0}
+        renderOrder={renderOrder + 1}
+        onSync={(mesh) => applyTextLayerMaterial(mesh, renderOrder + 1, depthTest, depthWrite)}
       >
         {label}
       </Text>
@@ -160,13 +153,15 @@ export function AlbumGridTextDisplay({ hoveredVersion, playingVersion, albumPale
       {/* Bright color glow very close behind */}
       <Text
         position={[0, 0, -0.05]}
-        fontSize={4.0}
+        fontSize={fontSize}
         color={mainColor}
         anchorX="center"
-        anchorY="middle"
-        maxWidth={40}
+        anchorY={anchorY}
+        maxWidth={maxWidth}
         textAlign="center"
         fillOpacity={0.9}
+        renderOrder={renderOrder - 1}
+        onSync={(mesh) => applyTextLayerMaterial(mesh, renderOrder - 1, depthTest, depthWrite)}
       >
         {label}
       </Text>
@@ -174,13 +169,15 @@ export function AlbumGridTextDisplay({ hoveredVersion, playingVersion, albumPale
       {/* Softer outer glow layer */}
       <Text
         position={[0, 0, -0.15]}
-        fontSize={4.0}
+        fontSize={fontSize}
         color={mainColor}
         anchorX="center"
-        anchorY="middle"
-        maxWidth={40}
+        anchorY={anchorY}
+        maxWidth={maxWidth}
         textAlign="center"
         fillOpacity={0.5}
+        renderOrder={renderOrder - 2}
+        onSync={(mesh) => applyTextLayerMaterial(mesh, renderOrder - 2, depthTest, depthWrite)}
       >
         {label}
       </Text>
@@ -188,16 +185,18 @@ export function AlbumGridTextDisplay({ hoveredVersion, playingVersion, albumPale
       {/* Shadow 1 - accent1 color, slight offset */}
       <Text
         position={[0.18, 0, -0.25]}
-        fontSize={4.0}
+        fontSize={fontSize}
         color={accent1}
         anchorX="center"
-        anchorY="middle"
-        maxWidth={40}
+        anchorY={anchorY}
+        maxWidth={maxWidth}
         textAlign="center"
         fillOpacity={0}
         outlineWidth={0.025}
         outlineColor={accent1}
         outlineOpacity={0.8 * shadowFlicker1}
+        renderOrder={renderOrder - 3}
+        onSync={(mesh) => applyTextLayerMaterial(mesh, renderOrder - 3, depthTest, depthWrite)}
       >
         {label}
       </Text>
@@ -205,16 +204,18 @@ export function AlbumGridTextDisplay({ hoveredVersion, playingVersion, albumPale
       {/* Shadow 2 - accent2 color, opposite offset */}
       <Text
         position={[-0.15, 0, -0.35]}
-        fontSize={4.0}
+        fontSize={fontSize}
         color={accent2}
         anchorX="center"
-        anchorY="middle"
-        maxWidth={40}
+        anchorY={anchorY}
+        maxWidth={maxWidth}
         textAlign="center"
         fillOpacity={0}
         outlineWidth={0.025}
         outlineColor={accent2}
         outlineOpacity={0.7 * shadowFlicker2}
+        renderOrder={renderOrder - 4}
+        onSync={(mesh) => applyTextLayerMaterial(mesh, renderOrder - 4, depthTest, depthWrite)}
       >
         {label}
       </Text>

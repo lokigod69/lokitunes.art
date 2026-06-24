@@ -194,6 +194,7 @@ function OrbScene({
         playingVersion={playingVersion}
         albumPalette={albumPalette}
         isMobile={isMobile}
+        cameraDistance={cameraDistance}
       />
       
       {/* ALBUM GRID - FIXED position for consistency across all albums */}
@@ -291,7 +292,7 @@ export function VersionOrbField({
     ? (isMobile ? 54 : 56)
     : (isMobile ? 44 : 44)
 
-  let cameraDistance = versions.length <= 2
+  const cameraDistance = versions.length <= 2
     ? Math.max(baseCameraDistance, minSmallCountDistance)
     : baseCameraDistance
 
