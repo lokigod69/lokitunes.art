@@ -10,6 +10,7 @@ import Image from 'next/image'
 import { RatingModal } from '@/components/RatingModal'
 import { useLikes } from '@/hooks/useLikes'
 import { useAuth } from '@/hooks/useAuth'
+import { getAlbumHref, normalizeAlbumRouteSlug } from '@/lib/album-slugs'
 
 function formatTime(seconds: number): string {
   if (!isFinite(seconds)) return '0:00'
@@ -67,8 +68,15 @@ export function GlobalAudioPlayer() {
       slug = pathname.replace('/album/', '')
     }
     
-    if (slug && pathname !== `/album/${slug}`) {
-      router.push(`/album/${slug}`)
+    if (slug) {
+      const targetHref = getAlbumHref(slug)
+      const currentAlbumSlug = pathname.startsWith('/album/')
+        ? normalizeAlbumRouteSlug(pathname.replace('/album/', ''))
+        : null
+
+      if (currentAlbumSlug !== normalizeAlbumRouteSlug(slug)) {
+        router.push(targetHref)
+      }
     }
   }
 

@@ -24,6 +24,7 @@ import { detectDeviceTier, getQualitySettings, type DeviceTier } from '@/lib/dev
 import { calculateOrbLayout, calculateCameraDistance, calculateOrbScale } from '@/lib/orb-layout'
 import type { RapierRigidBody } from '@react-three/rapier'
 import { devLog, devWarn } from '@/lib/debug'
+import { getAlbumHref } from '@/lib/album-slugs'
 
 interface OrbFieldProps {
   albums: Album[]
@@ -282,7 +283,7 @@ export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
       }
     })
     
-    router.push(`/album/${slug}`)
+    router.push(getAlbumHref(slug))
   }, [router, albums])
   
   // Handle hover - find album and set both title and album object
@@ -543,7 +544,7 @@ export function OrbFieldFallback({ albums }: OrbFieldProps) {
       {albums.map((album) => (
         <button
           key={album.id}
-          onClick={() => router.push(`/album/${album.slug}`)}
+          onClick={() => router.push(getAlbumHref(album.slug))}
           className="group relative aspect-square rounded-full overflow-hidden transition-transform hover:scale-105 focus-visible:scale-105"
           aria-label={`Album: ${album.title}, ${album.total_versions || 0} versions`}
         >

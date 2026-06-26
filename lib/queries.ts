@@ -1,5 +1,6 @@
 import { supabase, Album, AlbumWithSongs, Song, SongVersion } from './supabase'
 import { devLog } from './debug'
+import { getAlbumSlugCandidates } from './album-slugs'
 
 /**
  * Clean palette colors by stripping alpha channel
@@ -90,12 +91,16 @@ export async function getAlbumsWithVersionCounts(): Promise<Album[]> {
  * Fetch a single album with all songs and versions
  */
 export async function getAlbumBySlug(slug: string): Promise<AlbumWithSongs | null> {
-  const { data: album, error: albumError } = await supabase
+  const slugCandidates = getAlbumSlugCandidates(slug)
+  const { data: albums, error: albumError } = await supabase
     .from('albums')
     .select('*')
-    .eq('slug', slug)
+    .in('slug', slugCandidates)
     .eq('is_public', true)
-    .single()
+
+  const album = slugCandidates
+    .map((candidate) => (albums || []).find((row) => row.slug === candidate))
+    .find(Boolean)
 
   if (albumError || !album) {
     console.error('Error fetching album:', albumError)

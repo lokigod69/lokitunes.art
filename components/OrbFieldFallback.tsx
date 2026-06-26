@@ -7,6 +7,7 @@
 import { useRouter } from 'next/navigation'
 import type { Album } from '@/lib/supabase'
 import { devLog } from '@/lib/debug'
+import { getAlbumHref } from '@/lib/album-slugs'
 
 interface OrbFieldFallbackProps {
   albums: Album[]
@@ -22,7 +23,7 @@ export function OrbFieldFallback({ albums }: OrbFieldFallbackProps) {
       {albums.map((album) => (
         <button
           key={album.id}
-          onClick={() => router.push(`/album/${album.slug}`)}
+          onClick={() => router.push(getAlbumHref(album.slug))}
           className="group relative aspect-square rounded-full overflow-hidden transition-transform hover:scale-105 focus-visible:scale-105"
           aria-label={`Album: ${album.title}, ${album.total_versions || 0} versions`}
           data-auth-gate-mobile-browse="true"

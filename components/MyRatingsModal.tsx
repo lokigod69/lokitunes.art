@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react'
 import { X, Star, ExternalLink } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
+import { getAlbumHref } from '@/lib/album-slugs'
 
 interface UserRating {
   id: string
@@ -60,7 +61,7 @@ export function MyRatingsModal({ isOpen, onClose }: MyRatingsModalProps) {
 
   function handleNavigate(albumSlug: string) {
     onClose()
-    router.push(`/album/${albumSlug}`)
+    router.push(getAlbumHref(albumSlug))
   }
 
   if (!isOpen) return null
