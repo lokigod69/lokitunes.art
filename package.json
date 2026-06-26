@@ -16,6 +16,7 @@
     "test:mobile-postprocessing": "tsx scripts/test-mobile-postprocessing-safety.ts",
     "test:home-hydration": "tsx scripts/test-home-orbit-preference-hydration.ts",
     "test:mobile-auth-gate": "tsx scripts/test-mobile-auth-gate.ts",
+    "test:optional-auth-onboarding": "tsx scripts/test-optional-auth-onboarding.ts",
     "test:album-slugs": "tsx scripts/test-album-slug-routing.ts",
     "test:webp-image-handling": "tsx scripts/test-webp-image-handling.ts",
     "test:sync-failure-exit-code": "tsx scripts/test-sync-failure-exit-code.ts",

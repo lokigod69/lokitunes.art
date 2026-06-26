@@ -1,44 +1,34 @@
 import * as fs from 'fs'
 import * as path from 'path'
 
-const gatePath = path.join(process.cwd(), 'components', 'AuthInteractionGate.tsx')
-const source = fs.readFileSync(gatePath, 'utf8')
+const layoutPath = path.join(process.cwd(), 'app', 'layout.tsx')
+const layoutSource = fs.readFileSync(layoutPath, 'utf8')
 
-if (!source.includes("closest?.('[data-auth-gate-mobile-browse=\"true\"]')")) {
-  console.error('AuthInteractionGate must allow explicit mobile browse/menu surfaces through the gate.')
-  console.error('Without this, signed-out mobile users can be blocked from menus and album navigation.')
+if (layoutSource.includes('AuthInteractionGate')) {
+  console.error('RootLayout must not mount AuthInteractionGate.')
+  console.error('Signed-out users should be able to browse, play, and rate without a forced Google login.')
   process.exit(1)
 }
 
-if (!source.includes('onClickCapture={triggerGate}')) {
-  console.error('AuthInteractionGate should keep click capture active so protected mobile interactions stay gated.')
+const unifiedMenuPath = path.join(process.cwd(), 'components', 'UnifiedMenu.tsx')
+const unifiedMenuSource = fs.readFileSync(unifiedMenuPath, 'utf8')
+
+if (!unifiedMenuSource.includes('signInWithGoogle') || !unifiedMenuSource.includes('Sign In with Google')) {
+  console.error('UnifiedMenu must keep Google sign-in available as an optional account action.')
   process.exit(1)
 }
 
-if (source.includes('onClickCapture: triggerGate')) {
-  console.error('AuthInteractionGate should not disable click capture wholesale on mobile.')
+if (!unifiedMenuSource.includes('isAuthenticated &&') || !unifiedMenuSource.includes('Liked Songs')) {
+  console.error('Liked Songs should remain visible only for authenticated users.')
   process.exit(1)
 }
 
-if (!source.includes('onPointerDownCapture: triggerGate')) {
-  console.error('AuthInteractionGate should keep desktop pointer capture inside the non-mobile branch.')
+const ratingsRoutePath = path.join(process.cwd(), 'app', 'api', 'ratings', 'route.ts')
+const ratingsRouteSource = fs.readFileSync(ratingsRoutePath, 'utf8')
+
+if (!ratingsRouteSource.includes('ip_hash') || !ratingsRouteSource.includes('Could not determine client identity')) {
+  console.error('Anonymous ratings must continue to use IP-hash identity when no Google profile exists.')
   process.exit(1)
 }
 
-const requiredBrowseSurfaces = [
-  path.join(process.cwd(), 'app', 'page.tsx'),
-  path.join(process.cwd(), 'app', 'album', '[slug]', 'AlbumPage.tsx'),
-  path.join(process.cwd(), 'components', 'OrbFieldFallback.tsx'),
-  path.join(process.cwd(), 'components', 'OnboardingModal.tsx'),
-  path.join(process.cwd(), 'components', 'UnifiedMenu.tsx'),
-]
-
-for (const browsePath of requiredBrowseSurfaces) {
-  const browseSource = fs.readFileSync(browsePath, 'utf8')
-  if (!browseSource.includes('data-auth-gate-mobile-browse="true"')) {
-    console.error(`${path.relative(process.cwd(), browsePath)} must mark mobile browse/menu controls as auth-gate-safe.`)
-    process.exit(1)
-  }
-}
-
-console.log('mobile auth gate checks passed')
+console.log('mobile optional auth checks passed')

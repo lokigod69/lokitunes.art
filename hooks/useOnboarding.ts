@@ -78,7 +78,7 @@ export function useOnboarding(): UseOnboardingResult {
   }
 
   const hasLoaded = hasSeen !== null
-  const shouldShow = forceShow || hasSeen === false
+  const shouldShow = forceShow
 
   const show = () => {
     setForceShow(true)

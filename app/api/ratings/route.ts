@@ -2,6 +2,16 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { getClientIp, hashIp } from '@/lib/ip-hash'
 
+interface RatingUpsertRow {
+  version_id: string
+  song_id: string
+  rating: number
+  comment: string | null
+  updated_at: string
+  user_id: string | null
+  ip_hash: string | null
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
@@ -69,18 +79,15 @@ export async function POST(request: NextRequest) {
       ? trimmedComment.slice(0, 200)
       : null
 
-    // Build rating data based on auth status
-    // Logged in: use user_id, Anonymous: use ip_hash
-    const ratingData = {
+    // Logged in rows use user_id; anonymous rows use ip_hash.
+    const ratingData: RatingUpsertRow = {
       version_id: versionId,
       song_id: songId,
       rating: ratingStars,
       comment: finalComment,
       updated_at: new Date().toISOString(),
-      ...(userId
-        ? { user_id: userId, ip_hash: null }
-        : { ip_hash: ipHash, user_id: null }
-      )
+      user_id: userId ?? null,
+      ip_hash: userId ? null : ipHash,
     }
 
     // Upsert based on auth status
