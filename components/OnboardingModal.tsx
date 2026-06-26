@@ -170,6 +170,7 @@ export function OnboardingModal({
       onClick={handleBackdropClick}
       aria-modal="true"
       role="dialog"
+      data-auth-gate-mobile-browse="true"
     >
       <div
         ref={modalRef}

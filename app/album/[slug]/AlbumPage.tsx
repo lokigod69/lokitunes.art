@@ -164,6 +164,7 @@ export function AlbumPage({ album }: AlbumPageProps) {
           className="flex items-center gap-2 px-3 py-2 rounded-lg bg-void/80 backdrop-blur-md border border-bone/10 hover:border-bone/30 transition-colors cursor-pointer"
           aria-label="Back"
           title="Back"
+          data-auth-gate-mobile-browse="true"
         >
           <ArrowLeft className="w-5 h-5 text-bone" />
           <span className="text-bone text-sm">Back</span>

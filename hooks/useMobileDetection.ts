@@ -9,8 +9,8 @@ import { useEffect, useState } from 'react'
  * - Uses the native responsive media query API
  */
 export function useMobileDetection(breakpoint: number = 768) {
-  // Initialize with false to prevent hydration mismatches.
-  // Will update to the correct value after mount.
+  // Keep internal state false; the public return below uses a
+  // mobile-safe value until matchMedia resolves after mount.
   const [isMobile, setIsMobile] = useState(false)
   const [mounted, setMounted] = useState(false)
 
@@ -57,8 +57,9 @@ export function useMobileDetection(breakpoint: number = 768) {
     }
   }, [breakpoint])
 
-  // Return false during SSR and initial mount to prevent hydration issues
-  return mounted ? isMobile : false
+  // Default to the mobile-safe path until matchMedia settles.
+  // This avoids briefly mounting heavy desktop 3D effects on phones.
+  return mounted ? isMobile : true
 }
 
 /**
@@ -66,7 +67,7 @@ export function useMobileDetection(breakpoint: number = 768) {
  * Use this if you don't need live resize detection.
  */
 export function useIsMobile(breakpoint: number = 768): boolean {
-  const [isMobile, setIsMobile] = useState(false)
+  const [isMobile, setIsMobile] = useState(true)
 
   useEffect(() => {
     if (typeof window === 'undefined' || typeof window.matchMedia === 'undefined') {

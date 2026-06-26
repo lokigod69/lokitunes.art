@@ -22,10 +22,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
   const [hasWebGL, setHasWebGL] = useState(true)
-  const [is3D, setIs3D] = useState(() => {
-    if (typeof window === 'undefined') return false
-    return loadOrbitModePreference()
-  })
+  const [is3D, setIs3D] = useState(false)
 
   const isMobile = useMobileDetection(768)
 
@@ -36,6 +33,10 @@ export default function Home() {
   const setRepulsionStrength = useOrbRepulsion((s) => s.setRepulsionStrength)
 
   const { shouldShow, hasLoaded, language, setLanguage, dismiss, show } = useOnboarding()
+
+  useEffect(() => {
+    setIs3D(loadOrbitModePreference())
+  }, [])
 
   useEffect(() => {
     // Check for reduced motion preference
@@ -168,7 +169,7 @@ export default function Home() {
         <>
 
           {/* Fullscreen 3D Canvas - Background layer (z-0) */}
-          <div className="fixed inset-0 w-full h-full z-0">
+          <div className="fixed inset-0 w-full h-full z-0" data-auth-gate-mobile-browse="true">
             <OrbField3D key="3d-mode" albums={albums} isMobile={isMobile} />
           </div>
 

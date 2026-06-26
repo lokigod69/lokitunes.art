@@ -462,8 +462,8 @@ export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
           allBodiesRef={rigidBodies}
         />
         
-        {/* Post-processing effects - reduced on mobile to prevent pixelation/jitter */}
-        {!isMobile ? (
+        {/* Post-processing effects - desktop only; mobile postprocessing can crash WebGL. */}
+        {!isMobile && (
           <EffectComposer multisampling={quality.multisampling}>
             <Bloom
               intensity={quality.bloomIntensity}
@@ -476,10 +476,6 @@ export function OrbField({ albums, isMobile = false }: OrbFieldProps) {
               offset={deviceTier === 'low' ? [0, 0] : [0.002, 0.001]}
               radialModulation={deviceTier !== 'low'}
             />
-            <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
-          </EffectComposer>
-        ) : (
-          <EffectComposer multisampling={0}>
             <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
           </EffectComposer>
         )}

@@ -8,6 +8,11 @@
     "start": "next start",
     "lint": "eslint",
     "test:layout": "tsx scripts/test-album-grid-text-layout.ts",
+    "test:album-freshness": "tsx scripts/test-album-route-freshness.ts",
+    "test:mobile-safe-default": "tsx scripts/test-mobile-safe-default.ts",
+    "test:mobile-postprocessing": "tsx scripts/test-mobile-postprocessing-safety.ts",
+    "test:home-hydration": "tsx scripts/test-home-orbit-preference-hydration.ts",
+    "test:mobile-auth-gate": "tsx scripts/test-mobile-auth-gate.ts",
     "sync-content": "tsx scripts/sync-content.ts",
     "upload-content": "tsx scripts/upload-content.ts",
     "seed-albums": "tsx scripts/seed-albums.ts"

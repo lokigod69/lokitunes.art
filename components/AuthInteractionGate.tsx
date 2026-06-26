@@ -3,7 +3,7 @@
 // Blocks interactions when signed out by showing a Google sign-in modal.
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import type { KeyboardEvent as ReactKeyboardEvent, ReactNode } from 'react'
+import type { KeyboardEvent as ReactKeyboardEvent, ReactNode, SyntheticEvent } from 'react'
 import { LogIn, X } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { signInWithGoogle } from '@/lib/auth'
@@ -40,20 +40,30 @@ export function AuthInteractionGate({ children }: AuthInteractionGateProps) {
     return () => window.removeEventListener('keydown', handleEscape)
   }, [isOpen])
 
+  const isBrowseAllowed = useCallback(
+    (target: HTMLElement | null) => {
+      if (target?.closest?.('[data-auth-gate-allow="true"]')) return true
+      if (isMobile && target?.closest?.('[data-auth-gate-mobile-browse="true"]')) return true
+      return false
+    },
+    [isMobile]
+  )
+
   const triggerGate = useCallback(
-    (event: any) => {
+    (event: SyntheticEvent<HTMLDivElement>) => {
       if (!shouldGate) return
 
       const target = event?.target as HTMLElement | null
-      if (target?.closest?.('[data-auth-gate-allow="true"]')) return
+      if (isBrowseAllowed(target)) return
 
       event?.preventDefault?.()
       event?.stopPropagation?.()
-      event?.nativeEvent?.stopImmediatePropagation?.()
+      const nativeEvent = event.nativeEvent as Event & { stopImmediatePropagation?: () => void }
+      nativeEvent.stopImmediatePropagation?.()
 
       setIsOpen(true)
     },
-    [shouldGate]
+    [isBrowseAllowed, shouldGate]
   )
 
   const handleKeyDownCapture = useCallback(
@@ -62,22 +72,27 @@ export function AuthInteractionGate({ children }: AuthInteractionGateProps) {
       if (event.key !== 'Enter' && event.key !== ' ') return
 
       const target = event.target as HTMLElement | null
-      if (target?.closest?.('[data-auth-gate-allow="true"]')) return
+      if (isBrowseAllowed(target)) return
 
       event.preventDefault()
       event.stopPropagation()
-      ;(event.nativeEvent as any)?.stopImmediatePropagation?.()
+      const nativeEvent = event.nativeEvent as KeyboardEvent & { stopImmediatePropagation?: () => void }
+      nativeEvent.stopImmediatePropagation?.()
 
       setIsOpen(true)
     },
-    [shouldGate]
+    [isBrowseAllowed, shouldGate]
   )
 
   return (
     <div
       onClickCapture={triggerGate}
       onKeyDownCapture={handleKeyDownCapture}
-      {...(!isMobile ? { onPointerDownCapture: triggerGate } : {})}
+      {...(!isMobile
+        ? {
+            onPointerDownCapture: triggerGate,
+          }
+        : {})}
     >
       {children}
 

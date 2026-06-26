@@ -25,6 +25,7 @@ export function OrbFieldFallback({ albums }: OrbFieldFallbackProps) {
           onClick={() => router.push(`/album/${album.slug}`)}
           className="group relative aspect-square rounded-full overflow-hidden transition-transform hover:scale-105 focus-visible:scale-105"
           aria-label={`Album: ${album.title}, ${album.total_versions || 0} versions`}
+          data-auth-gate-mobile-browse="true"
         >
           {album.cover_url && (
             <img src={album.cover_url} alt={album.title} className="w-full h-full object-cover" />

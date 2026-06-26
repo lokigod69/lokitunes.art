@@ -84,12 +84,13 @@ export function UnifiedMenu({
         onClick={() => setIsOpen(true)}
         className="fixed top-4 right-4 z-[9999] flex h-12 w-12 items-center justify-center rounded-lg bg-void/90 backdrop-blur-sm border border-voltage/30 transition-colors hover:bg-void/95 active:bg-voltage/20 cursor-pointer"
         aria-label="Open menu"
+        data-auth-gate-mobile-browse="true"
       >
         <Menu className="w-5 h-5 text-bone" />
       </button>
 
       {isOpen && (
-        <div className="fixed inset-0 z-[200]">
+        <div className="fixed inset-0 z-[200]" data-auth-gate-mobile-browse="true">
           <div
             className="absolute inset-0 bg-black/70 backdrop-blur-sm"
             onClick={() => setIsOpen(false)}
