@@ -1,7 +1,7 @@
 /**
  * Helper functions for loading images from Supabase nested folder structure
- * Structure: covers/album-slug/cover.jpg
- *           covers/album-slug/01-song-name.jpg
+ * Structure: covers/album-slug/cover.webp
+ *           covers/album-slug/01-song-name.webp
  */
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
@@ -23,32 +23,38 @@ export function getAlbumCoverUrl(albumSlug: string): string[] {
   // Try EVERY possible pattern
   return [
     // Pattern 1: Clean folder, album name as filename
-    `${STORAGE_URL}/${cleanSlug}/${cleanSlug}.jpeg`,
-    `${STORAGE_URL}/${cleanSlug}/${cleanSlug}.jpg`,
+    `${STORAGE_URL}/${cleanSlug}/${cleanSlug}.webp`,
     `${STORAGE_URL}/${cleanSlug}/${cleanSlug}.png`,
+    `${STORAGE_URL}/${cleanSlug}/${cleanSlug}.jpg`,
+    `${STORAGE_URL}/${cleanSlug}/${cleanSlug}.jpeg`,
     
     // Pattern 2: Clean folder, "cover" filename
-    `${STORAGE_URL}/${cleanSlug}/cover.jpeg`,
-    `${STORAGE_URL}/${cleanSlug}/cover.jpg`,
+    `${STORAGE_URL}/${cleanSlug}/cover.webp`,
     `${STORAGE_URL}/${cleanSlug}/cover.png`,
+    `${STORAGE_URL}/${cleanSlug}/cover.jpg`,
+    `${STORAGE_URL}/${cleanSlug}/cover.jpeg`,
     
     // Pattern 3: Original slug with spaces, album name
-    `${STORAGE_URL}/${originalSlug}/${originalSlug}.jpeg`,
-    `${STORAGE_URL}/${originalSlug}/${originalSlug}.jpg`,
+    `${STORAGE_URL}/${originalSlug}/${originalSlug}.webp`,
     `${STORAGE_URL}/${originalSlug}/${originalSlug}.png`,
+    `${STORAGE_URL}/${originalSlug}/${originalSlug}.jpg`,
+    `${STORAGE_URL}/${originalSlug}/${originalSlug}.jpeg`,
     
     // Pattern 4: Original slug with spaces, "cover" filename
-    `${STORAGE_URL}/${originalSlug}/cover.jpeg`,
-    `${STORAGE_URL}/${originalSlug}/cover.jpg`,
+    `${STORAGE_URL}/${originalSlug}/cover.webp`,
     `${STORAGE_URL}/${originalSlug}/cover.png`,
+    `${STORAGE_URL}/${originalSlug}/cover.jpg`,
+    `${STORAGE_URL}/${originalSlug}/cover.jpeg`,
     
     // Pattern 5: At root level (no folder)
-    `${STORAGE_URL}/${cleanSlug}.jpeg`,
-    `${STORAGE_URL}/${cleanSlug}.jpg`,
+    `${STORAGE_URL}/${cleanSlug}.webp`,
     `${STORAGE_URL}/${cleanSlug}.png`,
-    `${STORAGE_URL}/${originalSlug}.jpeg`,
-    `${STORAGE_URL}/${originalSlug}.jpg`,
+    `${STORAGE_URL}/${cleanSlug}.jpg`,
+    `${STORAGE_URL}/${cleanSlug}.jpeg`,
+    `${STORAGE_URL}/${originalSlug}.webp`,
     `${STORAGE_URL}/${originalSlug}.png`,
+    `${STORAGE_URL}/${originalSlug}.jpg`,
+    `${STORAGE_URL}/${originalSlug}.jpeg`,
   ]
 }
 
@@ -74,14 +80,16 @@ export function getSongCoverUrl(albumSlug: string, songFilename: string): string
   
   return [
     // Try with clean slug folder
-    `${STORAGE_URL}/${cleanSlug}/${baseName}.jpeg`,
-    `${STORAGE_URL}/${cleanSlug}/${baseName}.jpg`,
+    `${STORAGE_URL}/${cleanSlug}/${baseName}.webp`,
     `${STORAGE_URL}/${cleanSlug}/${baseName}.png`,
+    `${STORAGE_URL}/${cleanSlug}/${baseName}.jpg`,
+    `${STORAGE_URL}/${cleanSlug}/${baseName}.jpeg`,
     
     // Try with original slug folder (with spaces)
-    `${STORAGE_URL}/${originalSlug}/${baseName}.jpeg`,
-    `${STORAGE_URL}/${originalSlug}/${baseName}.jpg`,
+    `${STORAGE_URL}/${originalSlug}/${baseName}.webp`,
     `${STORAGE_URL}/${originalSlug}/${baseName}.png`,
+    `${STORAGE_URL}/${originalSlug}/${baseName}.jpg`,
+    `${STORAGE_URL}/${originalSlug}/${baseName}.jpeg`,
   ]
 }
 

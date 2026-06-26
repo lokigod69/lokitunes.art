@@ -14,12 +14,25 @@ REM   sync.bat --force   - Force mode (includes deletions)
 REM Path to your lokitunes project
 cd /d "D:\CODING\LOKI LAZER\lokitunes"
 
+REM Use Windows system certificate store for Node HTTPS requests.
+set NODE_OPTIONS=--use-system-ca
+
 REM Check for --force flag
 set FORCE_FLAG=
 if "%~1"=="--force" set FORCE_FLAG=--force
 
 REM Path to your content folder (where this script is)
-call pnpm sync-content "%~dp0" %FORCE_FLAG%
+REM The dot avoids CMD passing a trailing backslash into the quoted argument.
+call pnpm sync-content "%~dp0." %FORCE_FLAG%
+if errorlevel 1 (
+  echo.
+  echo ================================
+  echo Sync failed!
+  echo ================================
+  echo.
+  pause
+  exit /b 1
+)
 
 echo.
 echo ================================

@@ -120,6 +120,8 @@ interface SyncChanges {
   versionsToUpdate: { song: DbSong; oldVersion: DbVersion; newVersion: VersionData }[]
 }
 
+const IMAGE_EXTENSIONS = ['.webp', '.png', '.jpg', '.jpeg', '.gif']
+
 function promptUser(question: string): Promise<string> {
   const rl = readline.createInterface({
     input: process.stdin,
@@ -250,6 +252,42 @@ function extractStorageObjectName(publicUrl: string | null | undefined, bucket: 
   }
 }
 
+function getObjectNameWithLocalExtension(existingObject: string | null, localPath: string, fallbackName: string): string {
+  const localExt = path.extname(localPath).toLowerCase()
+  if (!existingObject) return fallbackName
+
+  const existingExt = path.posix.extname(existingObject).toLowerCase()
+  if (existingExt === localExt) return existingObject
+
+  const existingDir = path.posix.dirname(existingObject)
+  const existingBase = path.posix.basename(existingObject, existingExt)
+  const fallbackBase = path.posix.basename(fallbackName, path.posix.extname(fallbackName))
+  const migratedName = `${existingBase || fallbackBase}${localExt}`
+
+  return existingDir === '.' ? migratedName : `${existingDir}/${migratedName}`
+}
+
+function getRefreshedAlbumCoverObjectName(existingObject: string | null, localAlbum: AlbumData): string {
+  const fallbackName = `${localAlbum.slug}${path.extname(localAlbum.coverPath).toLowerCase()}`
+  return getObjectNameWithLocalExtension(existingObject, localAlbum.coverPath, fallbackName)
+}
+
+function getRefreshedVersionCoverObjectName(existingObject: string | null, albumSlug: string, coverPath: string): string {
+  const fallbackName = `${albumSlug}/${path.basename(coverPath)}`
+  return getObjectNameWithLocalExtension(existingObject, coverPath, fallbackName)
+}
+
+async function removeReplacedStorageObject(bucket: string, oldObject: string | null, newObject: string): Promise<void> {
+  if (!oldObject || oldObject === newObject || !supabaseService) return
+
+  const { error } = await supabaseService.storage.from(bucket).remove([oldObject])
+  if (error) {
+    console.log(`      ⚠️ Could not remove old ${bucket} object ${oldObject}: ${error.message}`)
+  } else {
+    console.log(`      🧹 Removed old ${bucket} object: ${oldObject}`)
+  }
+}
+
 async function refreshExistingCovers(
   localAlbums: Map<string, AlbumData>,
   dbState: { albums: DbAlbum[]; songs: DbSong[]; versions: DbVersion[] }
@@ -294,7 +332,7 @@ async function refreshExistingCovers(
     console.log(`\n📁 Processing album: ${dbAlbum.title}`)
 
     const existingAlbumObject = extractStorageObjectName(dbAlbum.cover_url, 'covers')
-    const coverFileName = existingAlbumObject || `${localAlbum.slug}${path.extname(localAlbum.coverPath)}`
+    const coverFileName = getRefreshedAlbumCoverObjectName(existingAlbumObject, localAlbum)
     console.log(`   📤 Uploading album cover: ${coverFileName}`)
     const coverUrl = await uploadFile('covers', localAlbum.coverPath, coverFileName, {
       upsert: true,
@@ -315,6 +353,7 @@ async function refreshExistingCovers(
         console.log(`   ❌ Failed to update album cover: ${albumUpdateError.message}`)
       } else {
         console.log('   ✅ Updated album cover')
+        await removeReplacedStorageObject('covers', existingAlbumObject, coverFileName)
       }
     } else {
       console.log('   ❌ Failed to upload album cover')
@@ -347,7 +386,8 @@ async function refreshExistingCovers(
           continue
         }
 
-        const versionCoverFileName = `${slug}/${path.basename(localVersion.coverPath)}`
+        const existingVersionObject = extractStorageObjectName(dbVersion.cover_url, 'covers')
+        const versionCoverFileName = getRefreshedVersionCoverObjectName(existingVersionObject, slug, localVersion.coverPath)
         console.log(`      📤 Uploading: ${versionCoverFileName}`)
         const versionCoverUrl = await uploadFile('covers', localVersion.coverPath, versionCoverFileName, {
           upsert: true,
@@ -366,6 +406,7 @@ async function refreshExistingCovers(
             console.log(`      ❌ DB update failed for ${localVersion.label}: ${versionUpdateError.message}`)
           } else {
             console.log(`      ✅ Updated: ${localVersion.label}`)
+            await removeReplacedStorageObject('covers', existingVersionObject, versionCoverFileName)
           }
         } else {
           console.log(`      ❌ Upload failed for: ${localVersion.label}`)
@@ -379,7 +420,22 @@ async function refreshExistingCovers(
 
 function isImageFile(filename: string): boolean {
   const ext = path.extname(filename).toLowerCase()
-  return ['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(ext)
+  return IMAGE_EXTENSIONS.includes(ext)
+}
+
+function findPreferredImageFile(files: string[], baseNames: string[]): string | undefined {
+  const filesByLowerName = new Map(files.map((file) => [file.toLowerCase(), file]))
+
+  for (const baseName of baseNames) {
+    for (const ext of IMAGE_EXTENSIONS) {
+      const match = filesByLowerName.get(`${baseName}${ext}`.toLowerCase())
+      if (match && isImageFile(match)) {
+        return match
+      }
+    }
+  }
+
+  return undefined
 }
 
 function isAudioFile(filename: string): boolean {
@@ -510,10 +566,7 @@ function scanAlbumFolder(albumPath: string, slug: string): AlbumData | null {
   const files = fs.readdirSync(albumPath)
   
   // Find cover image
-  const coverFile = files.find(f => {
-    const name = f.toLowerCase()
-    return name.startsWith('cover.') && isImageFile(f)
-  })
+  const coverFile = findPreferredImageFile(files, ['cover'])
   
   if (!coverFile) {
     return null
@@ -541,21 +594,8 @@ function scanAlbumFolder(albumPath: string, slug: string): AlbumData | null {
     if (isSourceOriginal && trackNo === 0) {
       // Treat 00-* files as album-level source original and attach them to the first song.
       const baseName = audioFile.replace(/\.(wav|mp3|flac|ogg)$/i, '')
-      const possibleCovers = [
-        `${baseName}.jpg`,
-        `${baseName}.jpeg`,
-        `${baseName}.png`,
-        `${baseName}.webp`,
-      ]
-
-      let versionCoverPath: string | undefined
-      for (const coverName of possibleCovers) {
-        const coverPath = path.join(albumPath, coverName)
-        if (fs.existsSync(coverPath)) {
-          versionCoverPath = coverPath
-          break
-        }
-      }
+      const versionCoverFile = findPreferredImageFile(files, [baseName])
+      const versionCoverPath = versionCoverFile ? path.join(albumPath, versionCoverFile) : undefined
 
       deferredOriginals.push({
         filePath: path.join(albumPath, audioFile),
@@ -574,21 +614,10 @@ function scanAlbumFolder(albumPath: string, slug: string): AlbumData | null {
     
     // Look for matching cover image for this version
     const baseName = audioFile.replace(/\.(wav|mp3|flac|ogg)$/i, '')
-    const possibleCovers = [
-      `${baseName}.jpg`,
-      `${baseName}.jpeg`,
-      `${baseName}.png`,
-      `${baseName}.webp`,
-    ]
-    
-    let versionCoverPath: string | undefined
-    for (const coverName of possibleCovers) {
-      const coverPath = path.join(albumPath, coverName)
-      if (fs.existsSync(coverPath)) {
-        versionCoverPath = coverPath
-        console.log(`      🎨 Found version cover: ${coverName}`)
-        break
-      }
+    const versionCoverFile = findPreferredImageFile(files, [baseName])
+    const versionCoverPath = versionCoverFile ? path.join(albumPath, versionCoverFile) : undefined
+    if (versionCoverFile) {
+      console.log(`      🎨 Found version cover: ${versionCoverFile}`)
     }
 
     if (!versionCoverPath) {
@@ -1125,7 +1154,7 @@ async function syncContent(contentDir: string) {
     console.error(`\nExpected structure:`)
     console.error(`  ${contentDir}/`)
     console.error(`  ├── album-name-1/`)
-    console.error(`  │   ├── cover.jpg`)
+    console.error(`  │   ├── cover.webp`)
     console.error(`  │   └── 01-song.wav`)
     console.error(`  └── album-name-2/`)
     console.error(`      ├── cover.png`)
@@ -1162,6 +1191,7 @@ async function syncContent(contentDir: string) {
       console.error(`   Active key role: ${activeKeyPayload.role || 'unknown'}, ref: ${activeKeyPayload.ref || 'unknown'}`)
     }
     console.error('   Fix your Supabase URL/key in the .bat. (Make sure the key matches this project.)')
+    process.exitCode = 1
     return
   }
   console.log(`   Found ${dbState.albums.length} album(s) in database\n`)
@@ -1205,6 +1235,7 @@ async function syncContent(contentDir: string) {
   
   if (answer !== 'y' && answer !== 'yes') {
     console.log('\n❌ Sync cancelled.\n')
+    process.exitCode = 1
     return
   }
   
@@ -1232,7 +1263,7 @@ if (!contentDirArg) {
   console.error('\nExpected structure:')
   console.error('  ~/loki-content/')
   console.error('  ├── first-album/')
-  console.error('  │   ├── cover.jpg')
+  console.error('  │   ├── cover.webp')
   console.error('  │   ├── 01-song-original.wav')
   console.error('  │   └── 01-song-remix.wav')
   console.error('  └── second-album/')
